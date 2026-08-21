@@ -1,0 +1,952 @@
+﻿=== BGS-REM-R1A3 SECURE GIT INITIAL BASELINE ===
+
+=== 01 CONTEXT ===
+SYSTEM=ERP_BGS
+STEP=BGS-REM-R1A3
+PURPOSE=SECURE_INITIAL_GIT_BASELINE
+BUSINESS_SOURCE_MUTATION=NO
+DATABASE_MUTATION=NO
+TEST_EXECUTION=NO
+MIGRATION_EXECUTION=NO
+
+=== 02 ENV.TESTING GIT PROTECTION ===
+GITIGNORE_UPDATED_ENV_TESTING=YES
+
+=== 03 SECRET IGNORE VERIFICATION ===
+.gitignore:8:.env	.env
+.env=IGNORED_PASS
+.gitignore:21:.env.testing	.env.testing
+.env.testing=IGNORED_PASS
+
+=== 04 BASELINE 008L PROOF ===
+
+=== 05 LARGE ARCHIVE DUMP INVENTORY ===
+
+Name          Length LastWriteTime       
+----          ------ -------------       
+erp_app.sql    57487 5/25/2026 9:13:31 AM
+public.zip  37802886 5/25/2026 9:14:18 AM
+
+
+
+
+=== 06 STAGE SAFE APPLICATION FILES ===
+
+=== 07 STAGED SECRET CHECK ===
+.editorconfig
+.env.example
+.gitattributes
+.gitignore
+README.md
+app/Console/Kernel.php
+app/Exceptions/Handler.php
+app/Exports/DeliveryExport.php
+app/Exports/PaymentCustomerExport.php
+app/Exports/PaymentSupplierExport.php
+app/Exports/PurchasingExport.php
+app/Exports/SalesExport.php
+app/Helpers/GlobalHelper.php
+app/Helpers/helpers.php
+app/Http/Controllers/Auth/ConfirmPasswordController.php
+app/Http/Controllers/Auth/ForgotPasswordController.php
+app/Http/Controllers/Auth/LoginController.php
+app/Http/Controllers/Auth/RegisterController.php
+app/Http/Controllers/Auth/ResetPasswordController.php
+app/Http/Controllers/Auth/VerificationController.php
+app/Http/Controllers/BackupController.php
+app/Http/Controllers/CompanyController.php
+app/Http/Controllers/Controller.php
+app/Http/Controllers/CustomerController.php
+app/Http/Controllers/DashboardController.php
+app/Http/Controllers/DeliveryOrderController.php
+app/Http/Controllers/DocumentReceiptController.php
+app/Http/Controllers/ExpenseController.php
+app/Http/Controllers/GoodsReceiptController.php
+app/Http/Controllers/InvoiceCustomerController copy.php
+app/Http/Controllers/InvoiceCustomerController.php
+app/Http/Controllers/PoCustomerController.php
+app/Http/Controllers/PoSupplierController.php
+app/Http/Controllers/ProductController.php
+app/Http/Controllers/QuotationController.php
+app/Http/Controllers/ReportController.php
+app/Http/Controllers/SupplierController.php
+app/Http/Controllers/UserController.php
+app/Http/Controllers/UserManualController.php
+app/Http/Kernel.php
+app/Http/Middleware/Authenticate.php
+app/Http/Middleware/CheckRole.php
+app/Http/Middleware/EncryptCookies.php
+app/Http/Middleware/PreventRequestsDuringMaintenance.php
+app/Http/Middleware/RedirectIfAuthenticated.php
+app/Http/Middleware/TrimStrings.php
+app/Http/Middleware/TrustHosts.php
+app/Http/Middleware/TrustProxies.php
+app/Http/Middleware/ValidateSignature.php
+app/Http/Middleware/VerifyCsrfToken.php
+app/Models/Company.php
+app/Models/Customer.php
+app/Models/DeliveryOrder.php
+app/Models/DeliveryOrderDetail.php
+app/Models/DocumentReceipt.php
+app/Models/Expense.php
+app/Models/GoodsReceipt.php
+app/Models/GoodsReceiptDetail.php
+app/Models/InvoiceCustomer.php
+app/Models/InvoiceCustomerDetail.php
+app/Models/InvoiceSupplier.php
+app/Models/InvoiceSupplierDetail.php
+app/Models/PoCustomer.php
+app/Models/PoCustomerDetail.php
+app/Models/PoSupplier.php
+app/Models/PoSupplierDetail.php
+app/Models/Product.php
+app/Models/Quotation.php
+app/Models/QuotationDetail.php
+app/Models/Supplier.php
+app/Models/User.php
+app/Models/UserManual.php
+app/Providers/AppServiceProvider.php
+app/Providers/AuthServiceProvider.php
+app/Providers/BroadcastServiceProvider.php
+app/Providers/EventServiceProvider.php
+app/Providers/RouteServiceProvider.php
+artisan
+audit-output/BGS-REM-R1A1-safety-blocker-resolution.txt
+audit-output/BGS-REM-R1A2-test-isolation-repository-foundation.txt
+audit-output/BGS-REM-R1A3-secure-git-initial-baseline.txt
+bootstrap/app.php
+bootstrap/cache/.gitignore
+composer.json
+composer.lock
+config/app.php
+config/auth.php
+config/broadcasting.php
+config/cache.php
+config/cors.php
+config/database.php
+config/datatables-buttons.php
+config/filesystems.php
+config/hashing.php
+config/logging.php
+config/mail.php
+config/queue.php
+config/sanctum.php
+config/services.php
+config/session.php
+config/view.php
+database/.gitignore
+database/factories/UserFactory.php
+database/migrations/2026_06_08_002409_create_user_manuals_table.php
+database/migrations/2026_06_08_014218_update_user_manuals_table_for_hierarchy.php
+database/migrations/2026_06_08_091022_add_tax_invoice_attachment_to_invoice_customers_table.php
+database/migrations/2026_07_14_032436_create_expenses_table.php
+database/seeders/CustomerSeeder.php
+database/seeders/DatabaseSeeder.php
+database/seeders/ProductSeeder.php
+database/seeders/SupplierSeeder.php
+database/seeders/UserRoleSeeder.php
+docs/BGS-AUD-008I2-live-transaction-data-integrity-review.txt
+docs/BGS-AUD-008L-final-pre-remediation-audit-baseline.txt
+docs/smartlo1_erp_app (3).sql
+modern-output/BGS-AUD-008G-quotation-copy-lifecycle-readiness.txt
+package-lock.json
+package.json
+phpunit.xml
+public/.htaccess
+public/biaya/1783997730_2026-07-08_15-32-07.jpg
+public/favicon.ico
+public/index.php
+public/robots.txt
+public/test.php
+public/uploads/companies/logo/1777902915_LogoBGS.png
+public/uploads/companies/logo/1781081839_logo_6a2926ef9c1b9.png
+public/uploads/companies/logo/1782268572_logo_6a3b429c7302e.png
+public/uploads/companies/logo/LogoBGS.png
+public/uploads/companies/ttd_do/1781081839_ttd_do_6a2926efa52ca.jpg
+public/uploads/companies/ttd_do/1782268627_ttd_do_6a3b42d317c73.jpg
+public/uploads/companies/ttd_inv/1781081839_ttd_inv_6a2926efa5a0c.jpg
+public/uploads/companies/ttd_inv/1782268627_ttd_inv_6a3b42d3184d3.jpg
+public/uploads/companies/ttd_inv2/1781081839_ttd_inv2_6a2926efa5f2c.jpg
+public/uploads/companies/ttd_inv2/1782268627_ttd_inv2_6a3b42d318caf.jpg
+public/uploads/companies/ttd_sales_support/1782268627_ttd_sales_support_6a3b42d31738b.jpg
+public/uploads/companies/ttd_ss/1781081839_ttd_sales_support_6a2926efa4d58.jpg
+public/uploads/products/1780382015_124-810.jpg
+public/uploads/products/1780394619_2026-06-02_17-02-04.jpg
+public/uploads/products/1780399626_2026-06-02_18-26-21.jpg
+public/uploads/products/1780483998_2026-06-03_17-52-29.jpg
+public/uploads/products/1780496652_2026-06-03_21-20-41.jpg
+public/uploads/products/1781143985_Sandisk-Cruzer-Blade.png
+public/uploads/products/1781143991_Sandisk-Cruzer-Blade.png
+public/uploads/products/1781144977_E0HYkavwFo.jpg
+public/uploads/products/1781144997_GZWXlnRNnS.jpg
+public/uploads/products/1781145012_3h3EUJb3Na.jpg
+public/uploads/products/1781145024_E3sxXsgpxf.jpg
+public/uploads/products/1783385258_TBbOVnZAw1.jpg
+public/uploads/ttd/logo baru BGS-FInal.png
+public/uploads/ttd/ttd_afni.jpg
+public/uploads/ttd/ttd_do.jpg
+public/uploads/ttd/ttd_inv.jpg
+public/uploads/ttd/ttd_inv2.jpg
+public/vendor/datatables/buttons.server-side.js
+resources/css/app.css
+resources/js/app.js
+resources/js/bootstrap.js
+resources/sass/_variables.scss
+resources/sass/app.scss
+resources/views/auth/login.blade.php
+resources/views/auth/passwords/confirm.blade.php
+resources/views/auth/passwords/email.blade.php
+resources/views/auth/passwords/reset.blade.php
+resources/views/auth/register.blade.php
+resources/views/auth/verify.blade.php
+resources/views/backup/index.blade copy.php
+resources/views/backup/index.blade.php
+resources/views/backup/restore.blade.php
+resources/views/companies/create.blade copy.php
+resources/views/companies/create.blade.php
+resources/views/companies/edit.blade copy 2.php
+resources/views/companies/edit.blade copy.php
+resources/views/companies/edit.blade.php
+resources/views/companies/index.blade copy.php
+resources/views/companies/index.blade.php
+resources/views/companies/show.blade copy 2.php
+resources/views/companies/show.blade copy.php
+resources/views/companies/show.blade.php
+resources/views/customers/create.blade copy 2.php
+resources/views/customers/create.blade copy.php
+resources/views/customers/create.blade.php
+resources/views/customers/edit.blade copy.php
+resources/views/customers/edit.blade.php
+resources/views/customers/index.blade copy.php
+resources/views/customers/index.blade.php
+resources/views/customers/print.blade.php
+resources/views/customers/show.blade copy.php
+resources/views/customers/show.blade.php
+resources/views/dashboard.blade.php
+resources/views/delivery_orders/create.blade copy 2.php
+resources/views/delivery_orders/create.blade copy.php
+resources/views/delivery_orders/create.blade.php
+resources/views/delivery_orders/edit.blade.php
+resources/views/delivery_orders/index.blade copy.php
+resources/views/delivery_orders/index.blade.php
+resources/views/delivery_orders/print.blade copy 2.php
+resources/views/delivery_orders/print.blade copy.php
+resources/views/delivery_orders/print.blade.php
+resources/views/delivery_orders/receipt_print.blade.php
+resources/views/delivery_orders/show.blade.php
+resources/views/document-receipts/create.blade copy 2.php
+resources/views/document-receipts/create.blade copy 3.php
+resources/views/document-receipts/create.blade copy.php
+resources/views/document-receipts/create.blade old.php
+resources/views/document-receipts/create.blade.php
+resources/views/document-receipts/edit.blade.php
+resources/views/document-receipts/index.blade.php
+resources/views/document-receipts/print.blade copy 2.php
+resources/views/document-receipts/print.blade copy.php
+resources/views/document-receipts/print.blade.php
+resources/views/document-receipts/show.blade.php
+resources/views/errors/403.blade.php
+resources/views/expense/create.blade.php
+resources/views/expense/edit.blade.php
+resources/views/expense/index.blade.php
+resources/views/expense/show.blade.php
+resources/views/goods_receipts/create.blade copy.php
+resources/views/goods_receipts/create.blade.php
+resources/views/goods_receipts/edit.blade.php
+resources/views/goods_receipts/index.blade copy.php
+resources/views/goods_receipts/index.blade.php
+resources/views/goods_receipts/show.blade.php
+resources/views/invoice_customers/create.blade copy.php
+resources/views/invoice_customers/create.blade.php
+resources/views/invoice_customers/edit.blade.php
+resources/views/invoice_customers/index.blade.php
+resources/views/invoice_customers/print.blade.php
+resources/views/invoice_customers/print_invoice.blade.php
+resources/views/invoice_customers/show.blade.php
+resources/views/landing.blade.php
+resources/views/layouts/app.blade.php
+resources/views/po_customers/create.blade.php
+resources/views/po_customers/edit.blade.php
+resources/views/po_customers/index.blade.php
+resources/views/po_customers/show.blade.php
+resources/views/po_suppliers/create.blade copy 2.php
+resources/views/po_suppliers/create.blade copy.php
+resources/views/po_suppliers/create.blade.php
+resources/views/po_suppliers/edit.blade.php
+resources/views/po_suppliers/index.blade.php
+resources/views/po_suppliers/print.blade copy.php
+resources/views/po_suppliers/print.blade.php
+resources/views/po_suppliers/show.blade.php
+resources/views/products/create.blade.php
+resources/views/products/edit.blade.php
+resources/views/products/index.blade.php
+resources/views/products/show.blade.php
+resources/views/quotations/create.blade.php
+resources/views/quotations/edit.blade.php
+resources/views/quotations/index.blade.php
+resources/views/quotations/print.blade.php
+resources/views/quotations/show.blade.php
+resources/views/reports/delivery_pdf.blade.php
+resources/views/reports/index.blade.php
+resources/views/reports/payment_customer_pdf.blade.php
+resources/views/reports/payment_supplier_pdf.blade.php
+resources/views/reports/purchasing_pdf.blade.php
+resources/views/reports/sales_pdf.blade.php
+resources/views/suppliers/create.blade.php
+resources/views/suppliers/edit.blade.php
+resources/views/suppliers/index.blade.php
+resources/views/suppliers/show.blade.php
+resources/views/user_manuals/create.blade.php
+resources/views/user_manuals/edit.blade.php
+resources/views/user_manuals/index.blade.php
+resources/views/users/index.blade.php
+routes/api.php
+routes/channels.php
+routes/console.php
+routes/link.php
+routes/web.php
+storage/app/.gitignore
+storage/app/public/.gitignore
+storage/framework/.gitignore
+storage/framework/cache/.gitignore
+storage/framework/cache/data/.gitignore
+storage/framework/sessions/.gitignore
+storage/framework/testing/.gitignore
+storage/framework/views/.gitignore
+storage/logs/.gitignore
+tests/CreatesApplication.php
+tests/Feature/BgsBusinessStateRegressionTest.php
+tests/Feature/BgsInvoiceAggregateMutationRegressionTest.php
+tests/Feature/BgsInvoiceAggregateStateRegressionTest.php
+tests/Feature/BgsInvoiceCustomerRuntimeAtomicityTest.php
+tests/Feature/BgsInvoiceCustomerTransactionBoundaryTest.php
+tests/Feature/BgsPoCustomerIndexSourceContractTest.php
+tests/Feature/ExampleTest.php
+tests/TestCase.php
+tests/Unit/ExampleTest.php
+vite.config.js
+
+=== 08 DUMP ARCHIVE STAGING CHECK ===
+DUMP_ARCHIVE_STAGING_CHECK=FAIL
+docs/smartlo1_erp_app (3).sql
+
+=== 09 CORE SOURCE HASH PRE COMMIT ===
+QuotationController.php|SHA256=F8473D01DA16D4D82A6E9C570669A40790A0BBC6C259CCC87C7995BF8EFB539D
+PoCustomerController.php|SHA256=9A6498382B24858F2092031FE2FDDD457BFFAE4473CE075C22A77999340FEB84
+PoSupplierController.php|SHA256=C5CDC8EC2AB1490375EF403BC09EAAE20028303D457C5D7302E39EC3EC0FA40E
+GoodsReceiptController.php|SHA256=192C72D086BF1C480B57016411DB72634D554B3B9CB70793A50FFA5911CD4ACF
+DeliveryOrderController.php|SHA256=142CC5BDDACEE1CB508BBFB6C0A6BB30C68D0C3EFD27DCCB1F0550F368CE551D
+InvoiceCustomerController.php|SHA256=9DCF5394139E1F88283A366AFD4B0935FBBD24134073A940E3AF490C33E0639A
+
+=== 10 STAGED SUMMARY ===
+A  .editorconfig
+A  .env.example
+A  .gitattributes
+A  .gitignore
+A  README.md
+A  app/Console/Kernel.php
+A  app/Exceptions/Handler.php
+A  app/Exports/DeliveryExport.php
+A  app/Exports/PaymentCustomerExport.php
+A  app/Exports/PaymentSupplierExport.php
+A  app/Exports/PurchasingExport.php
+A  app/Exports/SalesExport.php
+A  app/Helpers/GlobalHelper.php
+A  app/Helpers/helpers.php
+A  app/Http/Controllers/Auth/ConfirmPasswordController.php
+A  app/Http/Controllers/Auth/ForgotPasswordController.php
+A  app/Http/Controllers/Auth/LoginController.php
+A  app/Http/Controllers/Auth/RegisterController.php
+A  app/Http/Controllers/Auth/ResetPasswordController.php
+A  app/Http/Controllers/Auth/VerificationController.php
+A  app/Http/Controllers/BackupController.php
+A  app/Http/Controllers/CompanyController.php
+A  app/Http/Controllers/Controller.php
+A  app/Http/Controllers/CustomerController.php
+A  app/Http/Controllers/DashboardController.php
+A  app/Http/Controllers/DeliveryOrderController.php
+A  app/Http/Controllers/DocumentReceiptController.php
+A  app/Http/Controllers/ExpenseController.php
+A  app/Http/Controllers/GoodsReceiptController.php
+A  "app/Http/Controllers/InvoiceCustomerController copy.php"
+A  app/Http/Controllers/InvoiceCustomerController.php
+A  app/Http/Controllers/PoCustomerController.php
+A  app/Http/Controllers/PoSupplierController.php
+A  app/Http/Controllers/ProductController.php
+A  app/Http/Controllers/QuotationController.php
+A  app/Http/Controllers/ReportController.php
+A  app/Http/Controllers/SupplierController.php
+A  app/Http/Controllers/UserController.php
+A  app/Http/Controllers/UserManualController.php
+A  app/Http/Kernel.php
+A  app/Http/Middleware/Authenticate.php
+A  app/Http/Middleware/CheckRole.php
+A  app/Http/Middleware/EncryptCookies.php
+A  app/Http/Middleware/PreventRequestsDuringMaintenance.php
+A  app/Http/Middleware/RedirectIfAuthenticated.php
+A  app/Http/Middleware/TrimStrings.php
+A  app/Http/Middleware/TrustHosts.php
+A  app/Http/Middleware/TrustProxies.php
+A  app/Http/Middleware/ValidateSignature.php
+A  app/Http/Middleware/VerifyCsrfToken.php
+A  app/Models/Company.php
+A  app/Models/Customer.php
+A  app/Models/DeliveryOrder.php
+A  app/Models/DeliveryOrderDetail.php
+A  app/Models/DocumentReceipt.php
+A  app/Models/Expense.php
+A  app/Models/GoodsReceipt.php
+A  app/Models/GoodsReceiptDetail.php
+A  app/Models/InvoiceCustomer.php
+A  app/Models/InvoiceCustomerDetail.php
+A  app/Models/InvoiceSupplier.php
+A  app/Models/InvoiceSupplierDetail.php
+A  app/Models/PoCustomer.php
+A  app/Models/PoCustomerDetail.php
+A  app/Models/PoSupplier.php
+A  app/Models/PoSupplierDetail.php
+A  app/Models/Product.php
+A  app/Models/Quotation.php
+A  app/Models/QuotationDetail.php
+A  app/Models/Supplier.php
+A  app/Models/User.php
+A  app/Models/UserManual.php
+A  app/Providers/AppServiceProvider.php
+A  app/Providers/AuthServiceProvider.php
+A  app/Providers/BroadcastServiceProvider.php
+A  app/Providers/EventServiceProvider.php
+A  app/Providers/RouteServiceProvider.php
+A  artisan
+A  audit-output/BGS-REM-R1A1-safety-blocker-resolution.txt
+A  audit-output/BGS-REM-R1A2-test-isolation-repository-foundation.txt
+AM audit-output/BGS-REM-R1A3-secure-git-initial-baseline.txt
+A  bootstrap/app.php
+A  bootstrap/cache/.gitignore
+A  composer.json
+A  composer.lock
+A  config/app.php
+A  config/auth.php
+A  config/broadcasting.php
+A  config/cache.php
+A  config/cors.php
+A  config/database.php
+A  config/datatables-buttons.php
+A  config/filesystems.php
+A  config/hashing.php
+A  config/logging.php
+A  config/mail.php
+A  config/queue.php
+A  config/sanctum.php
+A  config/services.php
+A  config/session.php
+A  config/view.php
+A  database/.gitignore
+A  database/factories/UserFactory.php
+A  database/migrations/2026_06_08_002409_create_user_manuals_table.php
+A  database/migrations/2026_06_08_014218_update_user_manuals_table_for_hierarchy.php
+A  database/migrations/2026_06_08_091022_add_tax_invoice_attachment_to_invoice_customers_table.php
+A  database/migrations/2026_07_14_032436_create_expenses_table.php
+A  database/seeders/CustomerSeeder.php
+A  database/seeders/DatabaseSeeder.php
+A  database/seeders/ProductSeeder.php
+A  database/seeders/SupplierSeeder.php
+A  database/seeders/UserRoleSeeder.php
+A  docs/BGS-AUD-008I2-live-transaction-data-integrity-review.txt
+A  docs/BGS-AUD-008L-final-pre-remediation-audit-baseline.txt
+A  "docs/smartlo1_erp_app (3).sql"
+A  modern-output/BGS-AUD-008G-quotation-copy-lifecycle-readiness.txt
+A  package-lock.json
+A  package.json
+A  phpunit.xml
+A  public/.htaccess
+A  public/biaya/1783997730_2026-07-08_15-32-07.jpg
+A  public/favicon.ico
+A  public/index.php
+A  public/robots.txt
+A  public/test.php
+A  public/uploads/companies/logo/1777902915_LogoBGS.png
+A  public/uploads/companies/logo/1781081839_logo_6a2926ef9c1b9.png
+A  public/uploads/companies/logo/1782268572_logo_6a3b429c7302e.png
+A  public/uploads/companies/logo/LogoBGS.png
+A  public/uploads/companies/ttd_do/1781081839_ttd_do_6a2926efa52ca.jpg
+A  public/uploads/companies/ttd_do/1782268627_ttd_do_6a3b42d317c73.jpg
+A  public/uploads/companies/ttd_inv/1781081839_ttd_inv_6a2926efa5a0c.jpg
+A  public/uploads/companies/ttd_inv/1782268627_ttd_inv_6a3b42d3184d3.jpg
+A  public/uploads/companies/ttd_inv2/1781081839_ttd_inv2_6a2926efa5f2c.jpg
+A  public/uploads/companies/ttd_inv2/1782268627_ttd_inv2_6a3b42d318caf.jpg
+A  public/uploads/companies/ttd_sales_support/1782268627_ttd_sales_support_6a3b42d31738b.jpg
+A  public/uploads/companies/ttd_ss/1781081839_ttd_sales_support_6a2926efa4d58.jpg
+A  public/uploads/products/1780382015_124-810.jpg
+A  public/uploads/products/1780394619_2026-06-02_17-02-04.jpg
+A  public/uploads/products/1780399626_2026-06-02_18-26-21.jpg
+A  public/uploads/products/1780483998_2026-06-03_17-52-29.jpg
+A  public/uploads/products/1780496652_2026-06-03_21-20-41.jpg
+A  public/uploads/products/1781143985_Sandisk-Cruzer-Blade.png
+A  public/uploads/products/1781143991_Sandisk-Cruzer-Blade.png
+A  public/uploads/products/1781144977_E0HYkavwFo.jpg
+A  public/uploads/products/1781144997_GZWXlnRNnS.jpg
+A  public/uploads/products/1781145012_3h3EUJb3Na.jpg
+A  public/uploads/products/1781145024_E3sxXsgpxf.jpg
+A  public/uploads/products/1783385258_TBbOVnZAw1.jpg
+A  "public/uploads/ttd/logo baru BGS-FInal.png"
+A  public/uploads/ttd/ttd_afni.jpg
+A  public/uploads/ttd/ttd_do.jpg
+A  public/uploads/ttd/ttd_inv.jpg
+A  public/uploads/ttd/ttd_inv2.jpg
+A  public/vendor/datatables/buttons.server-side.js
+A  resources/css/app.css
+A  resources/js/app.js
+A  resources/js/bootstrap.js
+A  resources/sass/_variables.scss
+A  resources/sass/app.scss
+A  resources/views/auth/login.blade.php
+A  resources/views/auth/passwords/confirm.blade.php
+A  resources/views/auth/passwords/email.blade.php
+A  resources/views/auth/passwords/reset.blade.php
+A  resources/views/auth/register.blade.php
+A  resources/views/auth/verify.blade.php
+A  "resources/views/backup/index.blade copy.php"
+A  resources/views/backup/index.blade.php
+A  resources/views/backup/restore.blade.php
+A  "resources/views/companies/create.blade copy.php"
+A  resources/views/companies/create.blade.php
+A  "resources/views/companies/edit.blade copy 2.php"
+A  "resources/views/companies/edit.blade copy.php"
+A  resources/views/companies/edit.blade.php
+A  "resources/views/companies/index.blade copy.php"
+A  resources/views/companies/index.blade.php
+A  "resources/views/companies/show.blade copy 2.php"
+A  "resources/views/companies/show.blade copy.php"
+A  resources/views/companies/show.blade.php
+A  "resources/views/customers/create.blade copy 2.php"
+A  "resources/views/customers/create.blade copy.php"
+A  resources/views/customers/create.blade.php
+A  "resources/views/customers/edit.blade copy.php"
+A  resources/views/customers/edit.blade.php
+A  "resources/views/customers/index.blade copy.php"
+A  resources/views/customers/index.blade.php
+A  resources/views/customers/print.blade.php
+A  "resources/views/customers/show.blade copy.php"
+A  resources/views/customers/show.blade.php
+A  resources/views/dashboard.blade.php
+A  "resources/views/delivery_orders/create.blade copy 2.php"
+A  "resources/views/delivery_orders/create.blade copy.php"
+A  resources/views/delivery_orders/create.blade.php
+A  resources/views/delivery_orders/edit.blade.php
+A  "resources/views/delivery_orders/index.blade copy.php"
+A  resources/views/delivery_orders/index.blade.php
+A  "resources/views/delivery_orders/print.blade copy 2.php"
+A  "resources/views/delivery_orders/print.blade copy.php"
+A  resources/views/delivery_orders/print.blade.php
+A  resources/views/delivery_orders/receipt_print.blade.php
+A  resources/views/delivery_orders/show.blade.php
+A  "resources/views/document-receipts/create.blade copy 2.php"
+A  "resources/views/document-receipts/create.blade copy 3.php"
+A  "resources/views/document-receipts/create.blade copy.php"
+A  "resources/views/document-receipts/create.blade old.php"
+A  resources/views/document-receipts/create.blade.php
+A  resources/views/document-receipts/edit.blade.php
+A  resources/views/document-receipts/index.blade.php
+A  "resources/views/document-receipts/print.blade copy 2.php"
+A  "resources/views/document-receipts/print.blade copy.php"
+A  resources/views/document-receipts/print.blade.php
+A  resources/views/document-receipts/show.blade.php
+A  resources/views/errors/403.blade.php
+A  resources/views/expense/create.blade.php
+A  resources/views/expense/edit.blade.php
+A  resources/views/expense/index.blade.php
+A  resources/views/expense/show.blade.php
+A  "resources/views/goods_receipts/create.blade copy.php"
+A  resources/views/goods_receipts/create.blade.php
+A  resources/views/goods_receipts/edit.blade.php
+A  "resources/views/goods_receipts/index.blade copy.php"
+A  resources/views/goods_receipts/index.blade.php
+A  resources/views/goods_receipts/show.blade.php
+A  "resources/views/invoice_customers/create.blade copy.php"
+A  resources/views/invoice_customers/create.blade.php
+A  resources/views/invoice_customers/edit.blade.php
+A  resources/views/invoice_customers/index.blade.php
+A  resources/views/invoice_customers/print.blade.php
+A  resources/views/invoice_customers/print_invoice.blade.php
+A  resources/views/invoice_customers/show.blade.php
+A  resources/views/landing.blade.php
+A  resources/views/layouts/app.blade.php
+A  resources/views/po_customers/create.blade.php
+A  resources/views/po_customers/edit.blade.php
+A  resources/views/po_customers/index.blade.php
+A  resources/views/po_customers/show.blade.php
+A  "resources/views/po_suppliers/create.blade copy 2.php"
+A  "resources/views/po_suppliers/create.blade copy.php"
+A  resources/views/po_suppliers/create.blade.php
+A  resources/views/po_suppliers/edit.blade.php
+A  resources/views/po_suppliers/index.blade.php
+A  "resources/views/po_suppliers/print.blade copy.php"
+A  resources/views/po_suppliers/print.blade.php
+A  resources/views/po_suppliers/show.blade.php
+A  resources/views/products/create.blade.php
+A  resources/views/products/edit.blade.php
+A  resources/views/products/index.blade.php
+A  resources/views/products/show.blade.php
+A  resources/views/quotations/create.blade.php
+A  resources/views/quotations/edit.blade.php
+A  resources/views/quotations/index.blade.php
+A  resources/views/quotations/print.blade.php
+A  resources/views/quotations/show.blade.php
+A  resources/views/reports/delivery_pdf.blade.php
+A  resources/views/reports/index.blade.php
+A  resources/views/reports/payment_customer_pdf.blade.php
+A  resources/views/reports/payment_supplier_pdf.blade.php
+A  resources/views/reports/purchasing_pdf.blade.php
+A  resources/views/reports/sales_pdf.blade.php
+A  resources/views/suppliers/create.blade.php
+A  resources/views/suppliers/edit.blade.php
+A  resources/views/suppliers/index.blade.php
+A  resources/views/suppliers/show.blade.php
+A  resources/views/user_manuals/create.blade.php
+A  resources/views/user_manuals/edit.blade.php
+A  resources/views/user_manuals/index.blade.php
+A  resources/views/users/index.blade.php
+A  routes/api.php
+A  routes/channels.php
+A  routes/console.php
+A  routes/link.php
+A  routes/web.php
+A  storage/app/.gitignore
+A  storage/app/public/.gitignore
+A  storage/framework/.gitignore
+A  storage/framework/cache/.gitignore
+A  storage/framework/cache/data/.gitignore
+A  storage/framework/sessions/.gitignore
+A  storage/framework/testing/.gitignore
+A  storage/framework/views/.gitignore
+A  storage/logs/.gitignore
+A  tests/CreatesApplication.php
+A  tests/Feature/BgsBusinessStateRegressionTest.php
+A  tests/Feature/BgsInvoiceAggregateMutationRegressionTest.php
+A  tests/Feature/BgsInvoiceAggregateStateRegressionTest.php
+A  tests/Feature/BgsInvoiceCustomerRuntimeAtomicityTest.php
+A  tests/Feature/BgsInvoiceCustomerTransactionBoundaryTest.php
+A  tests/Feature/BgsPoCustomerIndexSourceContractTest.php
+A  tests/Feature/ExampleTest.php
+A  tests/TestCase.php
+A  tests/Unit/ExampleTest.php
+A  vite.config.js
+?? erp_app.sql
+?? public.zip
+
+=== 11 INITIAL COMMIT ===
+
+=== 12 POST COMMIT PROOF ===
+A  .editorconfig
+A  .env.example
+A  .gitattributes
+A  .gitignore
+A  README.md
+A  app/Console/Kernel.php
+A  app/Exceptions/Handler.php
+A  app/Exports/DeliveryExport.php
+A  app/Exports/PaymentCustomerExport.php
+A  app/Exports/PaymentSupplierExport.php
+A  app/Exports/PurchasingExport.php
+A  app/Exports/SalesExport.php
+A  app/Helpers/GlobalHelper.php
+A  app/Helpers/helpers.php
+A  app/Http/Controllers/Auth/ConfirmPasswordController.php
+A  app/Http/Controllers/Auth/ForgotPasswordController.php
+A  app/Http/Controllers/Auth/LoginController.php
+A  app/Http/Controllers/Auth/RegisterController.php
+A  app/Http/Controllers/Auth/ResetPasswordController.php
+A  app/Http/Controllers/Auth/VerificationController.php
+A  app/Http/Controllers/BackupController.php
+A  app/Http/Controllers/CompanyController.php
+A  app/Http/Controllers/Controller.php
+A  app/Http/Controllers/CustomerController.php
+A  app/Http/Controllers/DashboardController.php
+A  app/Http/Controllers/DeliveryOrderController.php
+A  app/Http/Controllers/DocumentReceiptController.php
+A  app/Http/Controllers/ExpenseController.php
+A  app/Http/Controllers/GoodsReceiptController.php
+A  "app/Http/Controllers/InvoiceCustomerController copy.php"
+A  app/Http/Controllers/InvoiceCustomerController.php
+A  app/Http/Controllers/PoCustomerController.php
+A  app/Http/Controllers/PoSupplierController.php
+A  app/Http/Controllers/ProductController.php
+A  app/Http/Controllers/QuotationController.php
+A  app/Http/Controllers/ReportController.php
+A  app/Http/Controllers/SupplierController.php
+A  app/Http/Controllers/UserController.php
+A  app/Http/Controllers/UserManualController.php
+A  app/Http/Kernel.php
+A  app/Http/Middleware/Authenticate.php
+A  app/Http/Middleware/CheckRole.php
+A  app/Http/Middleware/EncryptCookies.php
+A  app/Http/Middleware/PreventRequestsDuringMaintenance.php
+A  app/Http/Middleware/RedirectIfAuthenticated.php
+A  app/Http/Middleware/TrimStrings.php
+A  app/Http/Middleware/TrustHosts.php
+A  app/Http/Middleware/TrustProxies.php
+A  app/Http/Middleware/ValidateSignature.php
+A  app/Http/Middleware/VerifyCsrfToken.php
+A  app/Models/Company.php
+A  app/Models/Customer.php
+A  app/Models/DeliveryOrder.php
+A  app/Models/DeliveryOrderDetail.php
+A  app/Models/DocumentReceipt.php
+A  app/Models/Expense.php
+A  app/Models/GoodsReceipt.php
+A  app/Models/GoodsReceiptDetail.php
+A  app/Models/InvoiceCustomer.php
+A  app/Models/InvoiceCustomerDetail.php
+A  app/Models/InvoiceSupplier.php
+A  app/Models/InvoiceSupplierDetail.php
+A  app/Models/PoCustomer.php
+A  app/Models/PoCustomerDetail.php
+A  app/Models/PoSupplier.php
+A  app/Models/PoSupplierDetail.php
+A  app/Models/Product.php
+A  app/Models/Quotation.php
+A  app/Models/QuotationDetail.php
+A  app/Models/Supplier.php
+A  app/Models/User.php
+A  app/Models/UserManual.php
+A  app/Providers/AppServiceProvider.php
+A  app/Providers/AuthServiceProvider.php
+A  app/Providers/BroadcastServiceProvider.php
+A  app/Providers/EventServiceProvider.php
+A  app/Providers/RouteServiceProvider.php
+A  artisan
+A  audit-output/BGS-REM-R1A1-safety-blocker-resolution.txt
+A  audit-output/BGS-REM-R1A2-test-isolation-repository-foundation.txt
+AM audit-output/BGS-REM-R1A3-secure-git-initial-baseline.txt
+A  bootstrap/app.php
+A  bootstrap/cache/.gitignore
+A  composer.json
+A  composer.lock
+A  config/app.php
+A  config/auth.php
+A  config/broadcasting.php
+A  config/cache.php
+A  config/cors.php
+A  config/database.php
+A  config/datatables-buttons.php
+A  config/filesystems.php
+A  config/hashing.php
+A  config/logging.php
+A  config/mail.php
+A  config/queue.php
+A  config/sanctum.php
+A  config/services.php
+A  config/session.php
+A  config/view.php
+A  database/.gitignore
+A  database/factories/UserFactory.php
+A  database/migrations/2026_06_08_002409_create_user_manuals_table.php
+A  database/migrations/2026_06_08_014218_update_user_manuals_table_for_hierarchy.php
+A  database/migrations/2026_06_08_091022_add_tax_invoice_attachment_to_invoice_customers_table.php
+A  database/migrations/2026_07_14_032436_create_expenses_table.php
+A  database/seeders/CustomerSeeder.php
+A  database/seeders/DatabaseSeeder.php
+A  database/seeders/ProductSeeder.php
+A  database/seeders/SupplierSeeder.php
+A  database/seeders/UserRoleSeeder.php
+A  docs/BGS-AUD-008I2-live-transaction-data-integrity-review.txt
+A  docs/BGS-AUD-008L-final-pre-remediation-audit-baseline.txt
+A  "docs/smartlo1_erp_app (3).sql"
+A  modern-output/BGS-AUD-008G-quotation-copy-lifecycle-readiness.txt
+A  package-lock.json
+A  package.json
+A  phpunit.xml
+A  public/.htaccess
+A  public/biaya/1783997730_2026-07-08_15-32-07.jpg
+A  public/favicon.ico
+A  public/index.php
+A  public/robots.txt
+A  public/test.php
+A  public/uploads/companies/logo/1777902915_LogoBGS.png
+A  public/uploads/companies/logo/1781081839_logo_6a2926ef9c1b9.png
+A  public/uploads/companies/logo/1782268572_logo_6a3b429c7302e.png
+A  public/uploads/companies/logo/LogoBGS.png
+A  public/uploads/companies/ttd_do/1781081839_ttd_do_6a2926efa52ca.jpg
+A  public/uploads/companies/ttd_do/1782268627_ttd_do_6a3b42d317c73.jpg
+A  public/uploads/companies/ttd_inv/1781081839_ttd_inv_6a2926efa5a0c.jpg
+A  public/uploads/companies/ttd_inv/1782268627_ttd_inv_6a3b42d3184d3.jpg
+A  public/uploads/companies/ttd_inv2/1781081839_ttd_inv2_6a2926efa5f2c.jpg
+A  public/uploads/companies/ttd_inv2/1782268627_ttd_inv2_6a3b42d318caf.jpg
+A  public/uploads/companies/ttd_sales_support/1782268627_ttd_sales_support_6a3b42d31738b.jpg
+A  public/uploads/companies/ttd_ss/1781081839_ttd_sales_support_6a2926efa4d58.jpg
+A  public/uploads/products/1780382015_124-810.jpg
+A  public/uploads/products/1780394619_2026-06-02_17-02-04.jpg
+A  public/uploads/products/1780399626_2026-06-02_18-26-21.jpg
+A  public/uploads/products/1780483998_2026-06-03_17-52-29.jpg
+A  public/uploads/products/1780496652_2026-06-03_21-20-41.jpg
+A  public/uploads/products/1781143985_Sandisk-Cruzer-Blade.png
+A  public/uploads/products/1781143991_Sandisk-Cruzer-Blade.png
+A  public/uploads/products/1781144977_E0HYkavwFo.jpg
+A  public/uploads/products/1781144997_GZWXlnRNnS.jpg
+A  public/uploads/products/1781145012_3h3EUJb3Na.jpg
+A  public/uploads/products/1781145024_E3sxXsgpxf.jpg
+A  public/uploads/products/1783385258_TBbOVnZAw1.jpg
+A  "public/uploads/ttd/logo baru BGS-FInal.png"
+A  public/uploads/ttd/ttd_afni.jpg
+A  public/uploads/ttd/ttd_do.jpg
+A  public/uploads/ttd/ttd_inv.jpg
+A  public/uploads/ttd/ttd_inv2.jpg
+A  public/vendor/datatables/buttons.server-side.js
+A  resources/css/app.css
+A  resources/js/app.js
+A  resources/js/bootstrap.js
+A  resources/sass/_variables.scss
+A  resources/sass/app.scss
+A  resources/views/auth/login.blade.php
+A  resources/views/auth/passwords/confirm.blade.php
+A  resources/views/auth/passwords/email.blade.php
+A  resources/views/auth/passwords/reset.blade.php
+A  resources/views/auth/register.blade.php
+A  resources/views/auth/verify.blade.php
+A  "resources/views/backup/index.blade copy.php"
+A  resources/views/backup/index.blade.php
+A  resources/views/backup/restore.blade.php
+A  "resources/views/companies/create.blade copy.php"
+A  resources/views/companies/create.blade.php
+A  "resources/views/companies/edit.blade copy 2.php"
+A  "resources/views/companies/edit.blade copy.php"
+A  resources/views/companies/edit.blade.php
+A  "resources/views/companies/index.blade copy.php"
+A  resources/views/companies/index.blade.php
+A  "resources/views/companies/show.blade copy 2.php"
+A  "resources/views/companies/show.blade copy.php"
+A  resources/views/companies/show.blade.php
+A  "resources/views/customers/create.blade copy 2.php"
+A  "resources/views/customers/create.blade copy.php"
+A  resources/views/customers/create.blade.php
+A  "resources/views/customers/edit.blade copy.php"
+A  resources/views/customers/edit.blade.php
+A  "resources/views/customers/index.blade copy.php"
+A  resources/views/customers/index.blade.php
+A  resources/views/customers/print.blade.php
+A  "resources/views/customers/show.blade copy.php"
+A  resources/views/customers/show.blade.php
+A  resources/views/dashboard.blade.php
+A  "resources/views/delivery_orders/create.blade copy 2.php"
+A  "resources/views/delivery_orders/create.blade copy.php"
+A  resources/views/delivery_orders/create.blade.php
+A  resources/views/delivery_orders/edit.blade.php
+A  "resources/views/delivery_orders/index.blade copy.php"
+A  resources/views/delivery_orders/index.blade.php
+A  "resources/views/delivery_orders/print.blade copy 2.php"
+A  "resources/views/delivery_orders/print.blade copy.php"
+A  resources/views/delivery_orders/print.blade.php
+A  resources/views/delivery_orders/receipt_print.blade.php
+A  resources/views/delivery_orders/show.blade.php
+A  "resources/views/document-receipts/create.blade copy 2.php"
+A  "resources/views/document-receipts/create.blade copy 3.php"
+A  "resources/views/document-receipts/create.blade copy.php"
+A  "resources/views/document-receipts/create.blade old.php"
+A  resources/views/document-receipts/create.blade.php
+A  resources/views/document-receipts/edit.blade.php
+A  resources/views/document-receipts/index.blade.php
+A  "resources/views/document-receipts/print.blade copy 2.php"
+A  "resources/views/document-receipts/print.blade copy.php"
+A  resources/views/document-receipts/print.blade.php
+A  resources/views/document-receipts/show.blade.php
+A  resources/views/errors/403.blade.php
+A  resources/views/expense/create.blade.php
+A  resources/views/expense/edit.blade.php
+A  resources/views/expense/index.blade.php
+A  resources/views/expense/show.blade.php
+A  "resources/views/goods_receipts/create.blade copy.php"
+A  resources/views/goods_receipts/create.blade.php
+A  resources/views/goods_receipts/edit.blade.php
+A  "resources/views/goods_receipts/index.blade copy.php"
+A  resources/views/goods_receipts/index.blade.php
+A  resources/views/goods_receipts/show.blade.php
+A  "resources/views/invoice_customers/create.blade copy.php"
+A  resources/views/invoice_customers/create.blade.php
+A  resources/views/invoice_customers/edit.blade.php
+A  resources/views/invoice_customers/index.blade.php
+A  resources/views/invoice_customers/print.blade.php
+A  resources/views/invoice_customers/print_invoice.blade.php
+A  resources/views/invoice_customers/show.blade.php
+A  resources/views/landing.blade.php
+A  resources/views/layouts/app.blade.php
+A  resources/views/po_customers/create.blade.php
+A  resources/views/po_customers/edit.blade.php
+A  resources/views/po_customers/index.blade.php
+A  resources/views/po_customers/show.blade.php
+A  "resources/views/po_suppliers/create.blade copy 2.php"
+A  "resources/views/po_suppliers/create.blade copy.php"
+A  resources/views/po_suppliers/create.blade.php
+A  resources/views/po_suppliers/edit.blade.php
+A  resources/views/po_suppliers/index.blade.php
+A  "resources/views/po_suppliers/print.blade copy.php"
+A  resources/views/po_suppliers/print.blade.php
+A  resources/views/po_suppliers/show.blade.php
+A  resources/views/products/create.blade.php
+A  resources/views/products/edit.blade.php
+A  resources/views/products/index.blade.php
+A  resources/views/products/show.blade.php
+A  resources/views/quotations/create.blade.php
+A  resources/views/quotations/edit.blade.php
+A  resources/views/quotations/index.blade.php
+A  resources/views/quotations/print.blade.php
+A  resources/views/quotations/show.blade.php
+A  resources/views/reports/delivery_pdf.blade.php
+A  resources/views/reports/index.blade.php
+A  resources/views/reports/payment_customer_pdf.blade.php
+A  resources/views/reports/payment_supplier_pdf.blade.php
+A  resources/views/reports/purchasing_pdf.blade.php
+A  resources/views/reports/sales_pdf.blade.php
+A  resources/views/suppliers/create.blade.php
+A  resources/views/suppliers/edit.blade.php
+A  resources/views/suppliers/index.blade.php
+A  resources/views/suppliers/show.blade.php
+A  resources/views/user_manuals/create.blade.php
+A  resources/views/user_manuals/edit.blade.php
+A  resources/views/user_manuals/index.blade.php
+A  resources/views/users/index.blade.php
+A  routes/api.php
+A  routes/channels.php
+A  routes/console.php
+A  routes/link.php
+A  routes/web.php
+A  storage/app/.gitignore
+A  storage/app/public/.gitignore
+A  storage/framework/.gitignore
+A  storage/framework/cache/.gitignore
+A  storage/framework/cache/data/.gitignore
+A  storage/framework/sessions/.gitignore
+A  storage/framework/testing/.gitignore
+A  storage/framework/views/.gitignore
+A  storage/logs/.gitignore
+A  tests/CreatesApplication.php
+A  tests/Feature/BgsBusinessStateRegressionTest.php
+A  tests/Feature/BgsInvoiceAggregateMutationRegressionTest.php
+A  tests/Feature/BgsInvoiceAggregateStateRegressionTest.php
+A  tests/Feature/BgsInvoiceCustomerRuntimeAtomicityTest.php
+A  tests/Feature/BgsInvoiceCustomerTransactionBoundaryTest.php
+A  tests/Feature/BgsPoCustomerIndexSourceContractTest.php
+A  tests/Feature/ExampleTest.php
+A  tests/TestCase.php
+A  tests/Unit/ExampleTest.php
+A  vite.config.js
+?? erp_app.sql
+?? public.zip
+
+--- HEAD ---
+HEAD
+fatal: ambiguous argument 'HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+
+--- LAST COMMIT ---
+fatal: your current branch 'master' does not have any commits yet
+
+=== 13 FINAL SAFETY GATE ===
+EXPECTED_TEST_DATABASE=erp_app_testing
+PRODUCTION_DATABASE=erp_app
+TEST_AND_PRODUCTION_NAMES_DIFFER=YES
+
+TEST_EXECUTION_AUTHORIZATION=PENDING_R1A3_REVIEW
+MIGRATION_EXECUTION_AUTHORIZATION=NO
+BUSINESS_SOURCE_REMEDIATION_AUTHORIZATION=PENDING_R1B
+BGS-REM-R1A3 COMPLETE

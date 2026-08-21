@@ -1,0 +1,194 @@
+ERP BGS
+BGS-AUD-008I2 LIVE TRANSACTION DATA INTEGRITY - REVIEW / FINDING REGISTER
+
+SOURCE: BGS-AUD-008I2-live-transaction-data-integrity.txt
+AUDIT_MODE=READ_ONLY
+REMEDIATION=DEFERRED
+
+=== 01 CLOSURE ===
+BGS-AUD-008I2 EVIDENCE COLLECTION=COMPLETE
+SQL_MODE=SELECT_ONLY
+NO_SCHEMA_CHANGE=YES
+NO_DATA_CHANGE=YES
+NO_REMEDIATION_AUTHORIZED=YES
+
+Transaction counts:
+quotations=68
+quotation_details=124
+po_customers=45
+po_customer_details=63
+po_suppliers=41
+po_supplier_details=57
+goods_receipts=28
+goods_receipt_details=37
+delivery_orders=31
+delivery_order_details=38
+invoice_customers=47
+invoice_customer_details=60
+
+=== 02 FINDING REGISTER ===
+CRIT-003|CRITICAL|Cumulative active Sales Invoice can exceed PO Customer amount.
+HIGH-030|HIGH|One orphan Invoice Customer Detail exists.
+HIGH-031|HIGH|Existing invoice remaining_amount is not authoritative for aggregate PO remaining.
+HIGH-032|HIGH|Multiple/partial Sales Invoice is existing capability but lacks safe aggregate invariant.
+HIGH-033|HIGH|Proforma/Sales Invoice linkage contract is not established in live evidence.
+MED-015|MEDIUM|Proforma payment semantics require review; evidence contains Proforma with payment_status=paid.
+MED-016|MEDIUM|Duplicate product lines exist and require semantic review before any uniqueness constraint.
+INFO-004|INFO|One PO Customer -> multiple Sales Invoices is existing capability and must be preserved.
+POS-006|POSITIVE|No GR over-receipt found in this evidence.
+POS-007|POSITIVE|No Delivery over-quantity found in this evidence.
+POS-008|POSITIVE|No PO Supplier item outside its source PO Customer found.
+
+=== 03 CRIT-003 OVER-INVOICE EVIDENCE ===
+PO_CUSTOMER_ID=53
+PO_NUMBER=PO-100/RTU/V/2026
+PO_AMOUNT=5772000.00
+ACTIVE_INVOICE_TOTAL=5834160.00
+CALCULATED_REMAINING=-62160.00
+
+PO_CUSTOMER_ID=62
+PO_NUMBER=019/PO-U-V/26
+PO_AMOUNT=14868450.00
+ACTIVE_INVOICE_TOTAL=23789520.00
+CALCULATED_REMAINING=-8921070.00
+
+CANONICAL_INVARIANT:
+SUM(active Sales Invoice Amount) MUST NOT exceed PO Customer Amount.
+
+Existing/sample data is not repaired during audit.
+
+=== 04 REMAINING PO AMOUNT BASELINE ===
+remaining_po_amount =
+    po_customer_amount
+    - cumulative_active_sales_invoice_amount
+
+RULES:
+- One PO Customer may have multiple Sales Invoices.
+- Remaining amount is authoritative at PO Customer aggregate level.
+- Invoice-level remaining_amount may only be a controlled snapshot if retained.
+- New invoice validation must use current aggregate remaining amount.
+- Cumulative active Sales Invoice amount must not exceed PO Customer amount.
+- Cancelled/non-active invoice treatment must follow the final cancellation policy.
+- Remaining PO Amount is internal system/control information.
+- Remaining PO Amount MUST NOT appear on Sales Invoice customer printout.
+
+Evidence shows stored remaining_amount is not reliable as aggregate balance,
+including repeated values across multiple invoices for PO Customer IDs
+59, 79, 87 and 88.
+
+=== 05 MULTIPLE SALES INVOICE BASELINE ===
+PO Customers with 2 invoices:
+59
+61
+62
+65
+71
+79
+87
+88
+
+Therefore multiple/partial invoicing is an EXISTING capability and must not be
+lost during remediation.
+
+=== 06 PROFORMA / SALES INVOICE BASELINE ===
+LIVE_COUNTS:
+proforma=2
+sales=45
+parent_invoice_relationships=0
+
+TARGET SUPPORTED PATHS:
+
+PO Customer
+  -> Sales Invoice
+
+OR
+
+PO Customer
+  -> Proforma Invoice
+  -> Sales Invoice
+
+RULES:
+- Proforma is optional.
+- Direct Sales Invoice is allowed where business rules permit.
+- User selects the applicable invoice path.
+- Proforma -> Sales Invoice linkage must be explicit and traceable.
+- Proforma must not consume the PO amount twice when converted.
+- Proforma payment semantics require final business-rule confirmation.
+
+=== 07 ORPHAN / RELATIONAL DATA ===
+ORPHAN_INVOICE_CUSTOMER_DETAIL=1
+ORPHAN_INVOICE_PRODUCT=0
+ORPHAN_INVOICE_PO_CUSTOMER=0
+ORPHAN_PARENT_INVOICE=0
+
+The orphan detail is remediation/migration inventory.
+Do not delete or repair during the audit phase.
+
+=== 08 PROCUREMENT / DELIVERY POSITIVE BASELINE ===
+PO_SUPPLIER_WITHOUT_DETAIL=0
+PO_CUSTOMER_WITHOUT_DETAIL=0
+SUPPLIER_ITEM_NOT_IN_SOURCE_PO_CUSTOMER=0
+GR_OVER_RECEIPT_FOUND=0
+DELIVERY_OVER_QUANTITY_FOUND=0
+
+These conditions are regression baselines to preserve.
+
+=== 09 DUPLICATE LINE REVIEW ===
+PO_CUSTOMER_ID=98|PRODUCT_ID=186|LINE_COUNT=2
+PO_SUPPLIER_ID=92|PRODUCT_ID=163|LINE_COUNT=2
+
+Do not auto-merge, delete, or add unique(header_id,product_id) until line-level
+business semantics (specification, description, pricing, delivery context, etc.)
+are confirmed.
+
+=== 10 PO CUSTOMER WITHOUT QUOTATION ===
+COUNT=27
+
+Evidence contains 27 PO Customer records with quotation_id=NULL.
+
+This is NOT automatically classified as corrupt data because the evidence does
+not establish whether Direct PO Customer entry without prior Quotation is valid.
+
+OPEN BUSINESS DECISION:
+OPTION_A=Quotation mandatory -> Quotation -> PO Customer
+OPTION_B=Two valid entry paths -> Quotation -> PO Customer OR Direct PO Customer
+
+Do not force quotation_id NOT NULL and do not clean these records until the
+business rule is confirmed.
+
+=== 11 STATUS OBSERVATIONS ===
+Observed legacy status values include:
+Quotation: sent / approved / rec_po
+PO Customer: received / processed
+PO Supplier: draft / confirmed
+Goods Receipt: partial / completed
+Delivery Order: pending / delivered
+Invoice Customer: completed / partial with payment sent / paid
+
+These values are legacy evidence. They do not silently replace the target
+canonical lifecycle already captured for ERP BGS. Mapping and transition rules
+must be defined during remediation.
+
+=== 12 REMEDIATION GATES ===
+[ ] Confirm whether Direct PO Customer without Quotation is valid.
+[ ] Freeze aggregate Remaining PO Amount semantics.
+[ ] Freeze active/cancelled Sales Invoice treatment.
+[ ] Freeze Proforma -> Sales Invoice conversion/linkage semantics.
+[ ] Protect cumulative invoice <= PO Customer amount transactionally.
+[ ] Define handling of existing over-invoiced records.
+[ ] Define handling of orphan Invoice Customer Detail.
+[ ] Review duplicate product-line semantics before uniqueness rules.
+[ ] Preserve valid multiple-invoice capability.
+[ ] Preserve GR and Delivery quantity positive baselines.
+[ ] Add automated regression tests.
+[ ] Perform manual UI/print/export verification after remediation.
+[ ] Verify Remaining PO Amount is absent from Sales Invoice printout.
+
+=== 13 FINAL STATUS ===
+BGS-AUD-008I2 REVIEW=COMPLETE
+FINDINGS_REGISTERED=YES
+SOURCE_CHANGE=NONE
+DATABASE_CHANGE=NONE
+REMEDIATION=DEFERRED
+
+END OF BGS-AUD-008I2 REVIEW

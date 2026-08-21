@@ -1,0 +1,350 @@
+ERP BGS
+BGS-AUD-008L FINAL PRE-REMEDIATION AUDIT BASELINE
+
+STATUS=FINAL_PRE_REMEDIATION_BASELINE
+AUDIT_PHASE=CLOSED_AFTER_VALIDATION
+SOURCE_CHANGE=NONE
+DATABASE_CHANGE=NONE
+REMEDIATION_AUTHORIZED=NO
+MAINTENANCE_WINDOW_REQUIRED=YES
+
+SOURCE_AUTHORITY=BGS-AUD-008K-R1-final-reconciliation-register.txt
+
+=== 01 APPLICATION SCOPE - FROZEN ===
+BUSINESS_MODEL=PO_FOR_ORDER
+INVENTORY_MODULE=NOT_REQUIRED
+PURCHASE_RETURN=NOT_REQUIRED
+SALES_RETURN=NOT_REQUIRED
+
+=== 02 CANONICAL BUSINESS FLOW - FROZEN ===
+FLOW_A=Quotation -> PO Customer -> PO Supplier -> Goods Receipt -> Delivery Order -> Optional Proforma -> Sales Invoice
+FLOW_B=Direct PO Customer -> PO Supplier -> Goods Receipt -> Delivery Order -> Optional Proforma -> Sales Invoice
+
+Quotation is optional upstream of PO Customer.
+Direct PO Customer is valid.
+po_customers.quotation_id remains nullable.
+No dummy/fake Quotation is required.
+
+=== 03 LIFECYCLE TARGETS - FROZEN ===
+QUOTATION=Draft -> Approved -> Sent -> Received PO Customer
+PO_CUSTOMER=Received PO -> Proceed -> Delivered -> Cancel
+PO_SUPPLIER=Draft -> Approved -> Sent -> Receipt
+GOODS_RECEIPT=Receipt
+DELIVERY_ORDER=Draft -> Sent
+SALES_INVOICE=Draft -> Sent -> Paid
+PROFORMA=Optional pre-billing document before Sales Invoice
+
+Quotation rules:
+- Draft print MUST NOT transition to Sent.
+- Approved print may transition to Sent.
+- PO Customer created from Quotation transitions source Quotation to Received PO Customer.
+- Lifecycle changes are server-authoritative.
+
+=== 04 COPY PREVIOUS QUOTATION - FROZEN ===
+Create New Quotation supports Copy From Previous Quotation.
+
+Flow:
+Create -> choose source -> preload reusable business content -> user edits -> save NEW quotation -> NEW quotation number -> Draft.
+
+May copy:
+customer, contact/PIC where applicable, item/detail, product, specification/description,
+quantity, unit price, discount, tax/PPh configuration, payment terms, validity,
+delivery time, delivery/additional cost, reusable notes/terms.
+
+MUST NOT copy:
+primary key, quotation number, lifecycle state/history, approval/sent state,
+PO Customer/PO Supplier/GR/DO/Proforma/Sales Invoice linkage,
+payment state, timestamps, downstream identities/history.
+
+SOURCE_QUOTATION_MUTATION=FORBIDDEN
+
+=== 05 PO CUSTOMER / PROCUREMENT - FROZEN ===
+- Direct PO Customer supported.
+- PO Customer number is external customer PO number.
+- PO Customer number is not forced into internal BGS numbering.
+- One PO Customer may have multiple PO Suppliers.
+- One PO Customer may have multiple Delivery Orders.
+- One PO Customer may have multiple Sales Invoices.
+- PO Supplier supports selecting specific PO Customer items.
+- Partial procurement supported.
+- Cumulative procurement quantity must not exceed PO Customer quantity.
+- PO Supplier detail must retain upstream lineage.
+- One PO Supplier may have multiple Goods Receipts for partial receipt.
+- Cumulative Goods Receipt quantity must not exceed PO Supplier quantity.
+- Goods Receipt detail ownership must match selected PO Supplier/detail.
+
+=== 06 DELIVERY - FROZEN ===
+- Partial delivery supported.
+- Cumulative delivered quantity must not exceed PO Customer quantity.
+- Delivery detail requires traceable upstream PO Customer detail lineage.
+- PO Customer Delivered state is derived/synchronized from delivery coverage.
+- Downstream use protects unsafe Delivery Order edit/delete.
+
+=== 07 SALES INVOICE / REMAINING PO AMOUNT - FROZEN ===
+One PO Customer may have multiple Sales Invoices.
+
+AUTHORITATIVE FORMULA:
+Remaining PO Amount = PO Customer Amount - cumulative active Sales Invoice Amount
+
+Rules:
+- cumulative active Sales Invoice Amount MUST NOT exceed PO Customer Amount
+- cancelled/reversed/non-active invoice handling follows canonical cancellation semantics
+- Remaining PO Amount authority is at PO Customer aggregate level
+- invoice-level remaining_amount, if retained, is snapshot only
+- Remaining PO Amount is internal/control information
+- Remaining PO Amount MUST NOT appear on customer Sales Invoice printout
+
+=== 08 PROFORMA / SALES INVOICE - FROZEN ===
+Supported:
+A. PO Customer -> Sales Invoice
+B. PO Customer -> Proforma Invoice -> Sales Invoice
+
+Rules:
+- Proforma optional
+- user selects the flow
+- Proforma -> Sales Invoice linkage explicit and traceable
+- Proforma must not consume PO amount twice
+- converted Proforma not counted again as billed Sales Invoice coverage
+
+=== 09 DELIVERY / ADDITIONAL COST - FROZEN ===
+Quotation supports delivery/additional cost.
+Sales Invoice supports delivery/additional cost.
+Existing add_cost fields are implementation candidates.
+
+Formula ordering for subtotal, discount, DP where applicable, tax, PPh, add_cost,
+and total must be regression-verified before changing behavior.
+
+=== 10 AUTHORIZATION / ADMIN OVERRIDE - FROZEN ===
+- Authentication required.
+- Authorization uses role/permission/policy.
+- Hard-coded email/user identity prohibited as authorization authority.
+- Approval requires explicit permission.
+- Normal users cannot arbitrarily select lifecycle state.
+- Normal-user edit/delete follows lifecycle + downstream usage.
+- Admin override requires explicit permission.
+- Admin override must be auditable.
+- Server-side authorization is authoritative.
+- Cancel/reversal preferred over destructive delete for materially progressed transactions.
+
+=== 11 NUMBERING - FROZEN ===
+Internal BGS generated transaction numbers:
+TARGET_SEQUENCE_DIGITS=4
+
+Requirements:
+- database-backed uniqueness
+- concurrency-safe generation
+- deterministic format
+- no unsafe number reuse
+- explicit reset policy per document type
+
+PO Customer:
+EXTERNAL_CUSTOMER_PO_NUMBER
+NOT converted into internal BGS numbering.
+
+=== 12 DATA / DATABASE FINDINGS - REGISTERED ===
+- Historical cumulative Sales Invoice can exceed PO Customer amount.
+- One orphan invoice_customer_detail exists.
+- Existing invoice remaining_amount is not aggregate-authoritative.
+- Multiple/partial invoicing needs aggregate invariant protection.
+- Proforma/Sales Invoice linkage semantics incomplete.
+- Legacy status enums differ from canonical lifecycle.
+- Migration repository/history is incomplete versus live schema.
+- Cascade delete exists in areas where business history protection is required.
+- Invoice Customer relational integrity needs strengthening.
+- Historical duplicate product lines require semantic review before uniqueness constraints.
+- Legacy/copy/backup tables and source files require controlled classification.
+
+DIRECT_PO_CUSTOMER_COUNT_OBSERVED=27
+DIRECT_PO_CUSTOMER_CLASSIFICATION=VALID_BUSINESS_CAPABILITY
+
+ORPHAN_INVOICE_CUSTOMER_DETAIL_COUNT=1
+ORPHAN_CLASSIFICATION=REMEDIATION_MIGRATION_INVENTORY
+
+HISTORICAL_ANOMALIES_DO_NOT_SILENTLY_FIX=YES
+
+=== 13 SOURCE HYGIENE / LEGACY - REGISTERED ===
+Candidates include:
+- copy/old/backup Blade files
+- InvoiceCustomerController copy.php
+- duplicate/shadow Invoice Customer routes
+- legacy/backup database tables
+- obsolete status literals
+- commented legacy logic
+- dead-code candidates
+
+Rules:
+- do not delete solely because code looks unused
+- prove zero runtime dependency before retirement
+- regression + manual functional verification required after cleanup
+
+=== 14 POSITIVE REGRESSION BASELINE - PRESERVE ===
+PRESERVE-001 Multiple Sales Invoice capability
+PRESERVE-002 Partial invoicing capability
+PRESERVE-003 Direct PO Customer capability
+PRESERVE-004 Valid PO Customer detail behavior
+PRESERVE-005 Valid PO Supplier detail behavior
+PRESERVE-006 No supplier item outside source PO Customer baseline
+PRESERVE-007 No Goods Receipt over-receipt baseline observed
+PRESERVE-008 No Delivery Order over-quantity baseline observed
+PRESERVE-009 Existing valid add_cost capability
+PRESERVE-010 Historical transaction visibility until controlled reconciliation
+
+=== 15 REMEDIATION REGISTER - FROZEN ===
+REM-001 Quotation Draft print side effect
+REM-002 PO Customer downstream edit/delete protection
+REM-003 Multiple PO Supplier support
+REM-004 Selective/partial procurement enforcement
+REM-005 Goods Receipt cumulative quantity invariant
+REM-006 Goods Receipt detail ownership
+REM-007 Goods Receipt downstream-use detection
+REM-008 Delivery Order PO Customer detail lineage
+REM-009 PO Customer Delivered synchronization
+REM-010 Delivery Order downstream DocumentReceipt protection
+REM-011 Sales Invoice cumulative amount invariant
+REM-012 Proforma aggregate semantics
+REM-013 Remaining PO Amount authority
+REM-014 Lifecycle/state normalization
+REM-015 Permission-based authorization/admin override
+REM-016 Attachment/database atomicity
+REM-017 Numbering consistency/concurrency
+REM-018 Copy Previous Quotation implementation
+REM-019 Historical data reconciliation
+REM-020 Dead/copy/old source classification and cleanup
+
+=== 16 REMEDIATION ORDER - FROZEN ===
+R1  Canonical business invariant test harness
+R2  Authorization / admin override foundation
+R3  Quotation lifecycle + Copy Previous Quotation
+R4  PO Customer state / downstream dependency
+R5  PO Supplier selective + partial procurement
+R6  Goods Receipt ownership / cumulative quantity / concurrency
+R7  Delivery Order lineage / quantity / delivery-state derivation
+R8  Sales Invoice / Proforma / Remaining PO Amount
+R9  Delivery/additional cost integration
+R10 Edit/Delete/Cancel/Reversal normalization
+R11 Numbering consistency
+R12 Historical data reconciliation
+R13 Dead/copy/old source cleanup
+R14 Full automated regression
+R15 Manual functional UAT + print/export verification
+
+=== 17 REMEDIATION SAFETY CONTRACT ===
+Before remediation:
+- maintenance window explicitly approved
+- source backup/hash captured
+- DB backup/recovery position confirmed when schema/data may change
+- RED regression established where applicable
+- mutation tests use isolated testing DB
+
+During remediation:
+- smallest controlled change
+- server-side validation authoritative
+- DB transaction for multi-write operations
+- concurrency protection for aggregates/numbering
+- preserve historical data unless explicitly reconciled
+
+After remediation:
+- targeted GREEN
+- related regression GREEN
+- full regression GREEN before closure
+- source/database evidence captured
+
+MANDATORY MANUAL FUNCTIONAL TEST:
+create, edit, approve, print, delete/cancel where applicable,
+downstream document creation, list/DataTable, PDF/print, Excel/export where applicable,
+totals, statuses, historical data visibility.
+
+Automated GREEN alone DOES NOT close remediation.
+
+=== 18 SPECIAL REGRESSION GATES ===
+QUOTATION:
+- Copy Previous -> NEW number
+- Copy Previous -> Draft
+- source unchanged
+- Draft print does not become Sent
+- Approved print may become Sent
+- PO Customer-from-Quotation sets Received PO Customer
+
+PO CUSTOMER:
+- Direct PO supported
+- quotation_id nullable
+- downstream dependency protects unsafe edit/delete
+
+PO SUPPLIER:
+- selective item creation
+- partial procurement
+- cumulative qty <= source PO Customer
+- multiple PO Suppliers per PO Customer preserved
+
+GOODS RECEIPT:
+- ownership validated
+- cumulative receipt <= PO Supplier qty
+- partial receipt preserved
+- downstream behavior verified
+
+DELIVERY ORDER:
+- detail lineage validated
+- cumulative delivery <= PO Customer qty
+- PO Customer delivery state synchronized
+- print/status behavior validated
+
+SALES INVOICE:
+- multiple invoice per PO preserved
+- cumulative active invoice <= PO amount
+- Remaining PO Amount authoritative
+- Remaining PO Amount absent from printout
+- direct Sales Invoice path works
+- Proforma -> Sales path works
+- Proforma does not double-consume PO coverage
+- Paid edit/delete restrictions enforced
+
+AUTHORIZATION:
+- critical actions permission-protected
+- admin override permission-based
+- override auditable
+- no hard-coded email authority
+
+NUMBERING:
+- internal sequence 4 digits where applicable
+- PO Customer external numbering unchanged
+- concurrency-safe uniqueness
+
+=== 19 HISTORICAL DATA POLICY ===
+Existing historical anomalies are not silently rewritten.
+
+Historical reconciliation requires:
+- classification
+- mapping/transform rule
+- validation
+- exception register
+- reconciliation evidence
+- rollback/recovery strategy
+
+New logic must prevent recurrence of known invalid states.
+
+=== 20 FINAL GATE ===
+CANONICAL_FLOW=FROZEN
+LIFECYCLE_TARGET=FROZEN
+DIRECT_PO_CUSTOMER=FROZEN_VALID
+COPY_QUOTATION=FROZEN_REQUIRED
+SELECTIVE_PROCUREMENT=FROZEN_REQUIRED
+PARTIAL_PROCUREMENT=FROZEN_REQUIRED
+MULTIPLE_SALES_INVOICE=FROZEN_REQUIRED
+REMAINING_PO_AMOUNT=FROZEN
+REMAINING_AMOUNT_PRINT_VISIBILITY=INTERNAL_ONLY
+PROFORMA_FLOW=FROZEN
+ADDITIONAL_COST_CAPABILITY=FROZEN
+AUTHORIZATION_TARGET=FROZEN
+ADMIN_OVERRIDE_TARGET=FROZEN
+NUMBERING_TARGET=FROZEN
+APPLICATION_SCOPE=FROZEN
+DATA_ANOMALIES=REGISTERED
+POSITIVE_BASELINES=REGISTERED
+REMEDIATION_ORDER=FROZEN
+MANUAL_UAT=MANDATORY
+
+AUDIT_PHASE_STATUS=CLOSED_READY_FOR_REMEDIATION_PLANNING
+REMEDIATION_AUTHORIZED=NO
+MAINTENANCE_WINDOW_REQUIRED=YES
+
+BGS-AUD-008L FINAL PRE-REMEDIATION AUDIT BASELINE COMPLETE
