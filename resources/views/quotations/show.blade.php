@@ -194,7 +194,18 @@
                     <i class="bi bi-file-earmark-text-fill me-2"></i> Detail Quotation
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('quotations.print', $quotation->id) }}" 
+                    @if($quotation->status === 'draft')
+<form action="{{ route('quotations.approve', $quotation->id) }}"
+      method="POST"
+      class="d-inline"
+      onsubmit="return confirm('Approve this quotation?');">
+    @csrf
+    <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle"></i> Approve
+    </button>
+</form>
+@endif
+<a href="{{ route('quotations.print', $quotation->id) }}" 
                         id="btn-print-quotation"
                         target="_blank" 
                         class="btn btn-light btn-sm fw-bold px-3">
@@ -404,21 +415,5 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const printBtn = document.getElementById('btn-print-quotation');
-        const statusContainer = document.getElementById('status-badge-container');
-        const currentBadge = document.getElementById('current-status-badge');
 
-        if (printBtn && statusContainer && currentBadge) {
-            printBtn.addEventListener('click', function () {
-                if (currentBadge.innerText.trim().toLowerCase() === 'draft') {
-                    setTimeout(() => {
-                        statusContainer.innerHTML = ': <span class="badge bg-primary badge-custom">Sent</span>';
-                    }, 500);
-                }
-            });
-        }
-    });
-</script>
 @endsection

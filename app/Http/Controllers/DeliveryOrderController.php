@@ -27,7 +27,7 @@ class DeliveryOrderController extends Controller
     public function create()
     {
         $poCustomers = PoCustomer::with('customer')
-            ->where('status', 'processed')
+            ->where('status', 'proceed')
             ->whereIn('invoice_status', ['partial', 'completed'])
             ->orderBy('po_date', 'desc')
             ->get();
@@ -66,7 +66,7 @@ class DeliveryOrderController extends Controller
     {
         \Log::info('Delivery Order Store Request:', $request->all());
 
-        // Validasi – do_number TIDAK wajib diisi karena otomatis digenerate
+        // Validasi â€“ do_number TIDAK wajib diisi karena otomatis digenerate
         $request->validate([ 
             'po_customer_id' => 'required|exists:po_customers,id',
             'delivery_date' => 'required|date',
@@ -214,7 +214,7 @@ class DeliveryOrderController extends Controller
                 ->with('error', 'Only DO with status Pending, Partial or Shipped can be edited.');
         }
         
-        $poCustomers = PoCustomer::with('customer')->where('status', 'processed')->get();
+        $poCustomers = PoCustomer::with('customer')->where('status', 'proceed')->get();
         $products = Product::orderBy('name')->get();
         
         return view('delivery_orders.edit', compact('do', 'poCustomers', 'products'));

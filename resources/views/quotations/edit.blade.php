@@ -267,12 +267,9 @@
 
                     <div class="col-md-4">
                         <label class="form-label">Status Document</label>
-                        <select name="status" class="form-select fw-semibold">
-                            <option value="draft" {{ $quotation->status == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="sent" {{ $quotation->status == 'sent' ? 'selected' : '' }}>Sent</option>
-                            <option value="approved" {{ $quotation->status == 'approved' ? 'selected' : '' }}>Approved</option>
-                            <option value="expired" {{ $quotation->status == 'expired' ? 'selected' : '' }}>Expired</option>
-                        </select>
+<div class="form-control bg-light">
+    {{ ucfirst($quotation->status) }}
+</div>
                     </div>
                     
                     <div class="col-md-4">

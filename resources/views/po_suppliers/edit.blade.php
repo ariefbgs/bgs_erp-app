@@ -1,486 +1,2113 @@
 @extends('layouts.app')
+
 @section('title', 'Edit PO Supplier')
+
 @section('content')
+
 <style>
-    .page-title {
-        font-size: 1.4rem;
-        font-weight: 600;
+    body {
+        background-color: #f1f5f9;
     }
-    .readonly-bg,
-    .brand-display,
-    .subtotal-display,
-    .code2-display,
-    .name2-display {
-        background: #f8f9fa !important;
+
+    .main-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        background: #fff;
+        overflow: hidden;
     }
+
+    .card-header-custom {
+        background: linear-gradient(
+            135deg,
+            #f97316,
+            #c2410c
+        );
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .card-header-custom h4 {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .section-sub-title {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #1e293b;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 6px;
+    }
+
+    .section-sub-title i {
+        color: #f97316;
+    }
+
+    .info-group-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        height: 100%;
+    }
+
+    .form-control,
+    .form-select {
+        border-color: #cbd5e1;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #f97316;
+        box-shadow:
+            0 0 0 3px
+            rgba(249, 115, 22, 0.15);
+    }
+
+    .readonly-bg {
+        background-color: #f1f5f9 !important;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .product-row {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 18px;
+        transition: all 0.2s;
+    }
+
+    .product-row:hover {
+        border-color: #cbd5e1;
+        box-shadow:
+            0 4px 12px
+            rgba(0, 0, 0, 0.03);
+    }
+
     .price-display,
     .qty-input,
     .subtotal-display,
-    .summary-input {
+    .summary-input-num {
         text-align: right;
     }
-    .product-card {
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 15px;
-        background: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .summary-table th {
-        width: 60%;
-        background: #f8f9fa;
-    }
-    .summary-table td,
-    .summary-table th {
+
+    .table-summary th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #475569;
         vertical-align: middle;
-    }
-    .grand-total-row th {
-        background: #0d6efd;
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .grand-total-row td {
-        background: #0d6efd;
-        color: #fff;
-        font-weight: 700;
-    }
-
-    /* optional: bikin lebih “ERP look” */
-    .grand-total-row td strong {
-        font-size: 1.1rem;
-    }
-    .section-title {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .btn-remove {
-        width: 100%;
-    }
-    .card-header-custom {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        color: white;
-        border-radius: 10px 10px 0 0;
-    }
-    .table-summary-wrapper {
-        margin-top: 20px;
     }
 </style>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header card-header-custom py-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="page-title">
+
+<div class="container-fluid py-4">
+
+    <div class="card main-card">
+
+        {{-- =====================================================
+             HEADER — PO CUSTOMER EDIT BASELINE
+        ====================================================== --}}
+        <div
+            class="card-header-custom
+                   d-flex
+                   justify-content-between
+                   align-items-center"
+        >
+            <h4>
+                <i class="bi bi-pencil-square me-2"></i>
                 Edit PO Supplier
-            </div>
-            <a href="{{ route('po-suppliers.index') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Back
+            </h4>
+
+            <a
+                href="{{ route('po-suppliers.index') }}"
+                class="btn btn-light btn-sm fw-bold px-3"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to List
             </a>
         </div>
-    </div>
-    <div class="card-body">
-        {{-- ALERT --}}
-        @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show">
-                <strong>There is an error!</strong>
-                <ul class="mb-0 mt-2">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        <form action="{{ route('po-suppliers.update', $poSupplier->id) }}"
-              method="POST"
-              enctype="multipart/form-data"
-              id="po-form">
-            @csrf
-            @method('PUT')
-            {{-- HEADER --}}
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="po_supplier_number" class="form-label fw-semibold">PO Supplier Number *</label>
-                    <input type="text" name="po_supplier_number" id="po_supplier_number" 
-                        class="form-control" required 
-                        value="{{ old('po_supplier_number', $poSupplier->po_supplier_number) }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-semibold">PO Date</label>
-                    <input type="text"
-                           class="form-control readonly-bg"
-                           name="po_date"
-                           value="{{ $poSupplier->po_date }}"
-                           readonly>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-semibold">Expected Date</label>
-                    <input type="text"
-                           class="form-control readonly-bg"
-                           name="expected_date"
-                           value="{{ $poSupplier->expected_date }}"
-                           readonly>
-                </div>
 
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-semibold">Supplier</label>
-                    <input type="text"
-                           class="form-control readonly-bg"
-                           name="supplier_name"
-                           value="{{ $poSupplier->supplier->name }}"
-                           readonly>
-                    <input type="hidden" name="supplier_id" value="{{ $poSupplier->supplier_id }}">
-                </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label fw-semibold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="draft" {{ $poSupplier->status == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="confirmed" {{ $poSupplier->status == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                    <option value="cancelled" {{ $poSupplier->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                </select>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label fw-semibold">Received Status</label>
-                <select name="receive_status" class="form-select">
-                    <option value="pending" {{ $poSupplier->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="partial" {{ $poSupplier->status == 'partial' ? 'selected' : '' }}>Partial</option>
-                    <option value="completed" {{ $poSupplier->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="cancelled" {{ $poSupplier->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                </select>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="section-title mb-3 d-flex align-items-center">
-                    <div class="me-2"> <i class="bi bi-box-seam-fill text-primary fs-5"></i> </div>
-                    <div> Product Details </div>
-                </div>
-                <button type="button"
-                        class="btn btn-success btn-sm"
-                        id="add-product">
-                    <i class="bi bi-plus-circle"></i>
-                    Add Product
-                </button>
-            </div>
 
-            {{-- PRODUCT AREA (full width) --}}
-            <div id="products-container">
-                @foreach($poSupplier->details as $index => $detail)
-                <div class="product-card product-row" data-row-id="{{ $index }}">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Product</label>
-                            <input type="text"
-                                   class="form-control readonly-bg"
-                                   value="{{ $detail->product->product_code }} - {{ $detail->product->name }}"
-                                   readonly>
-                            <input type="hidden"
-                                   name="items[{{ $index }}][product_id]"
-                                   value="{{ $detail->product_id }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Brand</label>
-                            <input type="text"
-                                   class="form-control brand-display"
-                                   value="{{ $detail->product->brand ?? '-' }}"
-                                   readonly>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Qty</label>
-                            <input type="number"
-                                   name="items[{{ $index }}][quantity]"
-                                   class="form-control qty-input"
-                                   data-row-id="{{ $index }}"
-                                   value="{{ $detail->quantity }}"
-                                   min="1">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Price</label>
-                            <input type="text"
-                                   class="form-control price-display"
-                                   data-row-id="{{ $index }}"
-                                   value="{{ number_format($detail->purchase_price,0,',','.') }}">
-                            <input type="hidden"
-                                   name="items[{{ $index }}][purchase_price]"
-                                   class="price-hidden"
-                                   value="{{ $detail->purchase_price }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Subtotal</label>
-                            <input type="text"
-                                   class="form-control subtotal-display"
-                                   value="{{ number_format($detail->subtotal,0,',','.') }}"
-                                   readonly>
-                            <input type="hidden"
-                                   name="items[{{ $index }}][subtotal]"
-                                   class="subtotal-hidden"
-                                   value="{{ $detail->subtotal }}">
-                            <button type="button"
-                                    class="btn btn-danger btn-sm mt-2 remove-product btn-remove">
-                                <i class="bi bi-trash"></i>
-                                Remove
-                            </button>
-                        </div>
+        <div class="card-body p-4">
+
+            {{-- =================================================
+                 ALERTS
+            ================================================== --}}
+            @if ($errors->any())
+                <div
+                    class="alert alert-danger border-0 shadow-sm
+                           d-flex fade show mb-4"
+                    style="
+                        background-color:#fef2f2;
+                        color:#991b1b;
+                        border-left:4px solid #dc2626 !important;
+                        border-radius:6px;
+                    "
+                >
+                    <div class="me-2">
+                        <i
+                            class="bi bi-exclamation-triangle-fill fs-5"
+                        ></i>
                     </div>
+
+                    <div>
+                        <strong class="d-block mb-1">
+                            Please fix the following validation errors:
+                        </strong>
+
+                        <ul class="mb-0 ps-3 small">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close ms-auto"
+                        data-bs-dismiss="alert"
+                    ></button>
                 </div>
-                @endforeach
-            </div>
-            {{-- SUMMARY TABLE (dipindahkan ke bawah product card) --}}
-            <div class="table-summary-wrapper">
-                <div class="row justify-content-end">
+            @endif
+
+
+            @if(session('success'))
+                <div
+                    class="alert alert-success border-0 shadow-sm
+                           d-flex fade show mb-4"
+                    style="
+                        background-color:#f0fdf4;
+                        color:#166534;
+                        border-left:4px solid #16a34a !important;
+                        border-radius:6px;
+                    "
+                >
+                    <i
+                        class="bi bi-check-circle-fill me-2 fs-5"
+                    ></i>
+
+                    <div>
+                        {{ session('success') }}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close ms-auto"
+                        data-bs-dismiss="alert"
+                    ></button>
+                </div>
+            @endif
+
+
+            @if(session('error'))
+                <div
+                    class="alert alert-danger border-0 shadow-sm mb-4"
+                    style="
+                        background-color:#fef2f2;
+                        color:#991b1b;
+                        border-left:4px solid #dc2626 !important;
+                    "
+                >
+                    <i
+                        class="bi bi-exclamation-circle-fill me-2"
+                    ></i>
+
+                    {{ session('error') }}
+                </div>
+            @endif
+
+
+            <form
+                action="{{ route(
+                    'po-suppliers.update',
+                    $poSupplier->id
+                ) }}"
+                method="POST"
+                id="po-form"
+            >
+
+                @csrf
+                @method('PUT')
+
+
+                {{-- =================================================
+                     HEADER / RELATIONSHIP
+                ================================================== --}}
+                <div class="row g-4 mb-4">
+
+                    <div class="col-md-6">
+
+                        <div class="info-group-box">
+
+                            <div class="section-sub-title">
+                                <i class="bi bi-diagram-3-fill me-2"></i>
+                                1. Customer & PO Relationship
+                            </div>
+
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Customer
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control readonly-bg"
+                                    value="{{
+                                        ($poSupplier->customer->customer_code ?? '')
+                                        .
+                                        ' - '
+                                        .
+                                        ($poSupplier->customer->name ?? '-')
+                                    }}"
+                                    readonly
+                                >
+
+                            </div>
+
+
+                            <div class="mb-0">
+
+                                <label class="form-label">
+                                    PO Customer
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control readonly-bg"
+                                    value="{{
+                                        $poSupplier->poCustomer->po_number
+                                        ?? '-'
+                                    }}"
+                                    readonly
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <div class="info-group-box">
+
+                            <div class="section-sub-title">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                2. Supplier PO Registry
+                            </div>
+
+
+                            <div class="row g-3">
+
+                                <div class="col-12">
+
+                                    <label class="form-label">
+                                        PO Supplier Number
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control readonly-bg"
+                                        value="{{
+                                            $poSupplier->po_supplier_number
+                                        }}"
+                                        readonly
+                                    >
+
+                                </div>
+
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label">
+                                        Supplier
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control readonly-bg"
+                                        value="{{
+                                            ($poSupplier->supplier->supplier_code ?? '')
+                                            .
+                                            ' - '
+                                            .
+                                            ($poSupplier->supplier->name ?? '-')
+                                        }}"
+                                        readonly
+                                    >
+
+                                </div>
+
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label">
+                                        PO Date
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control readonly-bg"
+                                        value="{{
+                                            $poSupplier->po_date
+                                        }}"
+                                        readonly
+                                    >
+
+                                </div>
+
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label">
+                                        PO Status
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control readonly-bg"
+                                        value="{{
+                                            ucfirst(
+                                                $poSupplier->status
+                                            )
+                                        }}"
+                                        readonly
+                                    >
+
+                                </div>
+
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label">
+                                        Receipt Status
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control readonly-bg"
+                                        value="{{
+                                            ucfirst(
+                                                $poSupplier->receipt_status
+                                                ?? 'pending'
+                                            )
+                                        }}"
+                                        readonly
+                                    >
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     PRODUCT DETAILS
+                ================================================== --}}
+                <div class="info-group-box mb-4">
+
+                    <div
+                        class="section-sub-title
+                               d-flex
+                               justify-content-between
+                               align-items-center
+                               text-dark
+                               w-100"
+                    >
+                        <span>
+                            <i class="bi bi-box-seam-fill me-2"></i>
+                            3. Product Detail
+                        </span>
+
+                        <button
+                            type="button"
+                            class="btn btn-success btn-sm fw-bold px-3 ms-auto"
+                            id="add-product"
+                            @if(
+                                $eligiblePoCustomerDetails->isEmpty()
+                            )
+                                disabled
+                                title="Tidak ada remaining PO Customer item"
+                            @endif
+                        >
+                            <i
+                                class="bi bi-plus-circle-fill me-1"
+                            ></i>
+
+                            Add Product Row
+                        </button>
+                    </div>
+
+
+                    <div
+                        id="products-container"
+                        class="d-flex flex-column gap-3 mb-3"
+                    >
+
+                        @foreach(
+                            $poSupplier->details
+                            as $index => $detail
+                        )
+
+                            <div
+                                class="product-row position-relative"
+                                id="row-{{ $index }}"
+                            >
+
+                                <div class="row g-2 text-start">
+
+                                    <div class="col-md-2">
+
+                                        <label class="form-label small">
+                                            Brand
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            class="form-control
+                                                   form-control-sm
+                                                   readonly-bg"
+                                            value="{{
+                                                $detail->product->brand
+                                                ?? '-'
+                                            }}"
+                                            readonly
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-4">
+
+                                        <label class="form-label small">
+                                            Product
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            class="form-control
+                                                   form-control-sm
+                                                   readonly-bg"
+                                            value="{{
+                                                (
+                                                    $detail->product->product_code
+                                                    ?? ''
+                                                )
+                                                .
+                                                ' - '
+                                                .
+                                                (
+                                                    $detail->product->name
+                                                    ?? ''
+                                                )
+                                            }}"
+                                            readonly
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="items[{{ $index }}][po_customer_detail_id]"
+                                            value="{{
+                                                $detail->po_customer_detail_id
+                                            }}"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="items[{{ $index }}][product_id]"
+                                            value="{{
+                                                $detail->product_id
+                                            }}"
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-1">
+
+                                        <label class="form-label small">
+                                            Qty
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            name="items[{{ $index }}][quantity]"
+                                            class="form-control
+                                                   form-control-sm
+                                                   qty-input"
+                                            data-row="{{ $index }}"
+                                            value="{{
+                                                $detail->quantity
+                                            }}"
+                                            min="0.0001"
+                                            step="any"
+                                            required
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-2">
+
+                                        <label class="form-label small">
+                                            Purchase Price (Rp)
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            class="form-control
+                                                   form-control-sm
+                                                   price-display"
+                                            data-row="{{ $index }}"
+                                            data-original-master-price="{{
+                                                $detail->product->purchase_price
+                                                ?? 0
+                                            }}"
+                                            data-product-name="{{
+                                                ($detail->product->product_code ?? '')
+                                                .
+                                                ' - '
+                                                .
+                                                ($detail->product->name ?? '')
+                                            }}"
+                                            value="{{
+                                                number_format(
+                                                    $detail->purchase_price,
+                                                    0,
+                                                    ',',
+                                                    '.'
+                                                )
+                                            }}"
+                                            required
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="items[{{ $index }}][purchase_price]"
+                                            class="price-hidden"
+                                            value="{{
+                                                $detail->purchase_price
+                                            }}"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="items[{{ $index }}][master_price_decision]"
+                                            class="master-price-decision"
+                                            value=""
+                                        >
+
+                                    </div>
+
+
+                                    <div class="col-md-2">
+
+                                        <label class="form-label small">
+                                            Subtotal (Rp)
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            class="form-control
+                                                   form-control-sm
+                                                   subtotal-display
+                                                   readonly-bg"
+                                            value="{{
+                                                number_format(
+                                                    $detail->subtotal,
+                                                    0,
+                                                    ',',
+                                                    '.'
+                                                )
+                                            }}"
+                                            data-value="{{
+                                                $detail->subtotal
+                                            }}"
+                                            readonly
+                                        >
+
+                                    </div>
+
+
+                                    <div
+                                        class="col-md-1
+                                               d-flex
+                                               align-items-end
+                                               justify-content-center"
+                                    >
+
+                                        <button
+                                            type="button"
+                                            class="btn
+                                                   btn-outline-danger
+                                                   btn-sm
+                                                   remove-product
+                                                   w-100"
+                                            data-row="{{ $index }}"
+                                            title="Remove Item"
+                                        >
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     REMARKS + FINANCIAL SUMMARY
+                ================================================== --}}
+                <div class="row g-4 text-start">
+
                     <div class="col-md-5">
-                        <table class="table table-bordered summary-table">
-                            <tr>
-                                <th>Subtotal</th>
-                                <td class="text-end">
-                                    <span id="subtotal-text">Rp 0</span>
-                                    <input type="hidden" name="subtotal" id="subtotal-value">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Discount (%)</th>
-                                <td>
-                                    <input type="number"
-                                           name="discount_percent"
-                                           id="discount_percent"
-                                           class="form-control summary-input"
-                                           value="{{ $poSupplier->discount_percent ?? 0 }}"
-                                           min="0"
-                                           max="100"
-                                           step="0.5">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Discount Amount</th>
-                                <td class="text-end">
-                                    <span id="discount-text">Rp 0</span>
-                                    <input type="hidden" name="discount_amount" id="discount-value">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>VAT (%)</th>
-                                <td>
-                                    <input type="number"
-                                           name="tax_percent"
-                                           id="tax_percent"
-                                           class="form-control summary-input"
-                                           value="{{ $poSupplier->tax_percent ?? 11 }}"
-                                           min="0"
-                                           max="100"
-                                           step="0.5">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>VAT Amount</th>
-                                <td class="text-end">
-                                    <span id="tax-text">Rp 0</span>
-                                    <input type="hidden" name="tax_amount" id="tax-value">
-                                </td>
-                            </tr>
-                            <tr class="grand-total-row">
-                                <th>Grand Total</th>
-                                <td class="text-end">
-                                    <strong id="grand-total-text">Rp 0</strong>
-                                    <input type="hidden" name="total" id="grand-total-value">
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {{-- NOTES --}}
-            <div class="mb-3 mt-4">
-                <label class="form-label fw-semibold">Remarks</label>
-                <textarea name="notes" class="form-control" rows="2">{{ $poSupplier->notes }}</textarea>
-            </div>
 
-            {{-- ACTION --}}
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Update PO Supplier
-                </button>
-                <a href="{{ route('po-suppliers.index') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
+                        <div class="info-group-box">
+
+                            <div class="section-sub-title">
+                                <i
+                                    class="bi bi-chat-right-quote-fill me-2"
+                                ></i>
+
+                                4. Additional Data
+                            </div>
+
+
+                            <div class="mb-0">
+
+                                <label class="form-label">
+                                    Remarks
+                                </label>
+
+                                <textarea
+                                    name="notes"
+                                    class="form-control"
+                                    rows="5"
+                                    placeholder="Write remarks or instructions..."
+                                >{{ old(
+                                    'notes',
+                                    $poSupplier->notes
+                                ) }}</textarea>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-7">
+
+                        <div
+                            class="border rounded-3
+                                   overflow-hidden shadow-sm"
+                        >
+
+                            <table
+                                class="table
+                                       table-bordered
+                                       table-summary
+                                       m-0
+                                       bg-white
+                                       align-middle"
+                            >
+
+                                <tr>
+
+                                    <th
+                                        width="45%"
+                                        class="ps-3"
+                                    >
+                                        Subtotal Items Amount
+                                    </th>
+
+                                    <td
+                                        colspan="2"
+                                        class="text-end pe-3
+                                               fw-bold text-dark"
+                                    >
+                                        <span id="subtotal-text">
+                                            Rp 0
+                                        </span>
+                                    </td>
+
+                                </tr>
+
+
+                                <tr>
+
+                                    <th class="ps-3">
+                                        Discount Allowance
+                                    </th>
+
+                                    <td
+                                        width="25%"
+                                        class="px-2"
+                                    >
+
+                                        <div
+                                            class="input-group
+                                                   input-group-sm"
+                                        >
+
+                                            <input
+                                                type="number"
+                                                name="discount_percent"
+                                                id="discount_percent"
+                                                class="form-control
+                                                       summary-input-num"
+                                                step="0.01"
+                                                min="0"
+                                                max="100"
+                                                value="{{
+                                                    old(
+                                                        'discount_percent',
+                                                        $poSupplier->discount_percent
+                                                        ?? 0
+                                                    )
+                                                }}"
+                                            >
+
+                                            <span
+                                                class="input-group-text"
+                                            >
+                                                %
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td
+                                        width="30%"
+                                        class="text-end pe-3"
+                                    >
+                                        <span id="discount-text">
+                                            Rp 0
+                                        </span>
+                                    </td>
+
+                                </tr>
+
+
+                                <tr
+                                    style="
+                                        background-color:#f8fafc;
+                                    "
+                                >
+
+                                    <th
+                                        class="ps-3
+                                               fw-semibold
+                                               text-secondary"
+                                    >
+                                        Subtotal After Discount
+                                    </th>
+
+                                    <td
+                                        colspan="2"
+                                        class="text-end pe-3
+                                               fw-bold text-secondary"
+                                    >
+                                        <span id="after-discount-text">
+                                            Rp 0
+                                        </span>
+                                    </td>
+
+                                </tr>
+
+
+                                <tr>
+
+                                    <th class="ps-3">
+                                        VAT
+                                    </th>
+
+                                    <td class="px-2">
+
+                                        <div
+                                            class="input-group
+                                                   input-group-sm"
+                                        >
+
+                                            <input
+                                                type="number"
+                                                id="tax_percent"
+                                                class="form-control
+                                                       readonly-bg
+                                                       summary-input-num"
+                                                value="{{
+                                                    $poSupplier->tax_percent
+                                                    ?? 0
+                                                }}"
+                                                readonly
+                                            >
+
+                                            <span
+                                                class="input-group-text"
+                                            >
+                                                %
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td
+                                        class="text-end pe-3"
+                                    >
+                                        <span id="tax-text">
+                                            Rp 0
+                                        </span>
+                                    </td>
+
+                                </tr>
+
+
+                                <tr
+                                    style="
+                                        border-top:
+                                        2px solid #cbd5e1;
+                                    "
+                                >
+
+                                    <th
+                                        class="ps-3
+                                               fs-6
+                                               text-dark"
+                                    >
+                                        <strong>
+                                            Grand Total
+                                        </strong>
+                                    </th>
+
+                                    <td
+                                        colspan="2"
+                                        class="text-end
+                                               pe-3
+                                               fs-5
+                                               text-success
+                                               fw-bold"
+                                    >
+                                        <strong>
+                                            <span
+                                                id="grand-total-text"
+                                            >
+                                                Rp 0
+                                            </span>
+                                        </strong>
+                                    </td>
+
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     ACTION
+                ================================================== --}}
+                <div
+                    class="col-12 mt-4 pt-3 border-top
+                           d-flex gap-2"
+                >
+
+                    <button
+                        type="submit"
+                        class="btn btn-warning
+                               px-4 py-2 fw-bold text-white"
+                        style="
+                            background:
+                            linear-gradient(
+                                135deg,
+                                #f97316,
+                                #c2410c
+                            );
+                            border:none;
+                        "
+                    >
+                        <i
+                            class="bi bi-save-fill me-1"
+                        ></i>
+
+                        Update PO Supplier
+                    </button>
+
+
+                    <a
+                        href="{{ route('po-suppliers.index') }}"
+                        class="btn
+                               btn-outline-secondary
+                               px-4 py-2"
+                    >
+                        Discard Changes
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
     </div>
+
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<!-- =========================================================
+     PURCHASE PRICE DIFFERENCE DECISION
+========================================================== -->
+<div class="modal fade"
+     id="masterPriceDecisionModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Purchase Price Differences
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="alert alert-info">
+
+                    Purchase Price PO Supplier berbeda dari
+                    Purchase Price pada Product Master.
+
+                    Pilih keputusan untuk setiap item.
+                    Harga transaksi PO Supplier tetap memakai
+                    harga yang Anda masukkan.
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-end">
+                                    Master Price
+                                </th>
+                                <th class="text-end">
+                                    PO Supplier Price
+                                </th>
+                                <th style="min-width:220px;">
+                                    Decision
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="masterPriceDecisionBody">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div
+                    id="masterPriceDecisionError"
+                    class="alert alert-danger d-none"
+                >
+                    Pilih Update Master atau Keep Existing
+                    untuk semua item yang berbeda harga.
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Back
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="continuePriceDecision"
+                >
+                    Continue
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script
+    src="https://code.jquery.com/jquery-3.6.0.min.js"
+></script>
+
+
 <script>
 $(document).ready(function() {
-    let rowCount = {{ count($poSupplier->details) }};
-    let productsData = @json($products);
 
-    function formatRupiah(angka) {
-        if(!angka || isNaN(angka)) return '0';
-        return new Intl.NumberFormat('id-ID').format(Math.round(angka));
+    let rowCount =
+        {{ count($poSupplier->details) }};
+
+    let eligiblePoCustomerDetails =
+        @json($eligiblePoCustomerDetails);
+
+
+    function formatRupiah(value) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            isNaN(value)
+        ) {
+            return '0';
+        }
+
+        return new Intl.NumberFormat(
+            'id-ID'
+        ).format(
+            Math.round(value)
+        );
     }
 
-    function parseRupiahToNumber(str) {
-        if(!str) return 0;
-        return parseInt(str.toString().replace(/\./g, '')) || 0;
+
+    function parseRupiahToNumber(value) {
+
+        if (!value) {
+            return 0;
+        }
+
+        return parseFloat(
+            value
+                .toString()
+                .replace(/\./g, '')
+                .replace(/,/g, '.')
+        ) || 0;
     }
+
 
     function calculateGrandTotal() {
+
         let subtotal = 0;
-        $('.subtotal-display').each(function() {
-            let val = $(this).data('value') || 0;
-            subtotal += parseInt(val);
-        });
-        
-        let discountPercent = parseFloat($('#discount_percent').val()) || 0;
-        let discountAmount = subtotal * (discountPercent / 100);
-        let afterDiscount = subtotal - discountAmount;
-        
-        let taxPercent = parseFloat($('#tax_percent').val()) || 0;
-        let taxAmount = afterDiscount * (taxPercent / 100);
-        let grandTotal = afterDiscount + taxAmount;
-        
-        $('#subtotal-text').text('Rp ' + formatRupiah(subtotal));
-        $('#subtotal-value').val(subtotal);
-        $('#discount-text').text('Rp ' + formatRupiah(discountAmount));
-        $('#discount-value').val(discountAmount);
-        $('#tax-text').text('Rp ' + formatRupiah(taxAmount));
-        $('#tax-value').val(taxAmount);
-        $('#grand-total-text').text('Rp ' + formatRupiah(grandTotal));
-        $('#grand-total-value').val(grandTotal);
+
+        $('.subtotal-display').each(
+            function() {
+
+                subtotal +=
+                    parseFloat(
+                        $(this).data('value')
+                    ) || 0;
+            }
+        );
+
+        let discountPercent =
+            parseFloat(
+                $('#discount_percent').val()
+            ) || 0;
+
+        let discountAmount =
+            subtotal *
+            (discountPercent / 100);
+
+        let afterDiscount =
+            subtotal -
+            discountAmount;
+
+        let taxPercent =
+            parseFloat(
+                $('#tax_percent').val()
+            ) || 0;
+
+        let taxAmount =
+            afterDiscount *
+            (taxPercent / 100);
+
+        let grandTotal =
+            afterDiscount +
+            taxAmount;
+
+        $('#subtotal-text')
+            .text(
+                'Rp ' +
+                formatRupiah(subtotal)
+            );
+
+        $('#discount-text')
+            .text(
+                'Rp ' +
+                formatRupiah(
+                    discountAmount
+                )
+            );
+
+        $('#after-discount-text')
+            .text(
+                'Rp ' +
+                formatRupiah(
+                    afterDiscount
+                )
+            );
+
+        $('#tax-text')
+            .text(
+                'Rp ' +
+                formatRupiah(
+                    taxAmount
+                )
+            );
+
+        $('#grand-total-text')
+            .text(
+                'Rp ' +
+                formatRupiah(
+                    grandTotal
+                )
+            );
     }
 
+
     function calculateSubtotal(rowId) {
-        let qty = parseInt($(`#row-${rowId} .qty-input`).val()) || 0;
-        let priceText = $(`#row-${rowId} .price-display`).val();
-        let price = parseRupiahToNumber(priceText);
-        let subtotal = qty * price;
-        
-        $(`#row-${rowId} .subtotal-display`).val(formatRupiah(subtotal));
-        $(`#row-${rowId} .subtotal-display`).data('value', subtotal);
-        $(`#row-${rowId} .price-hidden`).val(price);
-        $(`#row-${rowId} #subtotal-hidden-${rowId}`).val(subtotal);
+
+        let row =
+            $('#row-' + rowId);
+
+        let qty =
+            parseFloat(
+                row
+                    .find('.qty-input')
+                    .val()
+            ) || 0;
+
+        let price =
+            parseRupiahToNumber(
+                row
+                    .find('.price-display')
+                    .val()
+            );
+
+        let subtotal =
+            qty *
+            price;
+
+        row
+            .find('.price-hidden')
+            .val(price);
+
+        row
+            .find('.subtotal-display')
+            .val(
+                formatRupiah(
+                    subtotal
+                )
+            )
+            .data(
+                'value',
+                subtotal
+            );
+
         calculateGrandTotal();
     }
 
-    function addNewRow(item = null) {
-        let productOptions = '<option value="">Pilih Produk</option>';
-        productsData.forEach(function(product) {
-            let selected = (item && item.product_id == product.id) ? 'selected' : '';
-            productOptions += `<option value="${product.id}" data-price="${product.price}" data-name="${product.name}" data-brand="${product.brand || '-'}" ${selected}>${product.product_code} - ${product.name}</option>`;
-        });
-        
-        let qtyValue = (item && item.quantity) ? item.quantity : 1;
-        let priceValue = (item && item.purchase_price) ? formatRupiah(item.purchase_price) : '';
-        let priceNumeric = (item && item.purchase_price) ? item.purchase_price : 0;
-        let subtotalValue = (item && item.subtotal) ? formatRupiah(item.subtotal) : '';
-        let subtotalNumeric = (item && item.subtotal) ? item.subtotal : 0;
-        let brandValue = (item && item.brand) ? item.brand : '';
-        
-        let newRow = `
-            <div class="product-row mb-3" id="row-${rowCount}">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label class="form-label">Produk</label>
-                        <select name="items[${rowCount}][product_id]" class="form-control product-select" data-row="${rowCount}" required>${productOptions}</select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Brand</label>
-                        <input type="text" class="form-control brand-display" id="brand-${rowCount}" readonly style="background:#f8f9fa;" value="${brandValue}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" name="items[${rowCount}][quantity]" class="form-control qty-input" data-row="${rowCount}" value="${qtyValue}" min="1" required>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Purchase Price (Rp)</label>
-                        <input type="text" class="form-control price-display" data-row="${rowCount}" value="${priceValue}" required>
-                        <input type="hidden" name="items[${rowCount}][purchase_price]" class="price-hidden" data-row="${rowCount}" value="${priceNumeric}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Subtotal (Rp)</label>
-                        <input type="text" class="form-control subtotal-display" id="subtotal-${rowCount}" readonly style="background:#f8f9fa;" value="${subtotalValue}">
-                        <input type="hidden" name="items[${rowCount}][subtotal]" id="subtotal-hidden-${rowCount}" value="${subtotalNumeric}">
 
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-product" data-row="${rowCount}">Delete</button>
+    function buildEligibleOptions() {
+
+        let options =
+            '<option value="">' +
+            '-- Choose PO Customer Item --' +
+            '</option>';
+
+        eligiblePoCustomerDetails.forEach(
+            function(detail) {
+
+                if (!detail.product) {
+                    return;
+                }
+
+                let remaining =
+                    parseFloat(
+                        detail.remaining_quantity
+                        || 0
+                    );
+
+                if (remaining <= 0) {
+                    return;
+                }
+
+                let product =
+                    detail.product;
+
+                options +=
+                    '<option ' +
+                    'value="' +
+                    detail.id +
+                    '" ' +
+                    'data-product-id="' +
+                    product.id +
+                    '" ' +
+                    'data-price="' +
+                    (
+                        product.purchase_price
+                        || 0
+                    ) +
+                    '" ' +
+                    'data-brand="' +
+                    (
+                        product.brand
+                        || '-'
+                    ) +
+                    '" ' +
+                    'data-product-name="' +
+                    (
+                        (
+                            product.product_code
+                            || ''
+                        )
+                        +
+                        ' - '
+                        +
+                        (
+                            product.name
+                            || ''
+                        )
+                    ) +
+                    '" ' +
+                    'data-remaining="' +
+                    remaining +
+                    '">' +
+                    (
+                        product.product_code
+                        || ''
+                    ) +
+                    ' - ' +
+                    (
+                        product.name
+                        || ''
+                    ) +
+                    ' | Remaining: ' +
+                    remaining +
+                    '</option>';
+            }
+        );
+
+        return options;
+    }
+
+
+    function addNewRow() {
+
+        let options =
+            buildEligibleOptions();
+
+        let newRow =
+            `
+            <div
+                class="product-row position-relative"
+                id="row-${rowCount}"
+            >
+
+                <div class="row g-2 text-start">
+
+                    <div class="col-md-2">
+
+                        <label class="form-label small">
+                            Brand
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control
+                                   form-control-sm
+                                   brand-display
+                                   readonly-bg"
+                            value="-"
+                            readonly
+                        >
+
                     </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label small">
+                            PO Customer Item
+                        </label>
+
+                        <select
+                            name="items[${rowCount}][po_customer_detail_id]"
+                            class="form-select
+                                   form-select-sm
+                                   po-customer-detail-select"
+                            data-row="${rowCount}"
+                            required
+                        >
+                            ${options}
+                        </select>
+
+                        <input
+                            type="hidden"
+                            name="items[${rowCount}][product_id]"
+                            class="product-id-hidden"
+                            value=""
+                        >
+
+                    </div>
+
+
+                    <div class="col-md-1">
+
+                        <label class="form-label small">
+                            Qty
+                        </label>
+
+                        <input
+                            type="number"
+                            name="items[${rowCount}][quantity]"
+                            class="form-control
+                                   form-control-sm
+                                   qty-input"
+                            data-row="${rowCount}"
+                            value="1"
+                            min="0.0001"
+                            step="any"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="col-md-2">
+
+                        <label class="form-label small">
+                            Purchase Price (Rp)
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control
+                                   form-control-sm
+                                   price-display"
+                            data-row="${rowCount}"
+                            data-original-master-price="0"
+                            data-product-name=""
+                            value=""
+                            required
+                        >
+
+                        <input
+                            type="hidden"
+                            name="items[${rowCount}][purchase_price]"
+                            class="price-hidden"
+                            value="0"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="items[${rowCount}][master_price_decision]"
+                            class="master-price-decision"
+                            value=""
+                        >
+
+                    </div>
+
+
+                    <div class="col-md-2">
+
+                        <label class="form-label small">
+                            Subtotal (Rp)
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control
+                                   form-control-sm
+                                   subtotal-display
+                                   readonly-bg"
+                            value="0"
+                            data-value="0"
+                            readonly
+                        >
+
+                    </div>
+
+
+                    <div
+                        class="col-md-1
+                               d-flex
+                               align-items-end
+                               justify-content-center"
+                    >
+
+                        <button
+                            type="button"
+                            class="btn
+                                   btn-outline-danger
+                                   btn-sm
+                                   remove-product
+                                   w-100"
+                            data-row="${rowCount}"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                    </div>
+
                 </div>
+
             </div>
-        `;
-        $('#products-container').append(newRow);
-        if(item && item.purchase_price) $(`#row-${rowCount} .subtotal-display`).data('value', item.subtotal);
+            `;
+
+        $('#products-container')
+            .append(newRow);
+
         rowCount++;
     }
 
-    // Inisialisasi data subtotal
-    $('.subtotal-display').each(function() {
-        let text = $(this).val();
-        let number = parseRupiahToNumber(text);
-        $(this).data('value', number);
-    });
-    
+
+    $('.subtotal-display').each(
+        function() {
+
+            let value =
+                parseFloat(
+                    $(this).attr(
+                        'data-value'
+                    )
+                ) || 0;
+
+            $(this).data(
+                'value',
+                value
+            );
+        }
+    );
+
+
     calculateGrandTotal();
-    
-    // Event perubahan diskon & PPN
-    $('#discount_percent, #tax_percent').on('keyup change', calculateGrandTotal);
-    
-    // Event untuk product select (tambah produk baru)
-    $(document).on('change', '.product-select', function() {
-        let rowId = $(this).data('row');
-        let price = $(this).find(':selected').data('price');
-        let brand = $(this).find(':selected').data('brand');
-        if(brand) $(`#row-${rowId} .brand-display`).val(brand);
-        if(price) {
-            $(`#row-${rowId} .price-display`).val(formatRupiah(price));
-            $(`#row-${rowId} .price-hidden`).val(price);
+
+
+    $(document).on(
+        'change',
+        '.po-customer-detail-select',
+        function() {
+
+            let rowId =
+                $(this).data('row');
+
+            let row =
+                $('#row-' + rowId);
+
+            let selected =
+                $(this)
+                    .find(':selected');
+
+            let productId =
+                selected.data(
+                    'product-id'
+                ) || '';
+
+            let price =
+                parseFloat(
+                    selected.data(
+                        'price'
+                    )
+                ) || 0;
+
+            let brand =
+                selected.data(
+                    'brand'
+                ) || '-';
+
+            let remaining =
+                parseFloat(
+                    selected.data(
+                        'remaining'
+                    )
+                ) || 0;
+
+            let productName =
+                selected.data(
+                    'product-name'
+                ) || '';
+
+            row
+                .find(
+                    '.price-display'
+                )
+                .attr(
+                    'data-original-master-price',
+                    price
+                )
+                .attr(
+                    'data-product-name',
+                    productName
+                );
+
+            row
+                .find(
+                    '.master-price-decision'
+                )
+                .val('');
+
+            row
+                .find(
+                    '.product-id-hidden'
+                )
+                .val(
+                    productId
+                );
+
+            row
+                .find(
+                    '.brand-display'
+                )
+                .val(
+                    brand
+                );
+
+            row
+                .find(
+                    '.qty-input'
+                )
+                .attr(
+                    'max',
+                    remaining
+                )
+                .attr(
+                    'data-remaining',
+                    remaining
+                )
+                .val(
+                    Math.min(
+                        1,
+                        remaining
+                    )
+                );
+
+            row
+                .find(
+                    '.price-display'
+                )
+                .val(
+                    price > 0
+                        ?
+                        formatRupiah(
+                            price
+                        )
+                        :
+                        ''
+                );
+
+            row
+                .find(
+                    '.price-hidden'
+                )
+                .val(
+                    price
+                );
+
+            calculateSubtotal(
+                rowId
+            );
         }
-        calculateSubtotal(rowId);
-    });
-    
-    // Event untuk price display
-    $(document).on('keyup change', '.price-display', function() {
-        let rowId = $(this).data('row');
-        let rawValue = $(this).val();
-        let numericValue = parseRupiahToNumber(rawValue);
-        if(numericValue > 0) {
-            $(this).val(formatRupiah(numericValue));
-            $(`#row-${rowId} .price-hidden`).val(numericValue);
-        } else if(rawValue === '') {
-            $(this).val('');
-            $(`#row-${rowId} .price-hidden`).val(0);
+    );
+
+
+    $(document).on(
+        'keyup change',
+        '.price-display',
+        function() {
+
+            let rowId =
+                $(this).data('row');
+
+            let numericValue =
+                parseRupiahToNumber(
+                    $(this).val()
+                );
+
+            $('#row-' + rowId)
+                .find(
+                    '.master-price-decision'
+                )
+                .val('');
+
+            if (numericValue > 0) {
+
+                $(this).val(
+                    formatRupiah(
+                        numericValue
+                    )
+                );
+
+            } else if (
+                $(this).val() === ''
+            ) {
+
+                $(this).val('');
+            }
+
+            calculateSubtotal(
+                rowId
+            );
         }
-        calculateSubtotal(rowId);
-    });
-    
-    // Event untuk qty change
-    $(document).on('keyup change', '.qty-input', function() {
-        let rowId = $(this).data('row');
-        calculateSubtotal(rowId);
-    });
-    
-    // Tombol tambah produk
-    $('#add-product').click(function() {
-        addNewRow();
-    });
-    
-    // Tombol hapus produk
-    $(document).on('click', '.remove-product', function() {
-        let rowId = $(this).data('row');
-        $(`#row-${rowId}`).remove();
-        calculateGrandTotal();
-    });
-    
-    // Tidak ada event handler submit yang mencegah, biarkan form submit normal
+    );
+
+
+    $(document).on(
+        'keyup change',
+        '.qty-input',
+        function() {
+
+            let rowId =
+                $(this).data('row');
+
+            calculateSubtotal(
+                rowId
+            );
+        }
+    );
+
+
+    $('#discount_percent')
+        .on(
+            'input change',
+            calculateGrandTotal
+        );
+
+
+    $('#add-product')
+        .on(
+            'click',
+            function() {
+                addNewRow();
+            }
+        );
+
+
+    $(document).on(
+        'click',
+        '.remove-product',
+        function() {
+
+            let rowId =
+                $(this).data('row');
+
+            $('#row-' + rowId)
+                .remove();
+
+            calculateGrandTotal();
+        }
+    );
+
+
+    let allowFinalSubmit = false;
+
+    let masterPriceDecisionModal = null;
+
+
+    function collectMasterPriceDifferences() {
+
+        let differences = [];
+
+        $('.product-row').each(
+            function() {
+
+                let row =
+                    $(this);
+
+                let priceInput =
+                    row.find(
+                        '.price-display'
+                    );
+
+                let transactionPrice =
+                    parseRupiahToNumber(
+                        priceInput.val()
+                    );
+
+                let masterPrice =
+                    parseFloat(
+                        priceInput.attr(
+                            'data-original-master-price'
+                        )
+                    ) || 0;
+
+                let productName =
+                    priceInput.attr(
+                        'data-product-name'
+                    ) || 'Product';
+
+                let decisionInput =
+                    row.find(
+                        '.master-price-decision'
+                    );
+
+                /*
+                 * priceDecision is intentionally recalculated
+                 * from the latest transaction price before save.
+                 */
+                let priceDecision =
+                    decisionInput.val() || '';
+
+                if (
+                    Math.abs(
+                        transactionPrice -
+                        masterPrice
+                    ) > 0.009
+                ) {
+
+                    differences.push({
+                        row:
+                            row,
+
+                        productName:
+                            productName,
+
+                        masterPrice:
+                            masterPrice,
+
+                        transactionPrice:
+                            transactionPrice,
+
+                        decision:
+                            priceDecision
+                    });
+
+                } else {
+
+                    decisionInput.val('');
+                }
+            }
+        );
+
+        return differences;
+    }
+
+
+    function renderMasterPriceDifferences(
+        differences
+    ) {
+
+        let body =
+            $('#masterPriceDecisionBody');
+
+        body.empty();
+
+        differences.forEach(
+            function(item, index) {
+
+                let selectedDecision =
+                    item.row
+                        .find(
+                            '.master-price-decision'
+                        )
+                        .val() || '';
+
+                let html =
+                    '<tr ' +
+                    'data-difference-index="' +
+                    index +
+                    '">' +
+
+                    '<td>' +
+                    $('<div>')
+                        .text(item.productName)
+                        .html() +
+                    '</td>' +
+
+                    '<td class="text-end">' +
+                    'Rp ' +
+                    formatRupiah(
+                        item.masterPrice
+                    ) +
+                    '</td>' +
+
+                    '<td class="text-end">' +
+                    'Rp ' +
+                    formatRupiah(
+                        item.transactionPrice
+                    ) +
+                    '</td>' +
+
+                    '<td>' +
+                    '<select ' +
+                    'class="form-select form-select-sm ' +
+                    'price-decision-select" ' +
+                    'data-index="' +
+                    index +
+                    '">' +
+
+                    '<option value="">' +
+                    '-- Select Decision --' +
+                    '</option>' +
+
+                    '<option value="update"' +
+                    (
+                        selectedDecision ===
+                        'update'
+                            ? ' selected'
+                            : ''
+                    ) +
+                    '>' +
+                    'Update Master' +
+                    '</option>' +
+
+                    '<option value="keep"' +
+                    (
+                        selectedDecision ===
+                        'keep'
+                            ? ' selected'
+                            : ''
+                    ) +
+                    '>' +
+                    'Keep Existing' +
+                    '</option>' +
+
+                    '</select>' +
+                    '</td>' +
+
+                    '</tr>';
+
+                body.append(html);
+            }
+        );
+
+        body.data(
+            'differences',
+            differences
+        );
+
+        $('#masterPriceDecisionError')
+            .addClass('d-none');
+    }
+
+
+    $('#po-form')
+        .on(
+            'submit',
+            function(event) {
+
+                $('.price-display')
+                    .each(
+                        function() {
+
+                            let row =
+                                $(this)
+                                    .closest(
+                                        '.product-row'
+                                    );
+
+                            row
+                                .find(
+                                    '.price-hidden'
+                                )
+                                .val(
+                                    parseRupiahToNumber(
+                                        $(this).val()
+                                    )
+                                );
+                        }
+                    );
+
+                if (allowFinalSubmit) {
+
+                    allowFinalSubmit =
+                        false;
+
+                    return true;
+                }
+
+                let differences =
+                    collectMasterPriceDifferences();
+
+                if (
+                    differences.length === 0
+                ) {
+                    return true;
+                }
+
+                event.preventDefault();
+
+                renderMasterPriceDifferences(
+                    differences
+                );
+
+                if (!masterPriceDecisionModal) {
+
+                    masterPriceDecisionModal =
+                        new bootstrap.Modal(
+                            document.getElementById(
+                                'masterPriceDecisionModal'
+                            )
+                        );
+                }
+
+                masterPriceDecisionModal.show();
+
+                return false;
+            }
+        );
+
+
+    $(document).on(
+        'change',
+        '.price-decision-select',
+        function() {
+
+            let index =
+                parseInt(
+                    $(this).data('index'),
+                    10
+                );
+
+            let differences =
+                $('#masterPriceDecisionBody')
+                    .data('differences')
+                || [];
+
+            if (!differences[index]) {
+                return;
+            }
+
+            differences[index]
+                .row
+                .find(
+                    '.master-price-decision'
+                )
+                .val(
+                    $(this).val()
+                );
+
+            $('#masterPriceDecisionError')
+                .addClass('d-none');
+        }
+    );
+
+
+    $('#continuePriceDecision')
+        .on(
+            'click',
+            function() {
+
+                let differences =
+                    collectMasterPriceDifferences();
+
+                let missingDecision =
+                    differences.some(
+                        function(item) {
+
+                            return ![
+                                'update',
+                                'keep'
+                            ].includes(
+                                item.row
+                                    .find(
+                                        '.master-price-decision'
+                                    )
+                                    .val()
+                            );
+                        }
+                    );
+
+                if (missingDecision) {
+
+                    $('#masterPriceDecisionError')
+                        .removeClass('d-none');
+
+                    return;
+                }
+
+                allowFinalSubmit =
+                    true;
+
+                masterPriceDecisionModal.hide();
+
+                document
+                    .getElementById(
+                        'po-form'
+                    )
+                    .requestSubmit();
+            }
+        );
+
+
+    $('#masterPriceDecisionModal')
+        .on(
+            'hidden.bs.modal',
+            function() {
+
+                if (allowFinalSubmit) {
+                    return;
+                }
+
+                /*
+                 * Back / close resets decisions.
+                 * The next Save recalculates against latest prices.
+                 */
+                $('.master-price-decision')
+                    .val('');
+            }
+        );
+
 });
 </script>
+
 @endsection

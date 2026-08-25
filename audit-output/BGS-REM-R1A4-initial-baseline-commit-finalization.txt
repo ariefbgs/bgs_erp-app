@@ -56,3 +56,326 @@ HASH_FAILURE=False
 SECRET_IGNORE_FAILURE=False
 
 === 10 INITIAL COMMIT ===
+[master (root-commit) 07c20c7] chore: establish ERP BGS pre-remediation baseline
+ 292 files changed, 64672 insertions(+)
+ create mode 100644 .editorconfig
+ create mode 100644 .env.example
+ create mode 100644 .gitattributes
+ create mode 100644 .gitignore
+ create mode 100644 README.md
+ create mode 100644 app/Console/Kernel.php
+ create mode 100644 app/Exceptions/Handler.php
+ create mode 100644 app/Exports/DeliveryExport.php
+ create mode 100644 app/Exports/PaymentCustomerExport.php
+ create mode 100644 app/Exports/PaymentSupplierExport.php
+ create mode 100644 app/Exports/PurchasingExport.php
+ create mode 100644 app/Exports/SalesExport.php
+ create mode 100644 app/Helpers/GlobalHelper.php
+ create mode 100644 app/Helpers/helpers.php
+ create mode 100644 app/Http/Controllers/Auth/ConfirmPasswordController.php
+ create mode 100644 app/Http/Controllers/Auth/ForgotPasswordController.php
+ create mode 100644 app/Http/Controllers/Auth/LoginController.php
+ create mode 100644 app/Http/Controllers/Auth/RegisterController.php
+ create mode 100644 app/Http/Controllers/Auth/ResetPasswordController.php
+ create mode 100644 app/Http/Controllers/Auth/VerificationController.php
+ create mode 100644 app/Http/Controllers/BackupController.php
+ create mode 100644 app/Http/Controllers/CompanyController.php
+ create mode 100644 app/Http/Controllers/Controller.php
+ create mode 100644 app/Http/Controllers/CustomerController.php
+ create mode 100644 app/Http/Controllers/DashboardController.php
+ create mode 100644 app/Http/Controllers/DeliveryOrderController.php
+ create mode 100644 app/Http/Controllers/DocumentReceiptController.php
+ create mode 100644 app/Http/Controllers/ExpenseController.php
+ create mode 100644 app/Http/Controllers/GoodsReceiptController.php
+ create mode 100644 app/Http/Controllers/InvoiceCustomerController copy.php
+ create mode 100644 app/Http/Controllers/InvoiceCustomerController.php
+ create mode 100644 app/Http/Controllers/PoCustomerController.php
+ create mode 100644 app/Http/Controllers/PoSupplierController.php
+ create mode 100644 app/Http/Controllers/ProductController.php
+ create mode 100644 app/Http/Controllers/QuotationController.php
+ create mode 100644 app/Http/Controllers/ReportController.php
+ create mode 100644 app/Http/Controllers/SupplierController.php
+ create mode 100644 app/Http/Controllers/UserController.php
+ create mode 100644 app/Http/Controllers/UserManualController.php
+ create mode 100644 app/Http/Kernel.php
+ create mode 100644 app/Http/Middleware/Authenticate.php
+ create mode 100644 app/Http/Middleware/CheckRole.php
+ create mode 100644 app/Http/Middleware/EncryptCookies.php
+ create mode 100644 app/Http/Middleware/PreventRequestsDuringMaintenance.php
+ create mode 100644 app/Http/Middleware/RedirectIfAuthenticated.php
+ create mode 100644 app/Http/Middleware/TrimStrings.php
+ create mode 100644 app/Http/Middleware/TrustHosts.php
+ create mode 100644 app/Http/Middleware/TrustProxies.php
+ create mode 100644 app/Http/Middleware/ValidateSignature.php
+ create mode 100644 app/Http/Middleware/VerifyCsrfToken.php
+ create mode 100644 app/Models/Company.php
+ create mode 100644 app/Models/Customer.php
+ create mode 100644 app/Models/DeliveryOrder.php
+ create mode 100644 app/Models/DeliveryOrderDetail.php
+ create mode 100644 app/Models/DocumentReceipt.php
+ create mode 100644 app/Models/Expense.php
+ create mode 100644 app/Models/GoodsReceipt.php
+ create mode 100644 app/Models/GoodsReceiptDetail.php
+ create mode 100644 app/Models/InvoiceCustomer.php
+ create mode 100644 app/Models/InvoiceCustomerDetail.php
+ create mode 100644 app/Models/InvoiceSupplier.php
+ create mode 100644 app/Models/InvoiceSupplierDetail.php
+ create mode 100644 app/Models/PoCustomer.php
+ create mode 100644 app/Models/PoCustomerDetail.php
+ create mode 100644 app/Models/PoSupplier.php
+ create mode 100644 app/Models/PoSupplierDetail.php
+ create mode 100644 app/Models/Product.php
+ create mode 100644 app/Models/Quotation.php
+ create mode 100644 app/Models/QuotationDetail.php
+ create mode 100644 app/Models/Supplier.php
+ create mode 100644 app/Models/User.php
+ create mode 100644 app/Models/UserManual.php
+ create mode 100644 app/Providers/AppServiceProvider.php
+ create mode 100644 app/Providers/AuthServiceProvider.php
+ create mode 100644 app/Providers/BroadcastServiceProvider.php
+ create mode 100644 app/Providers/EventServiceProvider.php
+ create mode 100644 app/Providers/RouteServiceProvider.php
+ create mode 100644 artisan
+ create mode 100644 audit-output/BGS-REM-R1A1-safety-blocker-resolution.txt
+ create mode 100644 audit-output/BGS-REM-R1A2-test-isolation-repository-foundation.txt
+ create mode 100644 audit-output/BGS-REM-R1A3-secure-git-initial-baseline.txt
+ create mode 100644 audit-output/BGS-REM-R1A4-initial-baseline-commit-finalization.txt
+ create mode 100644 bootstrap/app.php
+ create mode 100644 bootstrap/cache/.gitignore
+ create mode 100644 composer.json
+ create mode 100644 composer.lock
+ create mode 100644 config/app.php
+ create mode 100644 config/auth.php
+ create mode 100644 config/broadcasting.php
+ create mode 100644 config/cache.php
+ create mode 100644 config/cors.php
+ create mode 100644 config/database.php
+ create mode 100644 config/datatables-buttons.php
+ create mode 100644 config/filesystems.php
+ create mode 100644 config/hashing.php
+ create mode 100644 config/logging.php
+ create mode 100644 config/mail.php
+ create mode 100644 config/queue.php
+ create mode 100644 config/sanctum.php
+ create mode 100644 config/services.php
+ create mode 100644 config/session.php
+ create mode 100644 config/view.php
+ create mode 100644 database/.gitignore
+ create mode 100644 database/factories/UserFactory.php
+ create mode 100644 database/migrations/2026_06_08_002409_create_user_manuals_table.php
+ create mode 100644 database/migrations/2026_06_08_014218_update_user_manuals_table_for_hierarchy.php
+ create mode 100644 database/migrations/2026_06_08_091022_add_tax_invoice_attachment_to_invoice_customers_table.php
+ create mode 100644 database/migrations/2026_07_14_032436_create_expenses_table.php
+ create mode 100644 database/seeders/CustomerSeeder.php
+ create mode 100644 database/seeders/DatabaseSeeder.php
+ create mode 100644 database/seeders/ProductSeeder.php
+ create mode 100644 database/seeders/SupplierSeeder.php
+ create mode 100644 database/seeders/UserRoleSeeder.php
+ create mode 100644 docs/BGS-AUD-008I2-live-transaction-data-integrity-review.txt
+ create mode 100644 docs/BGS-AUD-008L-final-pre-remediation-audit-baseline.txt
+ create mode 100644 modern-output/BGS-AUD-008G-quotation-copy-lifecycle-readiness.txt
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 phpunit.xml
+ create mode 100644 public/.htaccess
+ create mode 100644 public/biaya/1783997730_2026-07-08_15-32-07.jpg
+ create mode 100644 public/favicon.ico
+ create mode 100644 public/index.php
+ create mode 100644 public/robots.txt
+ create mode 100644 public/test.php
+ create mode 100644 public/uploads/companies/logo/1777902915_LogoBGS.png
+ create mode 100644 public/uploads/companies/logo/1781081839_logo_6a2926ef9c1b9.png
+ create mode 100644 public/uploads/companies/logo/1782268572_logo_6a3b429c7302e.png
+ create mode 100644 public/uploads/companies/logo/LogoBGS.png
+ create mode 100644 public/uploads/companies/ttd_do/1781081839_ttd_do_6a2926efa52ca.jpg
+ create mode 100644 public/uploads/companies/ttd_do/1782268627_ttd_do_6a3b42d317c73.jpg
+ create mode 100644 public/uploads/companies/ttd_inv/1781081839_ttd_inv_6a2926efa5a0c.jpg
+ create mode 100644 public/uploads/companies/ttd_inv/1782268627_ttd_inv_6a3b42d3184d3.jpg
+ create mode 100644 public/uploads/companies/ttd_inv2/1781081839_ttd_inv2_6a2926efa5f2c.jpg
+ create mode 100644 public/uploads/companies/ttd_inv2/1782268627_ttd_inv2_6a3b42d318caf.jpg
+ create mode 100644 public/uploads/companies/ttd_sales_support/1782268627_ttd_sales_support_6a3b42d31738b.jpg
+ create mode 100644 public/uploads/companies/ttd_ss/1781081839_ttd_sales_support_6a2926efa4d58.jpg
+ create mode 100644 public/uploads/products/1780382015_124-810.jpg
+ create mode 100644 public/uploads/products/1780394619_2026-06-02_17-02-04.jpg
+ create mode 100644 public/uploads/products/1780399626_2026-06-02_18-26-21.jpg
+ create mode 100644 public/uploads/products/1780483998_2026-06-03_17-52-29.jpg
+ create mode 100644 public/uploads/products/1780496652_2026-06-03_21-20-41.jpg
+ create mode 100644 public/uploads/products/1781143985_Sandisk-Cruzer-Blade.png
+ create mode 100644 public/uploads/products/1781143991_Sandisk-Cruzer-Blade.png
+ create mode 100644 public/uploads/products/1781144977_E0HYkavwFo.jpg
+ create mode 100644 public/uploads/products/1781144997_GZWXlnRNnS.jpg
+ create mode 100644 public/uploads/products/1781145012_3h3EUJb3Na.jpg
+ create mode 100644 public/uploads/products/1781145024_E3sxXsgpxf.jpg
+ create mode 100644 public/uploads/products/1783385258_TBbOVnZAw1.jpg
+ create mode 100644 public/uploads/ttd/logo baru BGS-FInal.png
+ create mode 100644 public/uploads/ttd/ttd_afni.jpg
+ create mode 100644 public/uploads/ttd/ttd_do.jpg
+ create mode 100644 public/uploads/ttd/ttd_inv.jpg
+ create mode 100644 public/uploads/ttd/ttd_inv2.jpg
+ create mode 100644 public/vendor/datatables/buttons.server-side.js
+ create mode 100644 resources/css/app.css
+ create mode 100644 resources/js/app.js
+ create mode 100644 resources/js/bootstrap.js
+ create mode 100644 resources/sass/_variables.scss
+ create mode 100644 resources/sass/app.scss
+ create mode 100644 resources/views/auth/login.blade.php
+ create mode 100644 resources/views/auth/passwords/confirm.blade.php
+ create mode 100644 resources/views/auth/passwords/email.blade.php
+ create mode 100644 resources/views/auth/passwords/reset.blade.php
+ create mode 100644 resources/views/auth/register.blade.php
+ create mode 100644 resources/views/auth/verify.blade.php
+ create mode 100644 resources/views/backup/index.blade copy.php
+ create mode 100644 resources/views/backup/index.blade.php
+ create mode 100644 resources/views/backup/restore.blade.php
+ create mode 100644 resources/views/companies/create.blade copy.php
+ create mode 100644 resources/views/companies/create.blade.php
+ create mode 100644 resources/views/companies/edit.blade copy 2.php
+ create mode 100644 resources/views/companies/edit.blade copy.php
+ create mode 100644 resources/views/companies/edit.blade.php
+ create mode 100644 resources/views/companies/index.blade copy.php
+ create mode 100644 resources/views/companies/index.blade.php
+ create mode 100644 resources/views/companies/show.blade copy 2.php
+ create mode 100644 resources/views/companies/show.blade copy.php
+ create mode 100644 resources/views/companies/show.blade.php
+ create mode 100644 resources/views/customers/create.blade copy 2.php
+ create mode 100644 resources/views/customers/create.blade copy.php
+ create mode 100644 resources/views/customers/create.blade.php
+ create mode 100644 resources/views/customers/edit.blade copy.php
+ create mode 100644 resources/views/customers/edit.blade.php
+ create mode 100644 resources/views/customers/index.blade copy.php
+ create mode 100644 resources/views/customers/index.blade.php
+ create mode 100644 resources/views/customers/print.blade.php
+ create mode 100644 resources/views/customers/show.blade copy.php
+ create mode 100644 resources/views/customers/show.blade.php
+ create mode 100644 resources/views/dashboard.blade.php
+ create mode 100644 resources/views/delivery_orders/create.blade copy 2.php
+ create mode 100644 resources/views/delivery_orders/create.blade copy.php
+ create mode 100644 resources/views/delivery_orders/create.blade.php
+ create mode 100644 resources/views/delivery_orders/edit.blade.php
+ create mode 100644 resources/views/delivery_orders/index.blade copy.php
+ create mode 100644 resources/views/delivery_orders/index.blade.php
+ create mode 100644 resources/views/delivery_orders/print.blade copy 2.php
+ create mode 100644 resources/views/delivery_orders/print.blade copy.php
+ create mode 100644 resources/views/delivery_orders/print.blade.php
+ create mode 100644 resources/views/delivery_orders/receipt_print.blade.php
+ create mode 100644 resources/views/delivery_orders/show.blade.php
+ create mode 100644 resources/views/document-receipts/create.blade copy 2.php
+ create mode 100644 resources/views/document-receipts/create.blade copy 3.php
+ create mode 100644 resources/views/document-receipts/create.blade copy.php
+ create mode 100644 resources/views/document-receipts/create.blade old.php
+ create mode 100644 resources/views/document-receipts/create.blade.php
+ create mode 100644 resources/views/document-receipts/edit.blade.php
+ create mode 100644 resources/views/document-receipts/index.blade.php
+ create mode 100644 resources/views/document-receipts/print.blade copy 2.php
+ create mode 100644 resources/views/document-receipts/print.blade copy.php
+ create mode 100644 resources/views/document-receipts/print.blade.php
+ create mode 100644 resources/views/document-receipts/show.blade.php
+ create mode 100644 resources/views/errors/403.blade.php
+ create mode 100644 resources/views/expense/create.blade.php
+ create mode 100644 resources/views/expense/edit.blade.php
+ create mode 100644 resources/views/expense/index.blade.php
+ create mode 100644 resources/views/expense/show.blade.php
+ create mode 100644 resources/views/goods_receipts/create.blade copy.php
+ create mode 100644 resources/views/goods_receipts/create.blade.php
+ create mode 100644 resources/views/goods_receipts/edit.blade.php
+ create mode 100644 resources/views/goods_receipts/index.blade copy.php
+ create mode 100644 resources/views/goods_receipts/index.blade.php
+ create mode 100644 resources/views/goods_receipts/show.blade.php
+ create mode 100644 resources/views/invoice_customers/create.blade copy.php
+ create mode 100644 resources/views/invoice_customers/create.blade.php
+ create mode 100644 resources/views/invoice_customers/edit.blade.php
+ create mode 100644 resources/views/invoice_customers/index.blade.php
+ create mode 100644 resources/views/invoice_customers/print.blade.php
+ create mode 100644 resources/views/invoice_customers/print_invoice.blade.php
+ create mode 100644 resources/views/invoice_customers/show.blade.php
+ create mode 100644 resources/views/landing.blade.php
+ create mode 100644 resources/views/layouts/app.blade.php
+ create mode 100644 resources/views/po_customers/create.blade.php
+ create mode 100644 resources/views/po_customers/edit.blade.php
+ create mode 100644 resources/views/po_customers/index.blade.php
+ create mode 100644 resources/views/po_customers/show.blade.php
+ create mode 100644 resources/views/po_suppliers/create.blade copy 2.php
+ create mode 100644 resources/views/po_suppliers/create.blade copy.php
+ create mode 100644 resources/views/po_suppliers/create.blade.php
+ create mode 100644 resources/views/po_suppliers/edit.blade.php
+ create mode 100644 resources/views/po_suppliers/index.blade.php
+ create mode 100644 resources/views/po_suppliers/print.blade copy.php
+ create mode 100644 resources/views/po_suppliers/print.blade.php
+ create mode 100644 resources/views/po_suppliers/show.blade.php
+ create mode 100644 resources/views/products/create.blade.php
+ create mode 100644 resources/views/products/edit.blade.php
+ create mode 100644 resources/views/products/index.blade.php
+ create mode 100644 resources/views/products/show.blade.php
+ create mode 100644 resources/views/quotations/create.blade.php
+ create mode 100644 resources/views/quotations/edit.blade.php
+ create mode 100644 resources/views/quotations/index.blade.php
+ create mode 100644 resources/views/quotations/print.blade.php
+ create mode 100644 resources/views/quotations/show.blade.php
+ create mode 100644 resources/views/reports/delivery_pdf.blade.php
+ create mode 100644 resources/views/reports/index.blade.php
+ create mode 100644 resources/views/reports/payment_customer_pdf.blade.php
+ create mode 100644 resources/views/reports/payment_supplier_pdf.blade.php
+ create mode 100644 resources/views/reports/purchasing_pdf.blade.php
+ create mode 100644 resources/views/reports/sales_pdf.blade.php
+ create mode 100644 resources/views/suppliers/create.blade.php
+ create mode 100644 resources/views/suppliers/edit.blade.php
+ create mode 100644 resources/views/suppliers/index.blade.php
+ create mode 100644 resources/views/suppliers/show.blade.php
+ create mode 100644 resources/views/user_manuals/create.blade.php
+ create mode 100644 resources/views/user_manuals/edit.blade.php
+ create mode 100644 resources/views/user_manuals/index.blade.php
+ create mode 100644 resources/views/users/index.blade.php
+ create mode 100644 routes/api.php
+ create mode 100644 routes/channels.php
+ create mode 100644 routes/console.php
+ create mode 100644 routes/link.php
+ create mode 100644 routes/web.php
+ create mode 100644 storage/app/.gitignore
+ create mode 100644 storage/app/public/.gitignore
+ create mode 100644 storage/framework/.gitignore
+ create mode 100644 storage/framework/cache/.gitignore
+ create mode 100644 storage/framework/cache/data/.gitignore
+ create mode 100644 storage/framework/sessions/.gitignore
+ create mode 100644 storage/framework/testing/.gitignore
+ create mode 100644 storage/framework/views/.gitignore
+ create mode 100644 storage/logs/.gitignore
+ create mode 100644 tests/CreatesApplication.php
+ create mode 100644 tests/Feature/BgsBusinessStateRegressionTest.php
+ create mode 100644 tests/Feature/BgsInvoiceAggregateMutationRegressionTest.php
+ create mode 100644 tests/Feature/BgsInvoiceAggregateStateRegressionTest.php
+ create mode 100644 tests/Feature/BgsInvoiceCustomerRuntimeAtomicityTest.php
+ create mode 100644 tests/Feature/BgsInvoiceCustomerTransactionBoundaryTest.php
+ create mode 100644 tests/Feature/BgsPoCustomerIndexSourceContractTest.php
+ create mode 100644 tests/Feature/ExampleTest.php
+ create mode 100644 tests/TestCase.php
+ create mode 100644 tests/Unit/ExampleTest.php
+ create mode 100644 vite.config.js
+INITIAL_COMMIT=PASS
+
+=== 11 POST COMMIT PROOF ===
+
+--- HEAD ---
+07c20c7ac25ef5b49b4b0b4574a12cd5e4af8f08
+
+--- LAST COMMIT ---
+07c20c7 chore: establish ERP BGS pre-remediation baseline
+
+--- STATUS ---
+ M audit-output/BGS-REM-R1A4-initial-baseline-commit-finalization.txt
+?? "docs/smartlo1_erp_app (3).sql"
+?? erp_app.sql
+?? public.zip
+
+=== 12 TEST DATABASE IDENTITY ===
+APP_ENV=testing
+DB_CONNECTION=mysql
+TEST_DATABASE=erp_app_testing
+PRODUCTION_DATABASE=erp_app
+TEST_DATABASE_NAME_ISOLATION=PASS
+
+=== 13 R1A4 FINAL DECISION ===
+TEST_EXECUTION_AUTHORIZATION=PENDING_R1A4_REVIEW
+MIGRATION_EXECUTION_AUTHORIZATION=NO
+BUSINESS_SOURCE_REMEDIATION_AUTHORIZATION=NO
+NEXT_EXPECTED_STEP=BGS-REM-R1B
+BGS-REM-R1A4 COMPLETE

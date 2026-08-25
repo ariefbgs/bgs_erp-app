@@ -19,3 +19,14 @@ yarn-error.log
 /.vscode
 
 .env.testing
+
+# Local remediation/audit artifacts (preserved outside Git)
+/audit-output/
+*.bak
+*.bak-*
+*.bak.*
+
+# Local database/application snapshots (never publish)
+/erp_app.sql
+/docs/smartlo1_erp_app (3).sql
+/public.zip

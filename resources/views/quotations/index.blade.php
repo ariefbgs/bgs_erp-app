@@ -1,3 +1,77 @@
+
+<style>
+    /* R1E-02H2 Transaction Index Standard */
+
+    .quotation-table-wrap {
+        overflow-x: auto;
+        position: relative;
+    }
+
+    .quotation-table {
+        min-width: 1250px;
+        table-layout: auto;
+    }
+
+    .quotation-table .col-action {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        min-width: 150px;
+        width: 150px;
+        white-space: nowrap;
+        box-shadow: 3px 0 5px rgba(0, 0, 0, 0.06);
+    }
+
+    /*
+     * Sticky header must explicitly retain the same
+     * background as the normal transaction table header.
+     */
+    .quotation-table.table-modern thead th.col-action {
+        background-color: #0c4a6e !important;
+        color: #f0f9ff !important;
+        z-index: 6;
+    }
+
+    .quotation-table tbody td.col-action {
+        background-color: #ffffff;
+    }
+
+    .quotation-table .col-customer {
+        min-width: 220px;
+        width: 220px;
+        line-height: 1.25;
+    }
+
+    .quotation-table .col-quotation-number {
+        min-width: 50px;
+        width: 50px;
+        white-space: nowrap;
+    }
+
+    .quotation-table .action-btn-group {
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .quotation-table .action-btn-group .btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+        padding: 0;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        line-height: 1;
+    }
+
+    .quotation-table .action-btn-group form {
+        display: inline-flex;
+        margin: 0;
+    }
+</style>
 @extends('layouts.app')
 @section('title', 'Quotation Management')
 @section('content')
@@ -15,7 +89,7 @@
         background: #fff;
         overflow: hidden;
     }
-    
+
     /* Header dengan gradasi warna Ocean Blue */
     .card-header-custom {
         background: linear-gradient(135deg, #0284c7, #075985);
@@ -74,7 +148,7 @@
         color: #334155;
         border-color: #f1f5f9;
     }
-    
+
     /* Teks Komponen di Dalam Tabel */
     .customer-name {
         font-weight: 600;
@@ -108,7 +182,7 @@
         border-radius: 6px;
         margin: 0 2px;
     }
-    
+
     /* Empty State */
     .empty-state {
         padding: 50px 20px;
@@ -148,7 +222,7 @@
                 Add New Quotation
             </a>
         </div>
-        
+
         <div class="card-body p-4">
             {{-- SUCCESS MESSAGE ALERT --}}
             @if(session('success'))
@@ -173,7 +247,7 @@
                 <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
-            @endif  
+            @endif
 
             {{-- SEARCH & FILTER BAR --}}
             <div class="search-filter-bar">
@@ -188,7 +262,7 @@
                                    placeholder="Type Quotation # or Customer Name..."
                                    value="{{ request('search') }}">
                         </div>
-                        
+
                         {{-- STATUS FILTER --}}
                         <div class="col-md-4">
                             <label class="filter-label">Filter Status</label>
@@ -214,21 +288,21 @@
                     </div>
                 </form>
             </div>
-            
+
             {{-- TABEL DATA --}}
             <div class="border rounded-3 overflow-hidden shadow-sm mb-3">
-                <div class="table-responsive">
-                    <table class="table table-modern align-middle m-0">
+                <div class="table-responsive quotation-table-wrap">
+                    <table class="table table-modern quotation-table align-middle m-0">
                         <thead>
                             <tr>
                                 <th width="5%" class="text-center">No</th>
-                                <th width="22%">Customer</th>
-                                <th width="15%">Quotation #</th>
-                                <th width="12%" class="text-center">Quotation Date</th>
-                                <th width="12%" class="text-center">Valid Until</th>
-                                <th width="14%" class="text-end">Quotation Total</th>
-                                <th width="10%" class="text-center">Status</th>
-                                <th width="10%" class="text-center">Actions</th>
+                                <th class="text-center col-action">Actions</th>
+                                <th class="col-customer">Customer</th>
+                                <th class="col-quotation-number">Quotation #</th>
+                                <th class="text-center">Quotation Date</th>
+                                <th class="text-center">Valid Until</th>
+                                <th class="text-end">Quotation Total</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -238,53 +312,9 @@
                                     <td class="text-center text-muted fw-bold">
                                         {{ $quotations->firstItem() + $index }}
                                     </td>
-                                    
-                                    {{-- NAMA CUSTOMER --}}
-                                    <td>
-                                        <div class="customer-name">
-                                            {{ $quotation->customer->name ?? '-' }}
-                                        </div>
-                                    </td>
-                                    
-                                    {{-- NOMOR QUOTATION --}}
-                                    <td>
-                                        <div class="quotation-number">
-                                            {{ $quotation->quotation_number }}
-                                        </div>
-                                    </td>
-                                    
-                                    {{-- TANGGAL QUOTATION --}}
-                                    <td class="text-center">
-                                        {{ $quotation->date ? date('d/m/Y', strtotime($quotation->date)) : '-' }}
-                                    </td>
-                                    
-                                    {{-- TANGGAL EXPIRED --}}
-                                    <td class="text-center">
-                                        {{ $quotation->valid_until ? date('d/m/Y', strtotime($quotation->valid_until)) : '-' }}
-                                    </td>
-                                    
-                                    {{-- TOTAL FINANSIAL --}}
-                                    <td class="text-end total-column">
-                                        Rp {{ number_format($quotation->total ?? 0, 0, ',', '.') }}
-                                    </td>
-                                    
-                                    {{-- STATUS BADGE MATURITY --}}
-                                    <td class="text-center">
-                                        @if($quotation->status == 'draft')
-                                            <span class="badge bg-secondary badge-custom">Draft</span>
-                                        @elseif($quotation->status == 'sent')
-                                            <span class="badge bg-primary badge-custom">Sent</span>
-                                        @elseif($quotation->status == 'approved')
-                                            <span class="badge bg-success badge-custom">Approved</span>
-                                        @elseif($quotation->status == 'rec_po')
-                                            <span class="badge bg-info text-dark badge-custom">Received PO</span>
-                                        @elseif($quotation->status == 'expired')
-                                            <span class="badge bg-danger badge-custom">Expired</span>
-                                        @endif
-                                    </td>
 
-                                    {{-- ACTION BUTTONS --}}
-                                    <td class="text-center">
+{{-- ACTION BUTTONS --}}
+                                    <td class="text-center col-action">
                                         <div class="d-flex justify-content-center action-btn-group">
                                             <a href="{{ route('quotations.show', $quotation->id) }}"
                                                class="btn btn-info btn-sm text-white"
@@ -310,6 +340,50 @@
                                             </form>
                                         </div>
                                     </td>
+
+                                    {{-- NAMA CUSTOMER --}}
+                                    <td class="col-customer">
+                                        <div class="customer-name">
+                                            {{ $quotation->customer->name ?? '-' }}
+                                        </div>
+                                    </td>
+
+                                    {{-- NOMOR QUOTATION --}}
+                                    <td class="col-quotation-number">
+                                        <div class="quotation-number">
+                                            {{ $quotation->quotation_number }}
+                                        </div>
+                                    </td>
+
+                                    {{-- TANGGAL QUOTATION --}}
+                                    <td class="text-center">
+                                        {{ $quotation->date ? date('d/m/Y', strtotime($quotation->date)) : '-' }}
+                                    </td>
+
+                                    {{-- TANGGAL EXPIRED --}}
+                                    <td class="text-center">
+                                        {{ $quotation->valid_until ? date('d/m/Y', strtotime($quotation->valid_until)) : '-' }}
+                                    </td>
+
+                                    {{-- TOTAL FINANSIAL --}}
+                                    <td class="text-end total-column">
+                                        Rp {{ number_format($quotation->total ?? 0, 0, ',', '.') }}
+                                    </td>
+
+                                    {{-- STATUS BADGE MATURITY --}}
+                                    <td class="text-center">
+                                        @if($quotation->status == 'draft')
+                                            <span class="badge bg-secondary badge-custom">Draft</span>
+                                        @elseif($quotation->status == 'sent')
+                                            <span class="badge bg-primary badge-custom">Sent</span>
+                                        @elseif($quotation->status == 'approved')
+                                            <span class="badge bg-success badge-custom">Approved</span>
+                                        @elseif($quotation->status == 'rec_po')
+                                            <span class="badge bg-info text-dark badge-custom">Received PO</span>
+                                        @elseif($quotation->status == 'expired')
+                                            <span class="badge bg-danger badge-custom">Expired</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
@@ -323,7 +397,7 @@
                     </table>
                 </div>
             </div>
-            
+
             {{-- PAGINATION BANNER --}}
             <div class="d-flex justify-content-between align-items-center mt-3 pt-2">
                 <div class="small fw-bold" style="color: #475569;">

@@ -1,466 +1,1111 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PO Supplier - {{ $poSupplier->po_supplier_number }}</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+<meta charset="UTF-8">
 
-        * {
-            margin: 0;
-            padding: 0; 
-            box-sizing: border-box;
-        }
+<title>
+    PO Supplier - {{ $poSupplier->po_supplier_number }}
+</title>
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f3f4f6;
-            color: #1f2937;
-            padding: 15px;
-        }
+<style>
 
-        .print-container {
-            max-width: 1000px;
-            margin: auto;
-            background: #fff;
-            padding: 20px 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
+    @page {
+        size: A4 portrait;
+        margin: 12mm 12mm;
+    }
 
-        @media print {
-            @page {
-                size: A4;
-                margin: 10mm 12mm;
-            }
+    * {
+        box-sizing: border-box;
+    }
 
-            body {
-                background: #fff !important;
-                padding: 0 !important;
-            }
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: DejaVu Sans, sans-serif;
+        font-size: 9.5px;
+        color: #111827;
+        line-height: 1.35;
+    }
 
-            .print-container {
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none;
-                border-radius: 0;
-            }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-            .no-print {
-                display: none !important;
-            }
-        }
+    .document {
+        width: 100%;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
 
-        td, th {
-            padding: 6px 8px;
-            vertical-align: top;
-        }
+    /* =========================================================
+       HEADER
+    ========================================================= */
 
-        /* HEADER */
-        .header-table {
-            width: 100%;
-            border-bottom: 3px solid #111827;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-        }
+    .header-table {
+        border-bottom: 3px solid #1f2937;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+    }
 
-        .company-logo {
-            max-width: 70px;
-            max-height: 70px;
-            object-fit: contain;
-        }
+    .header-table td {
+        vertical-align: middle;
+    }
 
-        .company-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 4px;
-        }
+    .logo-cell {
+        width: 11%;
+    }
 
-        .company-info {
-            font-size: 10px;
-            font-weight: 700;
-            line-height: 1.2;
-            color: #4b5563;
-        }
+    .logo {
+        width: 62px;
+        max-height: 70px;
+        object-fit: contain;
+    }
 
-        .po-title {
-            text-align: right;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #111827;
-        }
+    .company-cell {
+        width: 54%;
+        padding-left: 5px;
+    }
 
-        /* PURCHASE ORDER INFO */
-        .po-info {
-            margin-bottom: 12px;
-        }
+    .company-name {
+        font-size: 17px;
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
 
-        .po-info td {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            font-size: 12px;
-            padding: 6px 10px;
-        }
+    .company-info {
+        font-size: 9px;
+        line-height: 1.3;
+    }
 
-        /* SECTION CARD */
-        .section-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
+    .title-cell {
+        width: 35%;
+        text-align: right;
+        vertical-align: top !important;
+        padding-top: 4px;
+    }
 
-        .section-header {
-            background: #6f7786;
-            color: #fff;
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 700;
-            font-family: 'Inter', sans-serif;
-        }
+    .document-title {
+        font-size: 17px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
 
-        .section-body {
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 700;
-            font-family: 'Inter', sans-serif;
-            line-height: 1.4;
-        }
 
-        /* SUBJECT BOX */
-        .subject-box {
-            background: linear-gradient(to right, #111827, #374151);
-            color: #111827;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            display: block;
-        }
+    /* =========================================================
+       PO REGISTRY
+    ========================================================= */
 
-        /* ITEMS TABLE */
-        .items-table {
-            margin-bottom: 12px;
-        }
+    .registry {
+        margin-bottom: 10px;
+    }
 
-        .items-table thead th {
-            background: #6f7786;
-            color: #fff;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 6px 5px;
-            border: 1px solid #374151;
-            text-align: center;
-        }
+    .registry td {
+        border: 1px solid #d1d5db;
+        background: #f9fafb;
+        padding: 6px 8px;
+        vertical-align: top;
+    }
 
-        .items-table tbody td {
-            border: 1px solid #d1d5db;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 5px 4px;
-        }
+    .registry-label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 2px;
+    }
 
-        .items-table tbody tr:nth-child(even) {
-            background: #f9fafb;
-        }
 
-        .text-center {
-            text-align: center;
-        }
+    /* =========================================================
+       RELATIONSHIP / SUPPLIER INFORMATION
+    ========================================================= */
 
-        .text-right {
-            text-align: right;
-        }
+    .relationship-table {
+        margin-bottom: 10px;
+    }
 
-        .product-image {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
+    .relationship-table td {
+        width: 50%;
+        padding: 0 4px 0 0;
+        vertical-align: top;
+    }
 
-        /* TOTALS TABLE */
-        .totals-table {
-            width: 300px;
-            margin-left: auto;
-            margin-bottom: 15px;
-            border-collapse: collapse;
-        }
+    .relationship-table td:last-child {
+        padding-left: 4px;
+        padding-right: 0;
+    }
 
-        .totals-table td {
-            border: 1px solid #e5e7eb;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 6px 10px;
-        }
+    .info-card {
+        border: 1px solid #d1d5db;
+    }
 
-        .grand-total td {
-            background: #6f7786;
-            color: #fff;
-            font-weight: 700;
-        }
+    .info-card-header {
+        background: #747f91;
+        color: #fff;
+        font-weight: bold;
+        padding: 7px 9px;
+        font-size: 10px;
+    }
 
-        /* NOTES */
-        .notes-box {
-            background: #f9fafb;
-            border-left: 4px solid #111827;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 10px;
-            line-height: 1.5;
-        }
+    .info-card-body {
+        padding: 8px 9px;
+        min-height: 67px;
+    }
 
-        /* TWO COLUMN */
-        .two-column {
-            width: 100%;
-            margin-bottom: 15px;
-        }
+    .info-row {
+        margin-bottom: 3px;
+    }
 
-        .two-column td {
-            width: 50%;
-            vertical-align: top;
-            padding: 0 6px;
-        }
+    .info-label {
+        font-weight: bold;
+    }
 
-        .info-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-        }
 
-        .info-card-header {
-            background: #f3f4f6;
-            padding: 6px 10px;
-            font-size: 11px;
-            font-weight: 700;
-            border-bottom: 1px solid #e5e7eb;
-        }
+    /* =========================================================
+       PRODUCT TABLE
+    ========================================================= */
 
-        .info-card-body {
-               padding: 10px;
-            font-size: 10px;
-            line-height: 1.5;
-        }
+    .items {
+        margin-top: 4px;
+        page-break-inside: auto;
+    }
 
-        /* SIGNATURE AREA */
-        .signature-section {
-            margin-top: 20px;
-            page-break-inside: avoid;
-        }
+    .items thead {
+        display: table-header-group;
+    }
 
-        .signature-box {
-            width: 250px;
-        }
+    .items tr {
+        page-break-inside: avoid;
+    }
 
-        .signature-title {
-            margin-bottom: 5px;
-            font-size: 12px;
-        }
+    .items th {
+        background: #747f91;
+        color: #fff;
+        border: 1px solid #5f6978;
+        font-weight: bold;
+        text-align: center;
+        text-transform: uppercase;
+        padding: 6px 4px;
+        font-size: 8.8px;
+    }
 
-        .signature-name {
-            color: var(--primary);
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 5px;
-            display: inline-block;
-        }
+    .items td {
+        border: 1px solid #d1d5db;
+        padding: 5px 4px;
+        vertical-align: middle;
+    }
 
-        .signature-position {
-            font-size: 11px;
-            color: #6B7280;
-            margin-top: 2px;
-        }
+    .text-center {
+        text-align: center;
+    }
 
-        .signature-image {
-            max-width: 180px;
-            max-height: 95px;
-            object-fit: contain;
-            display: block;
-            margin: 5px 0;
-        }
+    .text-right {
+        text-align: right;
+    }
 
-        .signature-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #374151; /* Warna abu-abu gelap agar tidak terlalu kontras dengan teks utama */
-            margin-bottom: 8px;
-            display: block;
-            text-transform: capitalize;
-        }
 
-        .signature-line {
-            border-top: 1px solid #000;
-            width: 110px;
-            margin: 8px auto 5px auto;
-            /* Tambahkan font-size jika ada teks di dalamnya */
-            font-size: 12px; 
-        }
+    /* =========================================================
+       TOTALS
+    ========================================================= */
 
-        .signature-label, .signature-line {
-            margin-left: 0;
-            text-align: left;
-        }
+    .summary {
+        width: 43%;
+        margin-left: auto;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        page-break-inside: avoid;
+    }
 
-        .print-btn-container {
-            text-align: center;
-            margin-bottom: 15px;
-        }
+    .summary td {
+        border: 1px solid #e5e7eb;
+        padding: 5px 8px;
+    }
 
-        .print-btn {
-            background: #111827;
-            color: #fff;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-        }
+    .summary-label {
+        font-weight: bold;
+    }
 
-        .print-btn:hover {
-            background: #000;
-        }
-    </style>
+    .summary-after-discount td {
+        background: #f9fafb;
+    }
+
+    .grand-total td {
+        background: #747f91;
+        color: #fff;
+        font-weight: bold;
+        font-size: 10px;
+    }
+
+
+    /* =========================================================
+       NOTES
+    ========================================================= */
+
+    .notes {
+        background: #f9fafb;
+        border-left: 4px solid #1f2937;
+        padding: 8px 10px;
+        margin-top: 8px;
+        margin-bottom: 14px;
+        min-height: 43px;
+        page-break-inside: avoid;
+    }
+
+    .notes-title {
+        font-weight: bold;
+        margin-bottom: 3px;
+    }
+
+
+    /* =========================================================
+       SIGNATURE
+    ========================================================= */
+
+    .signature-section {
+        margin-top: 16px;
+        page-break-inside: avoid;
+    }
+
+    .best-regards {
+        font-weight: normal;
+        margin-bottom: 3px;
+    }
+
+    .signature-image {
+        max-width: 145px;
+        max-height: 78px;
+        object-fit: contain;
+        display: block;
+        margin: 2px 0;
+    }
+
+    .signature-name {
+        font-weight: bold;
+        font-size: 10px;
+        margin-top: 2px;
+    }
+
+    .signature-line {
+        width: 145px;
+        border-top: 1px solid #111;
+        margin-top: 3px;
+    }
+
+    .signature-position {
+        margin-top: 3px;
+        color: #4b5563;
+    }
+
+</style>
+
 </head>
+
 <body>
-    <div class="print-container">
-        @php
-            $company = App\Models\Company::where('is_active', true)->first();
-        @endphp
 
-        {{-- HEADER --}}
-        <table class="header-table">
-            <tr>
-                <td width="10%">
-                    @php
-                        $logoPath = null;
-                        if($company && $company->logo && file_exists(public_path($company->logo))){
-                            $logoPath = public_path($company->logo);
-                        } elseif(file_exists(public_path('uploads/companies/LogoBGS.png'))){
-                            $logoPath = public_path('uploads/companies/LogoBGS.png');
-                        }
-                    @endphp
-                    @if($logoPath)
-                        <img src="{{ $logoPath }}" class="company-logo">
-                    @endif
-                </td>
-                <td style="width:60%;">
-                    <div class="company-name">
-                        {{ $company->name ?? 'PT. BAGAS GEMILANG SATWIKA' }}
-                    </div>
-                    <div class="company-info">
-                        {!! nl2br(e($company->address ?? '-')) !!}<br>
-                        Grand Galaxy City, {{ $company->city ?? '-' }} {{ $company->postal_code ?? '-' }}<br>
-                        Telp : {{ $company->phone ?? '-' }}<br>
-                        Email : {{ $company->email ?? '-' }}
-                    </div>
-                </td>
-                <td width="30%">
-                    <div class="po-title">PURCHASE ORDER</div>
-                </td>
-            </tr>
-        </table>
+@php
 
-        <!-- PO SUPPLIER INFO -->
-        <table class="po-info">
-            <tr>
-                <td><strong>PO Supplier Number</strong><br>{{ $poSupplier->po_supplier_number }}</td>
-                <td><strong>PO Date</strong><br>{{ \Carbon\Carbon::parse($poSupplier->po_date)->format('d F Y') }}</td>
-            </tr>
-        </table>
+    /*
+    |--------------------------------------------------------------------------
+    | Transaction financial values
+    |--------------------------------------------------------------------------
+    */
 
-        <!-- PO SUPPLIER FOR -->
-        <div class="section-card">
-            <div class="section-header">PO SUPPLIER FOR</div>
-            <div class="section-body">
-                <strong>{{ $poSupplier->supplier->name ?? '-' }}</strong><br>
-                {!! nl2br(e($poSupplier->supplier->address ?? '-')) !!}
-                Telp : {{ $poSupplier->supplier->phone ?? '-' }}<br>
+    $subtotal =
+        (float) ($poSupplier->subtotal ?? 0);
+
+    $discountPercent =
+        (float) ($poSupplier->discount_percent ?? 0);
+
+    $discountAmount =
+        (float) ($poSupplier->discount_amount ?? 0);
+
+    $subtotalAfterDiscount =
+        $subtotal - $discountAmount;
+
+    $taxPercent =
+        (float) ($poSupplier->tax_percent ?? 0);
+
+    $taxAmount =
+        (float) ($poSupplier->tax_amount ?? 0);
+
+    $grandTotal =
+        (float) ($poSupplier->total ?? 0);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Company Logo
+    |--------------------------------------------------------------------------
+    */
+
+    $logoPath = null;
+
+    if (
+        $company &&
+        !empty($company->logo) &&
+        file_exists(public_path($company->logo))
+    ) {
+        $logoPath =
+            public_path($company->logo);
+
+    } elseif (
+        file_exists(
+            public_path(
+                'uploads/companies/logo/LogoBGS.png'
+            )
+        )
+    ) {
+        $logoPath =
+            public_path(
+                'uploads/companies/logo/LogoBGS.png'
+            );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sales Support Signature
+    |--------------------------------------------------------------------------
+    */
+
+    $signaturePath = null;
+
+    if (
+        $company &&
+        !empty($company->ttd_sales_support) &&
+        file_exists(
+            public_path(
+                $company->ttd_sales_support
+            )
+        )
+    ) {
+        $signaturePath =
+            public_path(
+                $company->ttd_sales_support
+            );
+
+    } else {
+
+        $signatureFiles =
+            glob(
+                public_path(
+                    'uploads/companies/ttd_sales_support/*'
+                )
+            );
+
+        if (
+            is_array($signatureFiles) &&
+            count($signatureFiles) > 0
+        ) {
+            $signaturePath =
+                $signatureFiles[0];
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Convert local assets to embedded Data URI
+    |--------------------------------------------------------------------------
+    |
+    | DomPDF can fail to render raw Windows filesystem paths.
+    | Embedding the image bytes removes dependency on filesystem URL access.
+    |
+    */
+
+    $logoSrc = null;
+
+    if (
+        !empty($logoPath) &&
+        file_exists($logoPath)
+    ) {
+
+        $logoMime =
+            mime_content_type($logoPath)
+            ?: 'image/png';
+
+        $logoSrc =
+            'data:' .
+            $logoMime .
+            ';base64,' .
+            base64_encode(
+                file_get_contents($logoPath)
+            );
+    }
+
+
+    $signatureSrc = null;
+
+    if (
+        !empty($signaturePath) &&
+        file_exists($signaturePath)
+    ) {
+
+        $signatureMime =
+            mime_content_type($signaturePath)
+            ?: 'image/png';
+
+        $signatureSrc =
+            'data:' .
+            $signatureMime .
+            ';base64,' .
+            base64_encode(
+                file_get_contents($signaturePath)
+            );
+    }
+
+@endphp
+
+
+<div class="document">
+
+
+{{-- ============================================================
+     HEADER
+============================================================ --}}
+
+<table class="header-table">
+
+    <tr>
+
+        <td class="logo-cell">
+
+            @if($logoSrc)
+
+                <img
+                    src="{{ $logoSrc }}"
+                    class="logo"
+                    alt="Logo"
+                >
+
+            @endif
+
+        </td>
+
+
+        <td class="company-cell">
+
+            <div class="company-name">
+
+                {{
+                    $company->name
+                    ?? 'PT Bagas Gemilang Satwika'
+                }}
+
             </div>
-        </div>
 
-        <!-- ITEMS TABLE -->
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th width="4%">No</th>
-                    <th width="12%">Brand</th>
-                    <th width="12%">Code</th>
-                    <th>Description</th>
-                    <th width="7%">Qty</th>
-                    <th width="7%">Unit</th>
-                    <th width="12%">Price</th>
-                    <th width="12%">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($poSupplier->details as $index => $detail)
-                <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ $detail->product->brand ?? '-' }}</td>
-                    <td class="text-center">{{ $detail->product->product_code ?? '-' }}</td>
-                    <td>{{ $detail->product->name ?? '-' }}</td>
-                    <td class="text-center">{{ number_format($detail->quantity, 0, ',', '.') }}</td>
-                    <td class="text-center">{{ $detail->product->unit ?? 'Pcs' }}</td>
-                    <td class="text-right">{{ number_format($detail->purchase_price, 0, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
 
-        <!-- TOTALS -->
-        <table class="totals-table">
-            <tr><td><strong>Subtotal</strong></td><td class="text-right">Rp {{ number_format($poSupplier->subtotal, 0, ',', '.') }}</td></tr>
-            @if(($poSupplier->discount_amount ?? 0) > 0)
-            <tr><td><strong>Discount</strong></td><td class="text-right">- Rp {{ number_format($poSupplier->discount_amount, 0, ',', '.') }}</td></tr>
-            @endif
-            @if(($poSupplier->tax_amount ?? 0) > 0)
-            <tr><td><strong>PPN {{ $poSupplier->tax_percent ?? 11 }}%</strong></td><td class="text-right">Rp {{ number_format($poSupplier->tax_amount, 0, ',', '.') }}</td></tr>
-            @endif
-            <tr class="grand-total"><td><strong>GRAND TOTAL</strong></td><td class="text-right">Rp {{ number_format($poSupplier->total, 0, ',', '.') }}</td></tr>
-        </table>
+            <div class="company-info">
 
-        <!-- NOTES -->
-        @if(!empty($poSupplier->notes))
-        <div class="notes-box">
-            <strong>NOTES :</strong><br>{!! nl2br(e($poSupplier->notes)) !!}
-        </div>
-        @endif
+                {!! nl2br(
+                    e(
+                        $company->address
+                        ?? '-'
+                    )
+                ) !!}
 
-        {{-- SIGNATURE CORNER --}}
-        <div class="signature-section">
-            <div class="signature-box">
-                <div class="signature-label">Best Regards,</div>
-                @php
-                    $signaturePath = null;
-                    if($company && $company->ttd_sales_support && file_exists(public_path($company->ttd_sales_support))){
-                        $signaturePath = public_path($company->ttd_sales_support);
-                    } elseif(file_exists(public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg'))){
-                        $signaturePath = public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg');
-                    }
-                @endphp
-                @if($signaturePath)
-                    <img src="{{ $signaturePath }}" class="signature-image">
+                @if(!empty($company->city))
+                    <br>{{ $company->city }}
+                    {{ $company->postal_code ?? '' }}
                 @endif
 
-                <div>
-                    <div class="signature-name">{{ $company->pic_sales_support ?? '-' }}</div>
-                </div>
-                <div class="signature-line"></div>
-                <div class="signature-position">Sales Support</div>
+                @if(!empty($company->phone))
+                    <br>
+                    Telp :
+                    {{ $company->phone }}
+                @endif
+
+                @if(!empty($company->email))
+                    <br>
+                    Email :
+                    {{ $company->email }}
+                @endif
+
             </div>
-        </div>
+
+        </td>
+
+
+        <td class="title-cell">
+
+            <div class="document-title">
+
+                PURCHASE ORDER
+
+            </div>
+
+        </td>
+
+    </tr>
+
+</table>
+
+
+{{-- ============================================================
+     PO SUPPLIER REGISTRY
+============================================================ --}}
+
+<table class="registry">
+
+    <tr>
+
+        <td width="58%">
+
+            <span class="registry-label">
+                PO Supplier Number
+            </span>
+
+            {{
+                $poSupplier->po_supplier_number
+                ?? '-'
+            }}
+
+        </td>
+
+
+        <td width="42%">
+
+            <span class="registry-label">
+                PO Date
+            </span>
+
+            {{
+                $poSupplier->po_date
+                    ? \Carbon\Carbon::parse(
+                        $poSupplier->po_date
+                    )->format('d F Y')
+                    : '-'
+            }}
+
+        </td>
+
+    </tr>
+
+</table>
+
+
+{{-- ============================================================
+     RELATIONSHIP INFORMATION
+============================================================ --}}
+
+<table class="relationship-table">
+
+    <tr>
+
+        {{-- SUPPLIER --}}
+        <td>
+
+            <div class="info-card">
+
+                <div class="info-card-header">
+
+                    PO SUPPLIER FOR
+
+                </div>
+
+
+                <div class="info-card-body">
+
+                    <div class="info-row">
+
+                        <strong>
+                            {{
+                                $poSupplier->supplier->name
+                                ?? '-'
+                            }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        {!! nl2br(
+                            e(
+                                $poSupplier->supplier->address
+                                ?? '-'
+                            )
+                        ) !!}
+
+                    </div>
+
+
+                    @if(
+                        !empty(
+                            $poSupplier->supplier->phone
+                        )
+                    )
+
+                        <div class="info-row">
+
+                            Telp :
+                            {{
+                                $poSupplier->supplier->phone
+                            }}
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+        </td>
+
+
+        {{-- CUSTOMER / SOURCE PO --}}
+        <td>
+
+            <div class="info-card">
+
+                <div class="info-card-header">
+
+                    CUSTOMER PO REFERENCE
+
+                </div>
+
+
+                <div class="info-card-body">
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            Customer :
+                        </span>
+
+                        {{
+                            $poSupplier->customer->name
+                            ?? '-'
+                        }}
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            PO Customer :
+                        </span>
+
+                        {{
+                            $poSupplier->poCustomer->po_number
+                            ?? '-'
+                        }}
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            PO Status :
+                        </span>
+
+                        {{
+                            ucfirst(
+                                $poSupplier->status
+                                ?? '-'
+                            )
+                        }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </td>
+
+    </tr>
+
+</table>
+
+
+{{-- ============================================================
+     PRODUCT DETAILS
+============================================================ --}}
+
+<table class="items">
+
+    <thead>
+
+        <tr>
+
+            <th width="4%">
+                No
+            </th>
+
+            <th width="12%">
+                Brand
+            </th>
+
+            <th width="13%">
+                Code
+            </th>
+
+            <th>
+                Description
+            </th>
+
+            <th width="7%">
+                Qty
+            </th>
+
+            <th width="7%">
+                Unit
+            </th>
+
+            <th width="14%">
+                Price
+            </th>
+
+            <th width="14%">
+                Subtotal
+            </th>
+
+        </tr>
+
+    </thead>
+
+
+    <tbody>
+
+        @forelse(
+            $poSupplier->details
+            as $index => $detail
+        )
+
+            <tr>
+
+                <td class="text-center">
+
+                    {{ $index + 1 }}
+
+                </td>
+
+
+                <td class="text-center">
+
+                    {{
+                        $detail->product->brand
+                        ?? '-'
+                    }}
+
+                </td>
+
+
+                <td class="text-center">
+
+                    {{
+                        $detail->product->product_code
+                        ?? '-'
+                    }}
+
+                </td>
+
+
+                <td>
+
+                    {{
+                        $detail->product->name
+                        ?? '-'
+                    }}
+
+                </td>
+
+
+                <td class="text-center">
+
+                    {{
+                        number_format(
+                            (float) (
+                                $detail->quantity
+                                ?? 0
+                            ),
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+
+                </td>
+
+
+                <td class="text-center">
+
+                    {{
+                        $detail->product->unit
+                        ?? '-'
+                    }}
+
+                </td>
+
+
+                <td class="text-right">
+
+                    Rp {{
+                        number_format(
+                            (float) (
+                                $detail->purchase_price
+                                ?? 0
+                            ),
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+
+                </td>
+
+
+                <td class="text-right">
+
+                    Rp {{
+                        number_format(
+                            (float) (
+                                $detail->subtotal
+                                ?? 0
+                            ),
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+
+                </td>
+
+            </tr>
+
+
+        @empty
+
+            <tr>
+
+                <td
+                    colspan="8"
+                    class="text-center"
+                >
+
+                    No product detail available.
+
+                </td>
+
+            </tr>
+
+        @endforelse
+
+    </tbody>
+
+</table>
+
+
+{{-- ============================================================
+     FINANCIAL SUMMARY
+============================================================ --}}
+
+<table class="summary">
+
+    <tr>
+
+        <td class="summary-label">
+
+            Subtotal
+
+        </td>
+
+        <td class="text-right">
+
+            Rp {{
+                number_format(
+                    $subtotal,
+                    0,
+                    ',',
+                    '.'
+                )
+            }}
+
+        </td>
+
+    </tr>
+
+
+    <tr>
+
+        <td class="summary-label">
+
+            Discount
+            ({{ number_format(
+                $discountPercent,
+                2,
+                ',',
+                '.'
+            ) }}%)
+
+        </td>
+
+        <td class="text-right">
+
+            - Rp {{
+                number_format(
+                    $discountAmount,
+                    0,
+                    ',',
+                    '.'
+                )
+            }}
+
+        </td>
+
+    </tr>
+
+
+    <tr class="summary-after-discount">
+
+        <td class="summary-label">
+
+            Subtotal After Discount
+
+        </td>
+
+        <td class="text-right">
+
+            Rp {{
+                number_format(
+                    $subtotalAfterDiscount,
+                    0,
+                    ',',
+                    '.'
+                )
+            }}
+
+        </td>
+
+    </tr>
+
+
+    <tr>
+
+        <td class="summary-label">
+
+            PPN
+            {{ number_format(
+                $taxPercent,
+                2,
+                ',',
+                '.'
+            ) }}%
+
+        </td>
+
+        <td class="text-right">
+
+            Rp {{
+                number_format(
+                    $taxAmount,
+                    0,
+                    ',',
+                    '.'
+                )
+            }}
+
+        </td>
+
+    </tr>
+
+
+    <tr class="grand-total">
+
+        <td>
+
+            GRAND TOTAL
+
+        </td>
+
+        <td class="text-right">
+
+            Rp {{
+                number_format(
+                    $grandTotal,
+                    0,
+                    ',',
+                    '.'
+                )
+            }}
+
+        </td>
+
+    </tr>
+
+</table>
+
+
+{{-- ============================================================
+     NOTES
+============================================================ --}}
+
+<div class="notes">
+
+    <div class="notes-title">
+
+        NOTES :
+
     </div>
+
+    {!! nl2br(
+        e(
+            $poSupplier->notes
+            ?? '-'
+        )
+    ) !!}
+
+</div>
+
+
+{{-- ============================================================
+     SIGNATURE
+============================================================ --}}
+
+<div class="signature-section">
+
+    <div class="best-regards">
+
+        Best Regards,
+
+    </div>
+
+
+    @if($signatureSrc)
+
+        <img
+            src="{{ $signatureSrc }}"
+            class="signature-image"
+            alt="Signature"
+        >
+
+    @endif
+
+
+    <div class="signature-name">
+
+        {{
+            $company->pic_sales_support
+            ?? '-'
+        }}
+
+    </div>
+
+
+    <div class="signature-line"></div>
+
+
+    <div class="signature-position">
+
+        Sales Support
+
+    </div>
+
+</div>
+
+
+</div>
+
 </body>
 </html>

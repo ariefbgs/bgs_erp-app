@@ -10,9 +10,11 @@ use App\Models\Quotation;
 use App\Models\InvoiceCustomer;
 use App\Models\DeliveryOrder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use Illuminate\Database\QueryException;
 
 class PoCustomerController extends Controller
@@ -38,7 +40,7 @@ class PoCustomerController extends Controller
             $query->where('invoice_status', $request->invoice_status);
         }
 
-        $poCustomers = $query->orderBy('id', 'desc')->paginate(10);
+        $poCustomers = $query->orderBy('id', 'desc')->paginate(8);
         
         foreach ($poCustomers as $po) {
             $totalInvoiced = $po->total_invoiced;
@@ -46,7 +48,9 @@ class PoCustomerController extends Controller
             $po->remaining_total = $po->total - $totalInvoiced;
         }
 
-        $poCustomers->appends($request->only(['search', 'status']));
+        $poCustomers->appends(
+    $request->only(['search', 'status', 'invoice_status'])
+);
         return view('po_customers.index', compact('poCustomers'));
     }
 
@@ -71,7 +75,7 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // STORE – dengan try-catch dan notifikasi error
+    // STORE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan try-catch dan notifikasi error
     // ============================================================
     public function store(Request $request)
     {
@@ -234,16 +238,16 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // EDIT – dengan pengecekan apakah PO sudah digunakan
+    // EDIT ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan pengecekan apakah PO sudah digunakan
     // ============================================================
     public function edit($id) 
     {
         $poCustomer = PoCustomer::with('details.product', 'customer')->findOrFail($id);
 
         // Cek apakah PO sudah memiliki Invoice atau Delivery Order
-        if (!$this->isAdmin() && $this->isPoCustomerUsed($poCustomer)) {
+        if ($this->isPoCustomerEditLocked($poCustomer)) {
             return redirect()->route('po-customers.index')
-                ->with('error', 'PO tidak dapat diedit karena sudah memiliki Invoice atau Delivery Order.');
+                ->with('error', 'PO tidak dapat diedit karena Invoice Customer terkait sudah Paid.');
         }
 
         $products = Product::orderBy('name')->get();
@@ -262,139 +266,739 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // UPDATE – dengan try-catch dan notifikasi error
+    // UPDATE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan try-catch dan notifikasi error
     // ============================================================
     public function update(Request $request, $id)
     {
-        $poCustomer = PoCustomer::findOrFail($id);
+        $poCustomer = PoCustomer::with('details.product')
+            ->findOrFail($id);
 
-        // Jika bukan admin, cek apakah PO sudah memiliki Invoice atau Delivery Order
-        if (!$this->isAdmin() && $this->isPoCustomerUsed($poCustomer)) {
-            return back()->with('error', 'PO tidak dapat diupdate karena sudah memiliki Invoice atau Delivery Order.');
+        if ($this->isPoCustomerEditLocked($poCustomer)) {
+            return back()->with(
+                'error',
+                'PO tidak dapat diupdate karena Invoice Customer terkait sudah Paid.'
+            );
         }
 
         try {
-            $request->validate([ 
-                'po_number' => 'required|string|max:50|unique:po_customers,po_number,' . $id,
-                'po_date' => 'required|date',
-                'delivery_date' => 'nullable|date|after:po_date',
-                'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|exists:products,id',
-                'items.*.quantity' => 'required|integer|min:1',
-                'items.*.unit_price' => 'required|numeric|min:0',
-                'payment_terms' => 'nullable|string|max:100',
-                'delivery_time' => 'nullable|string|max:150',
-                'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            $request->validate([
+                'po_number' => [
+                    'required',
+                    'string',
+                    'max:50',
+                    Rule::unique(
+                        'po_customers',
+                        'po_number'
+                    )->ignore($poCustomer->id),
+                ],
+                'po_date' =>
+                    'required|date',
+                'delivery_date' =>
+                    'nullable|date|after:po_date',
+                'items' =>
+                    'required|array|min:1',
+                'items.*.detail_id' =>
+                    'nullable|integer|exists:po_customer_details,id',
+                'items.*.product_id' =>
+                    'required|exists:products,id',
+                'items.*.quantity' =>
+                    'required|integer|min:1',
+                'items.*.unit_price' =>
+                    'required|numeric|min:0',
+                'payment_terms' =>
+                    'nullable|string|max:100',
+                'delivery_time' =>
+                    'nullable|string|max:150',
+                'attachment' =>
+                    'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
             ], [
-                'po_number.unique' => 'Nomor PO ":input" sudah terdaftar. Silakan gunakan nomor lain.',
-                'delivery_date.after' => 'Tanggal pengiriman harus lebih besar dari tanggal PO.',
+                'po_number.unique' =>
+                    'Nomor PO ":input" sudah terdaftar. Silakan gunakan nomor lain.',
+                'delivery_date.after' =>
+                    'Tanggal pengiriman harus lebih besar dari tanggal PO.',
             ]);
 
-            // Hitung ulang
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $subtotal += $item['quantity'] * $item['unit_price'];
+            /*
+            |--------------------------------------------------------------------------
+            | Validate detail lineage before changing anything
+            |--------------------------------------------------------------------------
+            */
+
+            $existingDetails = $poCustomer
+                ->details
+                ->keyBy('id');
+
+            $submittedIds = collect($request->items)
+                ->pluck('detail_id')
+                ->filter(function ($value) {
+                    return $value !== null &&
+                           $value !== '';
+                })
+                ->map(function ($value) {
+                    return (int) $value;
+                });
+
+            if ($submittedIds->duplicates()->isNotEmpty()) {
+                throw ValidationException::withMessages([
+                    'items' =>
+                        'Detail PO Customer yang sama tidak boleh dikirim lebih dari satu kali.',
+                ]);
             }
 
-            $discountPercent = $request->discount_percent ?? 0;
-            $discountAmount = $request->discount_amount ?? 0; 
-            $dppAmount = $subtotal - $discountAmount;
-            $taxPercent = $request->tax_percent ?? 11;
-            $taxAmount = $request->tax_amount ?? ($dppAmount * ($taxPercent / 100));
-            $pphPercent = $request->pph_percent ?? 0;
-            $pphAmount = $request->pph_amount ?? ($dppAmount * ($pphPercent / 100));
-            $total = $dppAmount + $taxAmount - $pphAmount;
+            foreach ($request->items as $index => $item) {
 
-            // Proses attachment
-            $attachmentPath = $poCustomer->attachment;
-
-            if ($request->input('delete_attachment') == '1' || $request->hasFile('attachment')) {
-                if ($attachmentPath && Storage::disk('public')->exists($attachmentPath)) {
-                    Storage::disk('public')->delete($attachmentPath);
+                if (empty($item['detail_id'])) {
+                    continue;
                 }
-                if ($request->input('delete_attachment') == '1') {
+
+                $detailId = (int) $item['detail_id'];
+
+                if (!$existingDetails->has($detailId)) {
+                    throw ValidationException::withMessages([
+                        "items.{$index}.detail_id" =>
+                            'Detail PO Customer tidak valid atau bukan milik PO ini.',
+                    ]);
+                }
+
+                $detail = $existingDetails->get($detailId);
+
+                $allocatedQuantity =
+                    (float) DB::table(
+                        'po_supplier_details as psd'
+                    )
+                    ->join(
+                        'po_suppliers as ps',
+                        'ps.id',
+                        '=',
+                        'psd.po_supplier_id'
+                    )
+                    ->where(
+                        'psd.po_customer_detail_id',
+                        $detailId
+                    )
+                    ->where(
+                        'ps.status',
+                        '!=',
+                        'cancelled'
+                    )
+                    ->sum('psd.quantity');
+
+                if (
+                    $allocatedQuantity > 0 &&
+                    (int) $detail->product_id !==
+                    (int) $item['product_id']
+                ) {
+                    throw ValidationException::withMessages([
+                        "items.{$index}.product_id" =>
+                            'Product tidak dapat diganti karena item ini sudah digunakan pada PO Supplier.',
+                    ]);
+                }
+
+                if (
+                    (float) $item['quantity'] <
+                    $allocatedQuantity
+                ) {
+                    throw ValidationException::withMessages([
+                        "items.{$index}.quantity" =>
+                            'Quantity tidak boleh lebih kecil dari quantity yang sudah dialokasikan ke PO Supplier (' .
+                            $allocatedQuantity .
+                            ').',
+                    ]);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Existing allocated rows may not disappear from request
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($existingDetails as $detailId => $detail) {
+
+                if ($submittedIds->contains((int) $detailId)) {
+                    continue;
+                }
+
+                $allocatedQuantity =
+                    (float) DB::table(
+                        'po_supplier_details as psd'
+                    )
+                    ->join(
+                        'po_suppliers as ps',
+                        'ps.id',
+                        '=',
+                        'psd.po_supplier_id'
+                    )
+                    ->where(
+                        'psd.po_customer_detail_id',
+                        $detailId
+                    )
+                    ->where(
+                        'ps.status',
+                        '!=',
+                        'cancelled'
+                    )
+                    ->sum('psd.quantity');
+
+                if ($allocatedQuantity > 0) {
+                    throw ValidationException::withMessages([
+                        'items' =>
+                            'Item "' .
+                            (
+                                $detail->product->name2 ??
+                                $detail->product->name ??
+                                ('Product ID ' . $detail->product_id)
+                            ) .
+                            '" tidak dapat dihapus karena sudah digunakan pada PO Supplier.',
+                    ]);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Calculate totals
+            |--------------------------------------------------------------------------
+            */
+
+            $subtotal = 0;
+
+            foreach ($request->items as $item) {
+                $subtotal +=
+                    ((float) $item['quantity']) *
+                    ((float) $item['unit_price']);
+            }
+
+            $discountPercent =
+                (float) ($request->discount_percent ?? 0);
+
+            $discountAmount =
+                (float) ($request->discount_amount ?? 0);
+
+            $dppAmount =
+                $subtotal - $discountAmount;
+
+            $taxPercent =
+                (float) ($request->tax_percent ?? 11);
+
+            $taxAmount =
+                $request->tax_amount !== null
+                    ? (float) $request->tax_amount
+                    : ($dppAmount * ($taxPercent / 100));
+
+            $pphPercent =
+                (float) ($request->pph_percent ?? 0);
+
+            $pphAmount =
+                $request->pph_amount !== null
+                    ? (float) $request->pph_amount
+                    : ($dppAmount * ($pphPercent / 100));
+
+            $total =
+                $dppAmount +
+                $taxAmount -
+                $pphAmount;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Attachment
+            |--------------------------------------------------------------------------
+            */
+
+            $attachmentPath =
+                $poCustomer->attachment;
+
+            if (
+                $request->input('delete_attachment') == '1' ||
+                $request->hasFile('attachment')
+            ) {
+                if (
+                    $attachmentPath &&
+                    Storage::disk('public')
+                        ->exists($attachmentPath)
+                ) {
+                    Storage::disk('public')
+                        ->delete($attachmentPath);
+                }
+
+                if (
+                    $request->input('delete_attachment') == '1'
+                ) {
                     $attachmentPath = null;
                 }
             }
 
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $extension = strtolower($file->getClientOriginalExtension());
-                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $extension;
-                
+
+                $file =
+                    $request->file('attachment');
+
+                $extension =
+                    strtolower(
+                        $file->getClientOriginalExtension()
+                    );
+
+                $originalName =
+                    pathinfo(
+                        $file->getClientOriginalName(),
+                        PATHINFO_FILENAME
+                    );
+
+                $safeName =
+                    time() .
+                    '_' .
+                    preg_replace(
+                        '/[^A-Za-z0-9_-]/',
+                        '_',
+                        $originalName
+                    ) .
+                    '.' .
+                    $extension;
+
                 $folder = 'po_customers';
-                if (!Storage::disk('public')->exists($folder)) {
-                    Storage::disk('public')->makeDirectory($folder);
+
+                if (
+                    !Storage::disk('public')
+                        ->exists($folder)
+                ) {
+                    Storage::disk('public')
+                        ->makeDirectory($folder);
                 }
 
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                if (
+                    in_array(
+                        $extension,
+                        ['jpg', 'jpeg', 'png', 'gif', 'webp']
+                    )
+                ) {
                     try {
-                        $manager = ImageManager::gd();
-                        $image = $manager->read($file->getRealPath());
+                        $manager =
+                            ImageManager::gd();
+
+                        $image =
+                            $manager->read(
+                                $file->getRealPath()
+                            );
+
                         $image->resize(800, 800);
-                        $image->toJpeg(80)->save(storage_path('app/public/' . $folder . '/' . $safeName));
+
+                        $image->toJpeg(80)->save(
+                            storage_path(
+                                'app/public/' .
+                                $folder .
+                                '/' .
+                                $safeName
+                            )
+                        );
+
                     } catch (\Exception $e) {
-                        Storage::disk('public')->putFileAs($folder, $file, $safeName);
+
+                        Storage::disk('public')
+                            ->putFileAs(
+                                $folder,
+                                $file,
+                                $safeName
+                            );
                     }
+
                 } else {
-                    Storage::disk('public')->putFileAs($folder, $file, $safeName);
+
+                    Storage::disk('public')
+                        ->putFileAs(
+                            $folder,
+                            $file,
+                            $safeName
+                        );
                 }
-                $attachmentPath = $folder . '/' . $safeName;
+
+                $attachmentPath =
+                    $folder . '/' . $safeName;
             }
 
-            // Update header
-            $poCustomer->update([
-                'po_number' => $request->po_number,
-                'po_date' => $request->po_date,
-                'delivery_date' => $request->delivery_date,
-                'status' => $request->status,
-                'subtotal' => $subtotal,
-                'tax_percent' => $taxPercent,
-                'tax_amount' => $taxAmount,
-                'discount_percent' => $discountPercent,
-                'discount_amount' => $discountAmount,
-                'pph_percent' => $pphPercent,
-                'pph_amount' => $pphAmount,
-                'total' => $total,
-                'notes' => $request->notes,
-                'attachment' => $attachmentPath, 
-                'payment_terms' => $request->payment_terms,
-                'delivery_time' => $request->delivery_time,
-            ]);
+            /*
+            |--------------------------------------------------------------------------
+            | Atomic database update
+            |--------------------------------------------------------------------------
+            */
 
-            // Hapus detail lama dan simpan baru
-            $poCustomer->details()->delete();
-            foreach ($request->items as $item) {
-                PoCustomerDetail::create([
-                    'po_customer_id' => $poCustomer->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'subtotal' => $item['quantity'] * $item['unit_price']
+            DB::transaction(function () use (
+                $poCustomer,
+                $request,
+                $subtotal,
+                $taxPercent,
+                $taxAmount,
+                $discountPercent,
+                $discountAmount,
+                $pphPercent,
+                $pphAmount,
+                $total,
+                $attachmentPath
+            ) {
+
+                $lockedPo =
+                    PoCustomer::where(
+                        'id',
+                        $poCustomer->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $lockedDetails =
+                    $lockedPo
+                        ->details()
+                        ->lockForUpdate()
+                        ->get()
+                        ->keyBy('id');
+
+                /*
+                | Revalidate downstream allocation while locked.
+                */
+
+                foreach ($request->items as $index => $item) {
+
+                    if (empty($item['detail_id'])) {
+                        continue;
+                    }
+
+                    $detailId =
+                        (int) $item['detail_id'];
+
+                    if (!$lockedDetails->has($detailId)) {
+                        throw ValidationException::withMessages([
+                            "items.{$index}.detail_id" =>
+                                'Detail PO Customer berubah selama proses update. Silakan muat ulang halaman.',
+                        ]);
+                    }
+
+                    $detail =
+                        $lockedDetails->get($detailId);
+
+                    $allocatedQuantity =
+                        (float) DB::table(
+                            'po_supplier_details as psd'
+                        )
+                        ->join(
+                            'po_suppliers as ps',
+                            'ps.id',
+                            '=',
+                            'psd.po_supplier_id'
+                        )
+                        ->where(
+                            'psd.po_customer_detail_id',
+                            $detailId
+                        )
+                        ->where(
+                            'ps.status',
+                            '!=',
+                            'cancelled'
+                        )
+                        ->sum('psd.quantity');
+
+                    if (
+                        $allocatedQuantity > 0 &&
+                        (int) $detail->product_id !==
+                        (int) $item['product_id']
+                    ) {
+                        throw ValidationException::withMessages([
+                            "items.{$index}.product_id" =>
+                                'Product tidak dapat diganti karena item sudah digunakan pada PO Supplier.',
+                        ]);
+                    }
+
+                    if (
+                        (float) $item['quantity'] <
+                        $allocatedQuantity
+                    ) {
+                        throw ValidationException::withMessages([
+                            "items.{$index}.quantity" =>
+                                'Quantity PO Customer tidak boleh lebih kecil dari quantity yang sudah dialokasikan ke PO Supplier.',
+                        ]);
+                    }
+                }
+
+                /*
+                | Update header.
+                */
+
+                $lockedPo->update([
+                    'po_number' =>
+                        $request->po_number,
+                    'po_date' =>
+                        $request->po_date,
+                    'delivery_date' =>
+                        $request->delivery_date,
+                    'subtotal' =>
+                        $subtotal,
+                    'tax_percent' =>
+                        $taxPercent,
+                    'tax_amount' =>
+                        $taxAmount,
+                    'discount_percent' =>
+                        $discountPercent,
+                    'discount_amount' =>
+                        $discountAmount,
+                    'pph_percent' =>
+                        $pphPercent,
+                    'pph_amount' =>
+                        $pphAmount,
+                    'total' =>
+                        $total,
+                    'notes' =>
+                        $request->notes,
+                    'attachment' =>
+                        $attachmentPath,
+                    'payment_terms' =>
+                        $request->payment_terms,
+                    'delivery_time' =>
+                        $request->delivery_time,
                 ]);
-            }
 
-            return redirect()->route('po-customers.index')
-                ->with('success', 'Customer PO berhasil diperbarui.');
+                $keptIds = [];
+
+                /*
+                | Update existing / create new details.
+                */
+
+                foreach ($request->items as $item) {
+
+                    $quantity =
+                        (float) $item['quantity'];
+
+                    $unitPrice =
+                        (float) $item['unit_price'];
+
+                    $detailSubtotal =
+                        $quantity * $unitPrice;
+
+                    if (!empty($item['detail_id'])) {
+
+                        $detailId =
+                            (int) $item['detail_id'];
+
+                        $detail =
+                            $lockedDetails->get($detailId);
+
+                        $detail->update([
+                            'product_id' =>
+                                $item['product_id'],
+                            'quantity' =>
+                                $quantity,
+                            'unit_price' =>
+                                $unitPrice,
+                            'subtotal' =>
+                                $detailSubtotal,
+                        ]);
+
+                        $keptIds[] =
+                            $detailId;
+
+                    } else {
+
+                        $newDetail =
+                            PoCustomerDetail::create([
+                                'po_customer_id' =>
+                                    $lockedPo->id,
+                                'product_id' =>
+                                    $item['product_id'],
+                                'quantity' =>
+                                    $quantity,
+                                'unit_price' =>
+                                    $unitPrice,
+                                'subtotal' =>
+                                    $detailSubtotal,
+                            ]);
+
+                        $keptIds[] =
+                            $newDetail->id;
+                    }
+                }
+
+                /*
+                | Delete only details removed from form AND unused downstream.
+                */
+
+                foreach ($lockedDetails as $detailId => $detail) {
+
+                    if (
+                        in_array(
+                            (int) $detailId,
+                            $keptIds,
+                            true
+                        )
+                    ) {
+                        continue;
+                    }
+
+                    $hasAllocation =
+                        DB::table(
+                            'po_supplier_details as psd'
+                        )
+                        ->join(
+                            'po_suppliers as ps',
+                            'ps.id',
+                            '=',
+                            'psd.po_supplier_id'
+                        )
+                        ->where(
+                            'psd.po_customer_detail_id',
+                            $detailId
+                        )
+                        ->where(
+                            'ps.status',
+                            '!=',
+                            'cancelled'
+                        )
+                        ->exists();
+
+                    if ($hasAllocation) {
+                        throw ValidationException::withMessages([
+                            'items' =>
+                                'Detail PO Customer yang sudah digunakan pada PO Supplier tidak dapat dihapus.',
+                        ]);
+                    }
+
+                    $detail->delete();
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Recalculate procurement status
+                |--------------------------------------------------------------------------
+                */
+
+                $currentDetails =
+                    $lockedPo
+                        ->details()
+                        ->get();
+
+                $hasAllocation =
+                    false;
+
+                $fullyProcured =
+                    !$currentDetails->isEmpty();
+
+                foreach ($currentDetails as $detail) {
+
+                    $allocated =
+                        (float) DB::table(
+                            'po_supplier_details as psd'
+                        )
+                        ->join(
+                            'po_suppliers as ps',
+                            'ps.id',
+                            '=',
+                            'psd.po_supplier_id'
+                        )
+                        ->where(
+                            'psd.po_customer_detail_id',
+                            $detail->id
+                        )
+                        ->where(
+                            'ps.status',
+                            '!=',
+                            'cancelled'
+                        )
+                        ->sum('psd.quantity');
+
+                    if ($allocated > 0) {
+                        $hasAllocation = true;
+                    }
+
+                    if (
+                        $allocated <
+                        (float) $detail->quantity
+                    ) {
+                        $fullyProcured = false;
+                    }
+                }
+
+                if (!$hasAllocation) {
+
+                    $procurementStatus =
+                        'pending';
+
+                } elseif ($fullyProcured) {
+
+                    $procurementStatus =
+                        'fully_procured';
+
+                } else {
+
+                    $procurementStatus =
+                        'partial';
+                }
+
+                /*
+                | Business status:
+                | no procurement = received
+                | any procurement = proceed
+                */
+
+                $businessStatus =
+                    $hasAllocation
+                        ? 'proceed'
+                        : 'received';
+
+                $lockedPo->update([
+                    'status' =>
+                        $businessStatus,
+                    'procurement_status' =>
+                        $procurementStatus,
+                ]);
+            });
+
+            return redirect()
+                ->route('po-customers.index')
+                ->with(
+                    'success',
+                    'Customer PO berhasil diperbarui.'
+                );
 
         } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->validator);
+
+            return back()
+                ->withInput()
+                ->withErrors($e->validator);
+
         } catch (QueryException $e) {
-            $errorMessage = 'Gagal memperbarui PO. ';
-            if ($e->getCode() == 23000) {
-                $errorMessage .= 'Data duplikat ditemukan. Pastikan nomor PO unik.';
+
+            $driverCode =
+                $e->errorInfo[1] ?? null;
+
+            if ((int) $driverCode === 1062) {
+
+                $message =
+                    'Nomor PO sudah digunakan oleh PO Customer lain.';
+
+            } elseif ((int) $driverCode === 1451) {
+
+                $message =
+                    'Detail PO tidak dapat dihapus karena sudah digunakan oleh transaksi downstream.';
+
             } else {
-                $errorMessage .= $e->getMessage();
+
+                $message =
+                    'Terjadi database integrity error. Perubahan tidak disimpan.';
             }
-            return back()->withInput()->with('error', $errorMessage);
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Gagal memperbarui PO. ' .
+                    $message
+                );
+
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Gagal memperbarui PO: ' . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Gagal memperbarui PO: ' .
+                    $e->getMessage()
+                );
         }
     }
-
-    // ============================================================
-    // DESTROY – dengan pengecekan relasi dan try-catch
     // ============================================================
     public function destroy($id)
     {
@@ -488,8 +1092,26 @@ class PoCustomerController extends Controller
     // ============================================================
     // PRIVATE HELPER: CEK APAKAH PO SUDAH DIGUNAKAN
     // ============================================================
+    /**
+     * PO Customer may be edited while downstream transactions remain open.
+     * A paid active Invoice Customer establishes financial finality.
+     */
+    private function isPoCustomerEditLocked(PoCustomer $poCustomer)
+    {
+        return InvoiceCustomer::where('po_customer_id', $poCustomer->id)
+            ->where('payment_status', 'paid')
+            ->where('status', '!=', 'cancelled')
+            ->exists();
+    }
     private function isPoCustomerUsed(PoCustomer $poCustomer)
     {
+        // A PO Supplier is a direct downstream dependency of PO Customer.
+        // Once procurement has started, the source PO Customer must be
+        // protected from unsafe edit/delete operations.
+        if ($poCustomer->poSuppliers()->exists()) {
+            return true;
+        }
+
         // Cek apakah PO sudah memiliki Invoice atau Delivery Order
         if ($poCustomer->invoiceCustomers()->exists() ||
             $poCustomer->deliveryOrders()->exists()) {
@@ -498,9 +1120,5 @@ class PoCustomerController extends Controller
 
         return false;
     }
-
-    private function isAdmin()
-    {
-        return auth()->check() && auth()->user()->email === 'arief@gmail.com';
-    }
 }
+

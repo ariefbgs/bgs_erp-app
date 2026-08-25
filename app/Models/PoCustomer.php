@@ -21,6 +21,7 @@ class PoCustomer extends Model
         'delivery_date',
         'status',
         'invoice_status',
+        'procurement_status',
         'subtotal',
         'tax_percent',
         'tax_amount',

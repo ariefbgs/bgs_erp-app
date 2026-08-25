@@ -61,4 +61,27 @@ class User extends Authenticatable
     {
         return $this->isAdmin() || $this->isManager();
     }
+
+    /**
+     * Deployment/RBAC compatibility layer.
+     *
+     * Existing ERP roles remain stored in users.role.
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return \Illuminate\Support\Facades\DB::table('role_permissions')
+            ->join(
+                'permissions',
+                'permissions.id',
+                '=',
+                'role_permissions.permission_id'
+            )
+            ->where('role_permissions.role', $this->role)
+            ->where('permissions.name', $permission)
+            ->exists();
+    }
 }

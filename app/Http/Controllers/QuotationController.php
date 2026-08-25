@@ -38,7 +38,7 @@ class QuotationController extends Controller
             $query->where('status', $request->status);
         }
 
-        $quotations = $query->orderBy('updated_at', 'desc')->paginate(10);
+        $quotations = $query->orderBy('updated_at', 'desc')->paginate(8);
         $quotations->appends($request->only(['search', 'status']));
 
         return view('quotations.index', compact('quotations'));
@@ -61,9 +61,61 @@ class QuotationController extends Controller
             ->unique()
             ->toArray();
 
-        return view('quotations.create', compact('customers', 'products', 'existingDeliveryTimes', 'existingPaymentTerms'));
+        $previousQuotations = Quotation::with('customer')
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('quotations.create', compact(
+            'customers',
+            'products',
+            'existingDeliveryTimes',
+            'existingPaymentTerms',
+            'previousQuotations'
+        ));
     }
 
+    /**
+     * Return reusable data from a previous Quotation.
+     *
+     * READ ONLY:
+     * - does not create a Quotation
+     * - does not update source Quotation
+     * - does not expose source persistence/lifecycle identity
+     */
+    public function copySource(Quotation $source_quotation)
+    {
+        $source_quotation->load('details');
+
+        return response()->json([
+            'customer_id' => $source_quotation->customer_id,
+
+            'discount_percent' => $source_quotation->discount_percent,
+            'discount_amount' => $source_quotation->discount_amount,
+            'dpp' => $source_quotation->dpp,
+
+            'tax_percent' => $source_quotation->tax_percent,
+            'tax_amount' => $source_quotation->tax_amount,
+
+            'pph23_percent' => $source_quotation->pph23_percent,
+            'pph23_amount' => $source_quotation->pph23_amount,
+
+            'notes' => $source_quotation->notes,
+            'payment_terms' => $source_quotation->payment_terms,
+            'delivery_time' => $source_quotation->delivery_time,
+            'show_image_on_print' => (bool) $source_quotation->show_image_on_print,
+
+            'items' => $source_quotation->details->map(function ($detail) {
+                return [
+                    'product_id' => $detail->product_id,
+                    'specification' => $detail->specification,
+                    'description' => $detail->description,
+                    'quantity' => $detail->quantity,
+                    'unit_price' => $detail->unit_price,
+                ];
+            })->values(),
+        ]);
+    }
     public function store(Request $request)
     {
         try {
@@ -185,7 +237,7 @@ class QuotationController extends Controller
     }
 
     /**
-     * EDIT – Admin bisa edit apapun, non-admin hanya jika belum digunakan.
+     * EDIT - Admin bisa edit apapun, non-admin hanya jika belum digunakan.
      */
     public function edit(Quotation $quotation)
     {
@@ -211,9 +263,9 @@ class QuotationController extends Controller
         }
 
         // Non-admin: cek apakah quotation sudah digunakan
-        if ($this->isQuotationUsed($quotation)) {
+        if ($this->isQuotationEditLocked($quotation)) {
             return redirect()->route('quotations.index')
-                ->with('error', 'Quotation cannot be edited because it has been used in Purchase Order, Invoice, or Delivery Order.');
+                ->with('error', 'Quotation cannot be edited because a related Invoice Customer has been paid.');
         }
 
         $customers = Customer::all();
@@ -236,16 +288,13 @@ class QuotationController extends Controller
     }
 
     /**
-     * UPDATE – Admin bisa update apapun, non-admin hanya jika belum digunakan.
+     * UPDATE - Admin bisa update apapun, non-admin hanya jika belum digunakan.
      */
     public function update(Request $request, Quotation $quotation)
     {
         // Admin override: boleh update apapun
-        if (!$this->isAdmin()) {
-            // Non-admin: cek apakah quotation sudah digunakan
-            if ($this->isQuotationUsed($quotation)) {
-                return back()->with('error', 'Quotation cannot be updated because it has been used in Purchase Order, Invoice, or Delivery Order.');
-            }
+        if ($this->isQuotationEditLocked($quotation)) {
+            return back()->with('error', 'Quotation cannot be updated because a related Invoice Customer has been paid.');
         }
 
         try {
@@ -292,13 +341,13 @@ class QuotationController extends Controller
                 $validUntil = date('Y-m-d', strtotime($request->date . ' +7 days'));
             }
 
-            // Update header – status bisa diubah dari form
+            // Update header ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ status bisa diubah dari form
             $quotation->update([
                 'quotation_number' => $request->quotation_number,
                 'customer_id' => $request->customer_id,
                 'date' => $request->date,
                 'valid_until' => $validUntil,
-                'status' => $request->status ?? $quotation->status,
+                'status' => $quotation->status,
                 'subtotal' => $subtotal,
                 'discount_percent' => $discountPercent,
                 'discount_amount' => $discountAmount,
@@ -349,8 +398,33 @@ class QuotationController extends Controller
     }
 
     /**
-     * DESTROY – Admin bisa hapus apapun, non-admin hanya jika belum digunakan.
+     * DESTROY - Admin bisa hapus apapun, non-admin hanya jika belum digunakan.
      */
+
+    /**
+     * Approve quotation.
+     *
+     * Canonical lifecycle:
+     * draft -> approved
+     */
+    public function approve(Quotation $quotation)
+    {
+        if ($quotation->status !== 'draft') {
+            return back()->with(
+                'error',
+                'Only Draft quotation can be approved.'
+            );
+        }
+
+        $quotation->update([
+            'status' => 'approved',
+        ]);
+
+        return back()->with(
+            'success',
+            'Quotation successfully approved.'
+        );
+    }
     public function destroy(Quotation $quotation)
     {
         // Admin override: boleh hapus apapun
@@ -381,8 +455,8 @@ class QuotationController extends Controller
             $quotation = Quotation::with('customer', 'details.product')->findOrFail($id);
             $company = Company::where('is_active', true)->first();
 
-            // Auto update status dari draft ke sent jika print
-            if ($quotation->status === 'draft') {
+            // Approved quotation becomes Sent when printed.
+            if ($quotation->status === 'approved') {
                 $quotation->status = 'sent';
                 $quotation->save();
             }
@@ -425,6 +499,19 @@ class QuotationController extends Controller
      * Cek apakah quotation sudah digunakan di transaksi lain.
      * Digunakan untuk non-admin.
      */
+    /**
+     * Editing remains allowed while downstream transactions are still open.
+     * A paid active Invoice Customer establishes financial finality.
+     */
+    private function isQuotationEditLocked(Quotation $quotation)
+    {
+        return InvoiceCustomer::whereHas('poCustomer', function ($query) use ($quotation) {
+                $query->where('quotation_id', $quotation->id);
+            })
+            ->where('payment_status', 'paid')
+            ->where('status', '!=', 'cancelled')
+            ->exists();
+    }
     private function isQuotationUsed(Quotation $quotation)
     {
         // Cek PO Customer
@@ -458,3 +545,5 @@ class QuotationController extends Controller
         return $romans[(int)$monthNum] ?? 'I';
     }
 }
+
+

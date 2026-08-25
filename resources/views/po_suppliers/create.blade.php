@@ -1,37 +1,114 @@
 @extends('layouts.app')
-@section('title', 'Add New Supplier PO')
+@section('title', 'Create PO Supplier')
 @section('content')
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <style>
-    .price-input, .qty-input, .price-display, .subtotal-display {
-        text-align: right;
+    body { background-color: #f1f5f9; }
+
+    .main-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        background: #fff;
+        overflow: hidden;
     }
-    .product-select {
-        text-align: left;
+
+    .card-header-custom {
+        background: linear-gradient(135deg, #10b981, #047857);
+        color: white;
+        padding: 1.5rem;
+        border: none;
     }
-    .table-responsive {
-        overflow-x: auto;
+
+    .card-header-custom h4 {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 0;
     }
-    .pic-info {
-        background-color: #e8f4f8;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 5px;
+
+    .form-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        font-weight: 700;
+        margin-bottom: 6px;
     }
-    .quantity, .purchase-price {
-        min-width: 100px;
+
+    .section-sub-title {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #1e293b;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 6px;
     }
-    .brand-display {
-        background-color: #f8f9fa;
+
+    .section-sub-title i {
+        color: #10b981;
+    }
+
+    .info-group-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .form-control,
+    .form-select {
+        border-color: #cbd5e1;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    }
+
+    .po-supplier-items-table thead th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .po-supplier-items-table tbody td {
+        vertical-align: middle;
+    }
+
+    .po-supplier-items-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .table-summary th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #475569;
+        vertical-align: middle;
+    }
+
+    .supplier-po-help {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border-left: 4px solid #3b82f6;
+        border-radius: 6px;
     }
 </style>
 
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4>Add New Supplier PO</h4>
+<div class="card main-card">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h4><i class="bi bi-file-earmark-plus-fill me-2"></i>Create PO Supplier</h4>
     </div>
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -54,13 +131,20 @@
             <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
         </div>
     @endif 
-    <div class="card-body">
+    <div class="card-body p-4">
         <form action="{{ route('po-suppliers.store') }}" method="POST" id="poSupplierForm">
             @csrf
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Select Customer <span class="text-danger">*</span></label>
+            
+            <div class="section-sub-title">
+                <i class="bi bi-person-vcard-fill me-2"></i>
+                Customer PO Information
+            </div>
+
+            <div class="info-group-box mb-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Select Customer <span class="text-danger">*</span></label>
                     <select name="customer_id" id="customer_id" class="form-control searchable-select" required>
                         <option value="">-- Select Customer --</option>
                         @foreach($customers as $customer)
@@ -76,10 +160,17 @@
                 </div>
             </div>
 
+            
+            </div>
+
             <div id="poDetails" style="display: none;">
-                <hr>
-                <h5>Detail PO Supplier</h5>
-                <div class="row">
+                <div class="section-sub-title">
+                    <i class="bi bi-building-fill me-2"></i>
+                    Supplier PO Information
+                </div>
+
+                <div class="info-group-box mb-4">
+                    <div class="row">
                     <div class="col-md-6">
                         <label class="form-label">Supplier <span class="text-danger">*</span></label>
                         <select name="supplier_id" id="supplier_id" class="form-control" required>
@@ -99,60 +190,178 @@
                             required>
                     </div>
                 </div>
-                <hr>
-                <h5>Product Details</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="itemsTable">
-                        <thead class="table-dark">
+                
+                </div>
+
+                <div class="section-sub-title">
+                    <i class="bi bi-box-seam-fill me-2"></i>
+                    Product Details
+                </div>
+
+                <div class="info-group-box mb-4 p-0 overflow-hidden">
+                    <div class="table-responsive">
+                    <table class="table table-bordered po-supplier-items-table mb-0 table-striped" id="itemsTable">
+                        <thead>
                             <tr>
-                                <th class="text-center" width="35%">Product</th>
-                                <th class="text-center" width="15%">Qty PO Customer</th>
-                                <th class="text-center" width="15%">Qty PO Supplier</th>
-                                <th class="text-center" width="20%">Purchase Price (Rp)</th>
-                                <th class="text-center" width="15%">Subtotal (Rp)</th>
+                                <th class="text-center" width="5%">Select</th>
+              <th class="text-center" width="30%">Product</th>
+              <th class="text-center" width="15%">Remaining Qty</th>
+              <th class="text-center" width="15%">Qty PO Supplier</th>
+              <th class="text-center" width="20%">Purchase Price (Rp)</th>
+              <th class="text-center" width="15%">Subtotal (Rp)</th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
-                            <tr><td colspan="5" class="text-center">Please select a Customer PO first</td></tr>
+                            <tr><td colspan="6" class="text-center">Please select a Customer PO first</td></tr>
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
-                                <th colspan="4" class="text-end">Subtotal</th>
+                                <th colspan="5" class="text-end">Subtotal</th>
                                 <th class="text-end" id="subtotal_display">Rp 0</th>
                             </tr>
                             <tr>
-                                <th colspan="3" class="text-end">Discount (%)</th>
+                                <th colspan="4" class="text-end">Discount (%)</th>
                                 <td class="text-start">
                                     <input type="number" name="discount_percent" id="discount_percent" class="form-control" step="0.01" min="0" max="100" value="0" style="width: 100px;">
                                 </td>
                                 <th class="text-end" id="discount_amount_display">Rp 0</th>
                             </tr>
                             <tr>
-                                <th colspan="3" class="text-end">VAT (%)</th>
+                                <th colspan="4" class="text-end">VAT (%)</th>
                                 <td class="text-start">
                                     <input type="number" name="tax_percent" id="tax_percent" class="form-control" step="0.01" min="0" max="100" value="11" style="width: 100px;">
                                 </td>
                                 <th class="text-end" id="tax_amount_display">Rp 0</th>
                             </tr>
                             <tr class="table-primary">
-                                <th colspan="4" class="text-end"><strong>Grand Total</strong></th>
+                                <th colspan="5" class="text-end"><strong>Grand Total</strong></th>
                                 <th class="text-end"><strong id="grand_total_display">Rp 0</strong></th>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Remarks</label>
-                    <textarea name="notes" class="form-control" rows="3"></textarea>
                 </div>
 
-                <div class="text-right mt-3">
-                    <button type="submit" class="btn btn-primary">Save PO Supplier</button>
-                    <a href="{{ route('po-suppliers.index') }}" class="btn btn-secondary">Cancel</a>
+                <div class="section-sub-title">
+                    <i class="bi bi-chat-left-text-fill me-2"></i>
+                    Remarks
+                </div>
+
+                <div class="info-group-box mb-4">
+                    <div class="mb-0">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white" style="background: linear-gradient(135deg, #10b981, #047857); border:none;"><i class="bi bi-save-fill me-1"></i> Save PO Supplier</button>
+                    <a href="{{ route('po-suppliers.index') }}" class="btn btn-light px-4 py-2 fw-bold">Cancel</a>
                 </div>
             </div>
         </form>
+
+<!-- Purchase Price Difference Decision -->
+<div class="modal fade"
+     id="masterPriceDecisionModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Purchase Price Differences
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="alert alert-info">
+
+                    Purchase Price PO Supplier berbeda dari
+                    Purchase Price pada Product Master.
+
+                    Pilih keputusan untuk setiap item.
+                    Harga PO Supplier tetap memakai harga transaksi
+                    yang Anda masukkan.
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered po-supplier-items-table mb-0 align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+
+                                <th class="text-end">
+                                    Master Price
+                                </th>
+
+                                <th class="text-end">
+                                    PO Supplier Price
+                                </th>
+
+                                <th style="min-width:220px;">
+                                    Decision
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="masterPriceDecisionBody">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div id="masterPriceDecisionError"
+                     class="alert alert-danger d-none">
+
+                    Pilih Update Master atau Keep Existing
+                    untuk semua item yang berbeda harga.
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light btn-sm fw-bold px-3"
+                        data-bs-dismiss="modal">
+
+                    Back
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="confirmMasterPriceDecision">
+
+                    Continue Save
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
     </div>
 </div>
 
@@ -162,6 +371,12 @@
 <script>
 $(document).ready(function() {
     let rowIndex = 0;
+
+    /*
+     * Prevent normal Save until every changed price has
+     * an explicit decision.
+     */
+    let masterPriceDecisionConfirmed = false;
 
     // Inisialisasi Select2 khusus untuk Select Customer
     $('.searchable-select').select2({
@@ -187,12 +402,41 @@ $(document).ready(function() {
     }
 
     function calculateSubtotal(rowId) {
-        let qty = parseFloat($(`#qty_${rowId}`).val()) || 0;
-        let price = parseRupiahToNumber($(`#price_${rowId}`).val());
+
+        let selected =
+            $('.item-selector[data-row="' + rowId + '"]')
+                .is(':checked');
+
+        if (!selected) {
+
+            $('#subtotal_' + rowId)
+                .text('Rp 0')
+                .data('value', 0);
+
+            $('#subtotal_hidden_' + rowId).val(0);
+
+            calculateGrandTotal();
+            return;
+        }
+
+        let qty =
+            parseFloat(
+                $('#qty_' + rowId).val()
+            ) || 0;
+
+        let price =
+            parseRupiahToNumber(
+                $('#price_' + rowId).val()
+            );
+
         let subtotal = qty * price;
-        $(`#subtotal_${rowId}`).text('Rp ' + formatRupiah(subtotal));
-        $(`#subtotal_${rowId}`).data('value', subtotal);
-        $(`#subtotal_hidden_${rowId}`).val(subtotal);
+
+        $('#subtotal_' + rowId)
+            .text('Rp ' + formatRupiah(subtotal))
+            .data('value', subtotal);
+
+        $('#subtotal_hidden_' + rowId).val(subtotal);
+
         calculateGrandTotal();
     }
 
@@ -264,7 +508,7 @@ $(document).ready(function() {
             return;
         }
 
-        $('#itemsBody').html('<tr><td colspan="5" class="text-center">Memuat data...</td></tr>');
+        $('#itemsBody').html('<tr><td colspan="6" class="text-center">Memuat data...</td></tr>');
         $('#poDetails').show();
 
         $.ajax({
@@ -273,28 +517,84 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (!response.items || response.items.length === 0) {
-                    $('#itemsBody').html('<tr><td colspan="5" class="text-center">Tidak ada item produk</td></tr>');
+                    $('#itemsBody').html('<tr><td colspan="6" class="text-center">Tidak ada item produk</td></tr>');
                     return;
                 }
 
                 var rows = '';
                 rowIndex = 0;
                 $.each(response.items, function(i, item) {
-                    rows += '<tr id="row_' + rowIndex + '">';
-                    rows += '<td>' + item.product_name + '<br><small>' + item.product_code + ' - ' + (item.brand || '-') + '</small></td>';
-                    rows += '<td class="text-center">' + item.quantity + ' ' + item.unit + '</td>';
-                    rows += '<td><input type="number" name="items[' + rowIndex + '][quantity]" id="qty_' + rowIndex + '" class="form-control qty-input" value="' + item.quantity + '" data-row="' + rowIndex + '" min="1" required></td>';
-                    rows += '<td><input type="text" name="items[' + rowIndex + '][purchase_price]" id="price_' + rowIndex + '" class="form-control price-input" data-row="' + rowIndex + '" value="' + formatRupiah(item.purchase_price || 0) + '" required></td>';
-                    rows += '<td class="text-end" id="subtotal_' + rowIndex + '" data-value="0">Rp 0</td>';
-                    rows += '<input type="hidden" name="items[' + rowIndex + '][product_id]" value="' + item.product_id + '">';
-                    rows += '<input type="hidden" name="items[' + rowIndex + '][subtotal]" id="subtotal_hidden_' + rowIndex + '" value="0">';
+                    rows += '<tr id="row_' + rowIndex + '" class="po-item-row">';
+
+                    rows += '<td class="text-center align-middle">' +
+                        '<input type="checkbox" ' +
+                        'class="form-check-input item-selector" ' +
+                        'data-row="' + rowIndex + '">' +
+                        '</td>';
+
+                    rows += '<td>' +
+                        item.product_name +
+                        '<br><small>' +
+                        item.product_code +
+                        ' - ' +
+                        (item.brand || '-') +
+                        '</small></td>';
+
+                    rows += '<td class="text-center align-middle">' +
+                        item.remaining_quantity +
+                        ' ' +
+                        item.unit +
+                        '</td>';
+
+                    rows += '<td><input type="number" ' +
+                        'name="items[' + rowIndex + '][quantity]" ' +
+                        'id="qty_' + rowIndex + '" ' +
+                        'class="form-control qty-input" ' +
+                        'value="' + item.remaining_quantity + '" ' +
+                        'data-row="' + rowIndex + '" ' +
+                        'data-remaining="' + item.remaining_quantity + '" ' +
+                        'min="1" ' +
+                        'max="' + item.remaining_quantity + '" ' +
+                        'disabled></td>';
+
+                    rows += '<td><input type="text" ' +
+                        'name="items[' + rowIndex + '][purchase_price]" ' +
+                        'id="price_' + rowIndex + '" ' +
+                        'class="form-control price-input" ' +
+                        'data-row="' + rowIndex + '" ' +
+                        'value="' + formatRupiah(item.purchase_price || 0) + '" ' +
+                        'data-master-price="' + (item.purchase_price || 0) + '" ' +
+                        'disabled></td>';
+
+                    rows += '<input type="hidden" ' +
+                        'name="items[' + rowIndex + '][master_price_decision]" ' +
+                        'id="master_price_decision_' + rowIndex + '" ' +
+                        'value="" disabled>';
+
+                    rows += '<td class="text-end align-middle" ' +
+                        'id="subtotal_' + rowIndex + '" ' +
+                        'data-value="0">Rp 0</td>';
+
+                    rows += '<input type="hidden" ' +
+                        'name="items[' + rowIndex + '][po_customer_detail_id]" ' +
+                        'id="detail_' + rowIndex + '" ' +
+                        'value="' + item.po_customer_detail_id + '" disabled>';
+
+                    rows += '<input type="hidden" ' +
+                        'name="items[' + rowIndex + '][product_id]" ' +
+                        'id="product_' + rowIndex + '" ' +
+                        'value="' + item.product_id + '" disabled>';
+
+                    rows += '<input type="hidden" ' +
+                        'name="items[' + rowIndex + '][subtotal]" ' +
+                        'id="subtotal_hidden_' + rowIndex + '" ' +
+                        'value="0" disabled>';
+
                     rows += '</tr>';
                     rowIndex++;
                 });
                 $('#itemsBody').html(rows);
-                for (let i = 0; i < rowIndex; i++) {
-                    calculateSubtotal(i);
-                }
+                calculateGrandTotal();
             },
             error: function() {
                 alert('Gagal mengambil detail PO Customer');
@@ -304,7 +604,37 @@ $(document).ready(function() {
     });
 
     // Event perubahan qty atau harga
+    // Select PO Customer Detail
+    $(document).on('change', '.item-selector', function() {
+
+        masterPriceDecisionConfirmed = false;
+
+        let rowId = $(this).data('row');
+        let selected = $(this).is(':checked');
+
+        $('#qty_' + rowId).prop('disabled', !selected);
+        $('#price_' + rowId).prop('disabled', !selected);
+        $('#detail_' + rowId).prop('disabled', !selected);
+        $('#product_' + rowId).prop('disabled', !selected);
+        $('#subtotal_hidden_' + rowId).prop('disabled', !selected);
+        $('#master_price_decision_' + rowId).prop('disabled', !selected);
+
+        if (!selected) {
+            $('#master_price_decision_' + rowId).val('');
+        }
+
+        $('#row_' + rowId)
+            .toggleClass(
+                'table-primary',
+                selected
+            );
+
+        calculateSubtotal(rowId);
+    });
+
     $(document).on('keyup change', '.qty-input, .price-input', function() {
+
+        masterPriceDecisionConfirmed = false;
         let rowId = $(this).data('row');
         if (rowId !== undefined) calculateSubtotal(rowId);
     });
@@ -323,32 +653,376 @@ $(document).ready(function() {
     });
 
     // Submit form - tambahkan hidden fields untuk total
-    $('#poSupplierForm').on('submit', function(e) {
-        if ($('#itemsBody tr').length === 0 || $('#itemsBody tr td:first').text() === 'Memuat data...') {
+        function collectMasterPriceDifferences() {
+
+        let differences = [];
+
+        $('.item-selector:checked')
+            .each(function() {
+
+                let rowId =
+                    $(this).data('row');
+
+                let priceInput =
+                    $('#price_' + rowId);
+
+                let masterPrice =
+                    parseFloat(
+                        priceInput.attr(
+                            'data-master-price'
+                        )
+                    ) || 0;
+
+                let transactionPrice =
+                    parseRupiahToNumber(
+                        priceInput.val()
+                    );
+
+                if (
+                    Math.round(masterPrice * 100) !==
+                    Math.round(transactionPrice * 100)
+                ) {
+
+                    let productName =
+                        $('#row_' + rowId)
+                            .find('td')
+                            .eq(1)
+                            .clone()
+                            .children()
+                            .remove()
+                            .end()
+                            .text()
+                            .trim();
+
+                    differences.push({
+                        rowId: rowId,
+                        productName: productName,
+                        masterPrice: masterPrice,
+                        transactionPrice: transactionPrice
+                    });
+                }
+            });
+
+        return differences;
+    }
+
+    function showMasterPriceDecisionModal(
+        differences
+    ) {
+
+        let body =
+            $('#masterPriceDecisionBody');
+
+        body.empty();
+
+        differences.forEach(function(item) {
+
+            /*
+             * Force fresh explicit decision every time modal opens.
+             */
+            $('#master_price_decision_' + item.rowId)
+                .val('');
+
+            let row =
+                $('<tr>');
+
+            $('<td>')
+                .text(item.productName)
+                .appendTo(row);
+
+            $('<td>')
+                .addClass('text-end')
+                .text(
+                    'Rp ' +
+                    formatRupiah(
+                        item.masterPrice
+                    )
+                )
+                .appendTo(row);
+
+            $('<td>')
+                .addClass('text-end')
+                .text(
+                    'Rp ' +
+                    formatRupiah(
+                        item.transactionPrice
+                    )
+                )
+                .appendTo(row);
+
+            let decisionCell =
+                $('<td>');
+
+            let updateId =
+                'master_update_' +
+                item.rowId;
+
+            let keepId =
+                'master_keep_' +
+                item.rowId;
+
+            decisionCell.append(
+                '<div class="form-check">' +
+                    '<input class="form-check-input master-price-choice" ' +
+                    'type="radio" ' +
+                    'name="master_price_choice_' + item.rowId + '" ' +
+                    'id="' + updateId + '" ' +
+                    'data-row="' + item.rowId + '" ' +
+                    'value="update">' +
+                    '<label class="form-check-label" for="' + updateId + '">' +
+                        'Update Master' +
+                    '</label>' +
+                '</div>'
+            );
+
+            decisionCell.append(
+                '<div class="form-check mt-1">' +
+                    '<input class="form-check-input master-price-choice" ' +
+                    'type="radio" ' +
+                    'name="master_price_choice_' + item.rowId + '" ' +
+                    'id="' + keepId + '" ' +
+                    'data-row="' + item.rowId + '" ' +
+                    'value="keep">' +
+                    '<label class="form-check-label" for="' + keepId + '">' +
+                        'Keep Existing' +
+                    '</label>' +
+                '</div>'
+            );
+
+            row.append(decisionCell);
+
+            body.append(row);
+        });
+
+        $('#masterPriceDecisionError')
+            .addClass('d-none');
+
+        let modal =
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById(
+                    'masterPriceDecisionModal'
+                )
+            );
+
+        modal.show();
+    }
+
+    $('#confirmMasterPriceDecision')
+        .on('click', function() {
+
+            let valid = true;
+
+            $('#masterPriceDecisionBody tr')
+                .each(function() {
+
+                    let choice =
+                        $(this).find(
+                            '.master-price-choice:checked'
+                        );
+
+                    if (choice.length !== 1) {
+                        valid = false;
+                        return;
+                    }
+
+                    let rowId =
+                        choice.data('row');
+
+                    $('#master_price_decision_' + rowId)
+                        .val(
+                            choice.val()
+                        );
+                });
+
+            if (!valid) {
+
+                $('#masterPriceDecisionError')
+                    .removeClass('d-none');
+
+                return;
+            }
+
+            masterPriceDecisionConfirmed =
+                true;
+
+            let modal =
+                bootstrap.Modal.getInstance(
+                    document.getElementById(
+                        'masterPriceDecisionModal'
+                    )
+                );
+
+            if (modal) {
+                modal.hide();
+            }
+
+            document
+                .getElementById(
+                    'poSupplierForm'
+                )
+                .requestSubmit();
+        });
+$('#poSupplierForm').on('submit', function(e) {
+
+        if (!$('#po_customer_id').val()) {
+
             e.preventDefault();
-            alert('Silakan pilih PO Customer terlebih dahulu!');
+
+            alert(
+                'Silakan pilih PO Customer terlebih dahulu!'
+            );
+
             return false;
         }
+
+        let selectedRows =
+            $('.item-selector:checked');
+
+        if (selectedRows.length === 0) {
+
+            e.preventDefault();
+
+            alert(
+                'Pilih minimal satu item yang akan dibuatkan PO Supplier.'
+            );
+
+            return false;
+        }
+
         let valid = true;
-        $('.qty-input, .price-input').each(function() {
-            let val = $(this).val();
-            if (!val || parseFloat($(this).val()) <= 0) {
+
+        selectedRows.each(function() {
+
+            let rowId = $(this).data('row');
+
+            let qtyInput =
+                $('#qty_' + rowId);
+
+            let priceInput =
+                $('#price_' + rowId);
+
+            let qty =
+                parseFloat(
+                    qtyInput.val()
+                ) || 0;
+
+            let remaining =
+                parseFloat(
+                    qtyInput.attr('data-remaining')
+                ) || 0;
+
+            let price =
+                parseRupiahToNumber(
+                    priceInput.val()
+                );
+
+            if (qty <= 0 || qty > remaining) {
+
                 valid = false;
-                $(this).css('border-color', 'red');
+                qtyInput.addClass('is-invalid');
+
             } else {
-                $(this).css('border-color', '');
+
+                qtyInput.removeClass('is-invalid');
+            }
+
+            if (price <= 0) {
+
+                valid = false;
+                priceInput.addClass('is-invalid');
+
+            } else {
+
+                priceInput.removeClass('is-invalid');
             }
         });
+
         if (!valid) {
+
             e.preventDefault();
-            alert('Harap isi quantity dan harga beli dengan benar!');
+
+            alert(
+                'Periksa quantity dan purchase price item yang dipilih. ' +
+                'Quantity tidak boleh melebihi remaining quantity.'
+            );
+
             return false;
         }
+
+        /*
+         * Validation sudah PASS.
+         *
+         * Sebelum formatted purchase price dinormalisasi,
+         * bandingkan dengan Product Master.
+         */
+        if (!masterPriceDecisionConfirmed) {
+
+            let priceDifferences =
+                collectMasterPriceDifferences();
+
+            if (priceDifferences.length > 0) {
+
+                e.preventDefault();
+
+                showMasterPriceDecisionModal(
+                    priceDifferences
+                );
+
+                return false;
+            }
+        }
+        selectedRows.each(function() {
+
+            let rowId = $(this).data('row');
+
+            let priceInput =
+                $('#price_' + rowId);
+
+            priceInput.val(
+                parseRupiahToNumber(
+                    priceInput.val()
+                )
+            );
+
+            calculateSubtotal(rowId);
+        });
+
         calculateGrandTotal();
-        $('<input>').attr({type: 'hidden', name: 'subtotal', value: $('#subtotal_hidden').val() || 0}).appendTo(this);
-        $('<input>').attr({type: 'hidden', name: 'discount_amount', value: $('#discount_amount_hidden').val() || 0}).appendTo(this);
-        $('<input>').attr({type: 'hidden', name: 'tax_amount', value: $('#tax_amount_hidden').val() || 0}).appendTo(this);
-        $('<input>').attr({type: 'hidden', name: 'total', value: $('#grand_total_hidden').val() || 0}).appendTo(this);
+
+        $(this)
+            .find(
+                'input[data-generated-total="1"]'
+            )
+            .remove();
+
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'subtotal',
+            value: $('#subtotal_hidden').val() || 0,
+            'data-generated-total': '1'
+        }).appendTo(this);
+
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'discount_amount',
+            value: $('#discount_amount_hidden').val() || 0,
+            'data-generated-total': '1'
+        }).appendTo(this);
+
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'tax_amount',
+            value: $('#tax_amount_hidden').val() || 0,
+            'data-generated-total': '1'
+        }).appendTo(this);
+
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'total',
+            value: $('#grand_total_hidden').val() || 0,
+            'data-generated-total': '1'
+        }).appendTo(this);
+
         return true;
     });
 });

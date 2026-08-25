@@ -10,6 +10,7 @@ class PoSupplierDetail extends Model
     
     protected $fillable = [
         'po_supplier_id',
+        'po_customer_detail_id',
         'product_id',
         'quantity',
         'purchase_price',
@@ -21,6 +22,11 @@ class PoSupplierDetail extends Model
         return $this->belongsTo(PoSupplier::class);
     }
     
+    public function poCustomerDetail()
+    {
+        return $this->belongsTo(PoCustomerDetail::class, 'po_customer_detail_id');
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

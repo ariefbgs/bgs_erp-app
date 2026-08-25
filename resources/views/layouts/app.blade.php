@@ -211,6 +211,14 @@
                             </div>
                         </div>
 
+                        @auth
+                            @if (Auth::user()->hasPermission('deployment_view'))
+                                <a class="nav-link {{ request()->routeIs('deployment.*') ? 'active' : '' }}" href="{{ route('deployment.index') }}">
+                                    <i class="fas fa-code-branch"></i> Deployment Manager
+                                </a>
+                            @endif
+                        @endauth
+
                     </div>
                 </div>
 

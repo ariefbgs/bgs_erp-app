@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DeploymentController;
+
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SupplierController;
@@ -94,9 +96,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('customers/{id}/print', [CustomerController::class, 'print'])->name('customers.print');
     
     // Quotation
-    Route::resource('quotations', QuotationController::class);
+    Route::get(
+    '/quotations/copy-source/{source_quotation}',
+    [QuotationController::class, 'copySource']
+)->name('quotations.copy-source');
+
+Route::resource('quotations', QuotationController::class);
     Route::post('/quotations/update-price', [QuotationController::class, 'updateProductPrice'])->name('quotations.update-price');
     Route::get('/quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
+    Route::post('/quotations/{quotation}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
 
     // PO Customer
     Route::get('po-customers/{id}/view-image', [PoCustomerController::class, 'viewImage'])->name('po-customers.view-image');
@@ -197,11 +205,45 @@ Route::middleware(['auth'])->group(function () {
     // VIEW PRODUCT IMAGE
     // ==========================================
     Route::get('products/{id}/image-view', [ProductController::class, 'viewImage'])->name('products.image.view');
-
-    // ⚠️ Rute ini HANYA untuk sementara waktu! 
+    // Rute ini HANYA untuk sementara waktu!
     //Route::get('/storage-link', function () {
     //    Artisan::call('storage:link');
     //    return 'Storage linked successfully. Please delete this route now.';
     //});
 
 }); // Penutup Middleware Auth Global
+
+/*
+|--------------------------------------------------------------------------
+| Deployment Foundation
+|--------------------------------------------------------------------------
+|
+| Controlled deployment HTTP entry points.
+| Execution logic must remain outside the HTTP controller.
+|
+*/
+
+Route::middleware('auth')
+    ->prefix('deployment')
+    ->name('deployment.')
+    ->group(function () {
+        Route::get('/', [DeploymentController::class, 'index'])
+            ->middleware('permission:deployment_view')
+            ->name('index');
+
+        Route::post('/upload', [DeploymentController::class, 'upload'])
+            ->middleware('permission:deployment_upload')
+            ->name('upload');
+
+        Route::post('/install', [DeploymentController::class, 'install'])
+            ->middleware('permission:deployment_install')
+            ->name('install');
+
+        Route::post('/rollback', [DeploymentController::class, 'rollback'])
+            ->middleware('permission:deployment_rollback')
+            ->name('rollback');
+
+        Route::get('/history', [DeploymentController::class, 'history'])
+            ->middleware('permission:deployment_view')
+            ->name('history');
+    });

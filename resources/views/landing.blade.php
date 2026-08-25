@@ -131,7 +131,7 @@
             </div>
 
             <div class="col">
-                <a href="{{ route('expenses.index') }}" class="card h-100 p-4 features-card">
+                <a href="{{ route('expense.index') }}" class="card h-100 p-4 features-card">
                     <div class="icon-circle bg-danger bg-opacity-10 text-danger"><i class="bi bi-credit-card"></i></div>
                     <h5 class="fw-bold text-dark mb-1">Biaya & Pengeluaran</h5>
                     <p class="text-muted small mb-0">Pencatatan klaim pengeluaran kas operasional.</p>

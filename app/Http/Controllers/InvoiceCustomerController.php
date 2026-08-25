@@ -54,7 +54,7 @@ class InvoiceCustomerController extends Controller
     public function create()
     {
         $poCustomers = PoCustomer::with('customer')
-            ->whereIn('status', ['received', 'processed'])
+            ->whereIn('status', ['received', 'proceed'])
             ->whereIn('invoice_status', ['issue yet', 'partial'])
             ->orderBy('po_date', 'desc')
             ->get();
@@ -181,7 +181,7 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // âœ… REMAINING AMOUNT = sisa tagihan setelah invoice ini
+            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
             // Jika ada DP, remaining = subtotal - dpAmount, jika tidak = 0
             $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
 
@@ -210,7 +210,7 @@ class InvoiceCustomerController extends Controller
                 $taxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
             }
 
-            // âœ… PASTIKAN remaining_amount DIKIRIM KE DATABASE
+            // Ã¢Å“â€¦ PASTIKAN remaining_amount DIKIRIM KE DATABASE
             $data = [
                 'invoice_number' => $invoiceNumber,
                 'tax_invoice_number' => $request->tax_invoice_number,
@@ -229,7 +229,7 @@ class InvoiceCustomerController extends Controller
                 'pph23_percent' => $pph23Percent,
                 'pph23_amount' => $pph23Amount,
                 'total' => $total,
-                'remaining_amount' => $remainingAfterInvoice, // âœ… PASTIKAN INI ADA!
+                'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
                 'payment_status' => $request->payment_status ?? 'sent',
                 'payment_terms' => $request->payment_terms,
@@ -238,7 +238,7 @@ class InvoiceCustomerController extends Controller
                 'parent_invoice_id' => $request->parent_invoice_id ?? null,
             ];
 
-            // âœ… DEBUG: Log data sebelum simpan
+            // Ã¢Å“â€¦ DEBUG: Log data sebelum simpan
             \Log::info('Data yang akan disimpan:', $data);
 
             DB::beginTransaction();
@@ -305,7 +305,7 @@ class InvoiceCustomerController extends Controller
     }
 
     // =====================================================
-    // UPDATE â€“ invoice_number TIDAK bisa diubah
+    // UPDATE Ã¢â‚¬â€œ invoice_number TIDAK bisa diubah
     // =====================================================
     public function update(Request $request, $id)
     {
@@ -358,7 +358,7 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // âœ… REMAINING AMOUNT = sisa tagihan setelah invoice ini
+            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
             $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
 
             // ===== VALIDASI SISA PO =====
@@ -407,7 +407,7 @@ class InvoiceCustomerController extends Controller
                 $taxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
             }
 
-            // âœ… UPDATE termasuk remaining_amount
+            // Ã¢Å“â€¦ UPDATE termasuk remaining_amount
             DB::beginTransaction();
 
             $invoice->update([
@@ -426,7 +426,7 @@ class InvoiceCustomerController extends Controller
                 'pph23_percent' => $pph23Percent,
                 'pph23_amount' => $pph23Amount,
                 'total' => $total,
-                'remaining_amount' => $remainingAfterInvoice, // âœ… PASTIKAN INI ADA!
+                'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
                 'payment_status' => $request->payment_status,
                 'payment_terms' => $request->payment_terms,
@@ -435,7 +435,7 @@ class InvoiceCustomerController extends Controller
                 'parent_invoice_id' => $request->parent_invoice_id ?? null,
             ]);
 
-            // âœ… DEBUG: Log update
+            // Ã¢Å“â€¦ DEBUG: Log update
             \Log::info('Update data:', [
                 'remaining_amount' => $remainingAfterInvoice,
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed'

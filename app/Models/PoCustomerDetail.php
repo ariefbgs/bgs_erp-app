@@ -24,6 +24,11 @@ class PoCustomerDetail extends Model
         return $this->belongsTo(PoCustomer::class);
     }
 
+    public function poSupplierDetails()
+    {
+        return $this->hasMany(PoSupplierDetail::class, 'po_customer_detail_id');
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

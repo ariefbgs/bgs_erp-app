@@ -238,6 +238,38 @@
             <form action="{{ route('quotations.store') }}" method="POST" id="quotation-form">
                 @csrf
                 
+                {{-- COPY FROM PREVIOUS QUOTATION --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-md-8">
+                        <label for="source_quotation" class="form-label">
+                            Copy From Previous Quotation
+                        </label>
+
+                        <select
+                            id="source_quotation"
+                            name="source_quotation"
+                            class="form-control select2-enable"
+                            data-placeholder="Optional - select previous quotation to copy..."
+                        >
+                            <option value="">Create from blank quotation</option>
+
+                            @foreach($previousQuotations as $previousQuotation)
+                                <option value="{{ $previousQuotation->id }}">
+                                    {{ $previousQuotation->quotation_number }}
+                                    -
+                                    {{ optional($previousQuotation->customer)->name }}
+                                    -
+                                    {{ $previousQuotation->date }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <small class="text-muted">
+                            The selected quotation is only used as a template.
+                            A new quotation number and Draft lifecycle will be created when saved.
+                        </small>
+                    </div>
+                </div>
                 {{-- INPUT HIDDEN TRIGGER DISKON --}}
                 <input type="hidden" name="discount_trigger" id="discount_trigger" value="percent">
 
@@ -761,5 +793,127 @@ $(document).ready(function() {
         calculateGrandTotal();
     });
 });
+</script>
+
+<script>
+$(document).on('change', '#source_quotation', async function () {
+        const sourceId = this.value;
+
+        if (!sourceId) {
+            return;
+        }
+
+        try {
+            const baseUrl = @json(url('/quotations/copy-source'));
+            const response = await fetch(
+                `${baseUrl}/${encodeURIComponent(sourceId)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Unable to load source quotation.');
+            }
+
+            const source = await response.json();
+
+            /*
+             * Header reusable values only.
+             *
+             * Intentionally NOT copied:
+             * - id
+             * - quotation_number
+             * - status
+             * - date
+             * - valid_until
+             * - timestamps
+             */
+
+            $('#customer_id')
+                .val(source.customer_id)
+                .trigger('change');
+
+            $('#discount_percent').val(source.discount_percent ?? 0);
+            $('#discount_amount_display').val(source.discount_amount ? formatRupiah(source.discount_amount) : '');
+            $('#dpp-value').val(source.dpp ?? 0);
+
+            $('#tax_percent').val(source.tax_percent ?? 0);
+            $('#tax_amount_display').val(source.tax_amount ? formatRupiah(source.tax_amount) : '');
+
+            $('#pph23_percent').val(source.pph23_percent ?? 0);
+            $('#pph23_amount_display').val(source.pph23_amount ? formatRupiah(source.pph23_amount) : '');
+
+            $('[name="notes"]').val(source.notes ?? '');
+            $('[name="payment_terms"]').val(source.payment_terms ?? '');
+            $('[name="delivery_time"]').val(source.delivery_time ?? '');
+
+            $('#show_image').prop(
+                'checked',
+                source.show_image_on_print === true
+            );
+
+            /*
+             * Rebuild detail rows using the existing Add Product
+             * behavior so normal create-form calculation remains
+             * authoritative.
+             */
+            $('#products-container').empty();
+
+            const items = Array.isArray(source.items)
+                ? source.items
+                : [];
+
+            for (const item of items) {
+                $('#add-product').trigger('click');
+
+                const row = $('#products-container .product-row').last();
+
+                row.find('.product-select')
+                    .val(String(item.product_id))
+                    .trigger('change');
+
+                row.find('.qty-input')
+                    .val(item.quantity);
+
+                const copiedPrice = parseFloat(item.unit_price) || 0;
+
+                row.find('.price-display')
+                    .val(copiedPrice > 0 ? formatRupiah(copiedPrice) : '');
+
+                row.find('.spec-display')
+                    .val(item.specification ?? '');
+
+                row.find('.desc-display')
+                    .val(item.description ?? '');
+
+                /*
+                 * Existing quotation form calculates on change/keyup.
+                 * Call the existing row calculator directly after all
+                 * copied values are populated.
+                 */
+                calculateSubtotal(row.find('.qty-input').data('row'));
+            }
+
+            /*
+             * Let existing calculation code remain the authority.
+             */
+            if (typeof calculateGrandTotal === 'function') {
+                calculateGrandTotal();
+            }
+
+        } catch (error) {
+            console.error(error);
+
+            alert(
+                'Failed to load the selected quotation. ' +
+                'No quotation has been created or changed.'
+            );
+        }
+    });
 </script>
 @endsection

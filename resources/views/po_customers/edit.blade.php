@@ -202,15 +202,7 @@
                                     <label class="form-label">Target Delivery Date <span class="text-danger">*</span></label>
                                     <input type="date" name="delivery_date" id="delivery_date" class="form-control" value="{{ $poCustomer->delivery_date ? ($poCustomer->delivery_date instanceof \Carbon\Carbon ? $poCustomer->delivery_date->format('Y-m-d') : date('Y-m-d', strtotime($poCustomer->delivery_date))) : '' }}" required>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Processing Status <span class="text-danger">*</span></label>
-                                    <select name="status" class="form-select fw-semibold" required>
-                                        <option value="received" {{ $poCustomer->status == 'received' ? 'selected' : '' }}>Received</option>
-                                        <option value="processed" {{ $poCustomer->status == 'processed' ? 'selected' : '' }}>Processed</option>
-                                        <option value="delivered" {{ $poCustomer->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
-                                        <option value="cancelled" {{ $poCustomer->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                    </select>
-                                </div>
+                                
 
                                 {{-- PAYMENT TERMS --}}
                                 <div class="col-md-6">
@@ -295,7 +287,48 @@
                     
                     {{-- WADAH BARIS DINAMIS --}}
                     <div id="products-container" class="d-flex flex-column gap-3 mb-3">
-                        @foreach($poCustomer->details as $index => $detail)
+                        @php
+    /*
+    |--------------------------------------------------------------------------
+    | Procurement allocation state
+    |--------------------------------------------------------------------------
+    | Every PO Supplier except cancelled is an active allocation.
+    */
+    $allocatedByDetail = \Illuminate\Support\Facades\DB::table(
+            'po_supplier_details as psd'
+        )
+        ->join(
+            'po_suppliers as ps',
+            'ps.id',
+            '=',
+            'psd.po_supplier_id'
+        )
+        ->whereIn(
+            'psd.po_customer_detail_id',
+            $poCustomer->details->pluck('id')
+        )
+        ->where(
+            'ps.status',
+            '!=',
+            'cancelled'
+        )
+        ->groupBy('psd.po_customer_detail_id')
+        ->selectRaw(
+            'psd.po_customer_detail_id, SUM(psd.quantity) as allocated_qty'
+        )
+        ->pluck(
+            'allocated_qty',
+            'po_customer_detail_id'
+        );
+@endphp
+@foreach($poCustomer->details as $index => $detail)
+        @php
+            $allocatedQty = (float) (
+                $allocatedByDetail[$detail->id] ?? 0
+            );
+
+            $isAllocated = $allocatedQty > 0;
+        @endphp
                         <div class="product-row position-relative" id="row-{{ $index }}">
                             <div class="row g-2 text-start">
                                 <div class="col-md-2">
@@ -304,7 +337,41 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small">Select Product</label>
-                                    <select name="items[{{ $index }}][product_id]" class="form-select form-select-sm product-select" data-row="{{ $index }}" required>
+                                    <input type="hidden" name="items[{{ $index }}][detail_id]" value="{{ $detail->id }}">
+                                    @if($isAllocated)
+                    <input
+                        type="hidden"
+                        name="items[{{ $index }}][product_id]"
+                        value="{{ $detail->product_id }}"
+                    >
+
+                    <select
+                        class="form-select form-select-sm product-select readonly-bg"
+                        data-row="{{ $index }}"
+                        disabled
+                        title="Product terkunci karena item sudah digunakan pada PO Supplier"
+                    >
+                        @foreach($products as $product)
+                            <option
+                                value="{{ $product->id }}"
+                                data-price="{{ $product->price }}"
+                                data-brand="{{ $product->brand ?? '-' }}"
+                                data-product-code2="{{ $product->product_code2 ?? '' }}"
+                                data-product-name2="{{ $product->name2 ?? '' }}"
+                                {{ $detail->product_id == $product->id ? 'selected' : '' }}
+                            >
+                                {{ $product->product_code2 ?? $product->product_code ?? '' }}
+                                - {{ $product->name2 ?? $product->name ?? '' }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <div class="form-text text-warning">
+                        <i class="bi bi-lock-fill me-1"></i>
+                        Product terkunci — sudah digunakan pada PO Supplier.
+                    </div>
+                @else
+<select name="items[{{ $index }}][product_id]" class="form-select form-select-sm product-select" data-row="{{ $index }}" required>
                                         <option value="">-- Choose Product --</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->id }}" 
@@ -317,10 +384,30 @@
                                             </option>
                                         @endforeach
                                     </select>
+                @endif
                                 </div>
                                 <div class="col-md-1">
                                     <label class="form-label small">Qty</label>
-                                    <input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm qty-input" data-row="{{ $index }}" value="{{ $detail->quantity }}" min="1" required>
+                                    <input
+                    type="number"
+                    name="items[{{ $index }}][quantity]"
+                    class="form-control form-control-sm qty-input"
+                    data-row="{{ $index }}"
+                    value="{{ $detail->quantity }}"
+                    min="{{ $isAllocated ? $allocatedQty : 1 }}"
+                    @if($isAllocated)
+                        data-allocated-qty="{{ $allocatedQty }}"
+                        title="Minimum quantity {{ $allocatedQty }} karena sudah dialokasikan ke PO Supplier. Quantity boleh dinaikkan."
+                    @endif
+                    required
+                >
+                @if($isAllocated)
+                    <div class="form-text">
+                        Allocated:
+                        {{ rtrim(rtrim(number_format($allocatedQty, 4, '.', ''), '0'), '.') }}.
+                        Qty boleh dinaikkan.
+                    </div>
+                @endif
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label small">Price (Rp)</label>
@@ -333,7 +420,17 @@
                                     <input type="hidden" name="items[{{ $index }}][subtotal]" id="subtotal-hidden-{{ $index }}" class="subtotal-hidden" value="{{ $detail->subtotal }}">
                                 </div>
                                 <div class="col-md-1 d-flex align-items-end justify-content-center">
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-product" data-row="{{ $index }}" title="Remove Item">
+                                    <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm remove-product"
+                    data-row="{{ $index }}"
+                    @if($isAllocated)
+                        disabled
+                        title="Item tidak dapat dihapus karena sudah digunakan pada PO Supplier"
+                    @else
+                        title="Remove Item"
+                    @endif
+                >
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -708,6 +805,24 @@ $(document).ready(function() {
     
     $(document).on('keyup change', '.qty-input', function() {
         let rowId = $(this).data('row');
+
+        const allocatedQty =
+            parseFloat($(this).data('allocated-qty')) || 0;
+
+        const currentQty =
+            parseFloat($(this).val()) || 0;
+
+        if (
+            allocatedQty > 0 &&
+            currentQty < allocatedQty
+        ) {
+            this.setCustomValidity(
+                `Quantity tidak boleh lebih kecil dari allocated quantity ${allocatedQty}.`
+            );
+        } else {
+            this.setCustomValidity('');
+        }
+
         calculateSubtotal(rowId);
     });
     

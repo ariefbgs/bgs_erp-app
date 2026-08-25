@@ -9,7 +9,8 @@ class PoSupplier extends Model
     protected $fillable = [
         'po_supplier_number', 'po_customer_id', 'customer_id', 'supplier_id',
         'po_date', 'status', 'notes',
-        'subtotal', 'tax_percent', 'tax_amount', 'total'
+        'subtotal', 'discount_percent', 'discount_amount',
+        'tax_percent', 'tax_amount', 'total'
     ];
 
     protected $dates = ['po_date'];
