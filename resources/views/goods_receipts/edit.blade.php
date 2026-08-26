@@ -62,7 +62,7 @@
             <div class="page-title">
                 Edit Good Receipt  
             </div>
-            <a href="{{ route('quotations.index') }}" class="btn btn-light btn-sm">
+            <a href="{{ route('goods-receipts.index') }}" class="btn btn-light btn-sm">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
         </div>

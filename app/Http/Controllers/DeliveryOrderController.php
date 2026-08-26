@@ -27,10 +27,20 @@ class DeliveryOrderController extends Controller
     public function create()
     {
         $poCustomers = PoCustomer::with('customer')
-            ->where('status', 'proceed')
-            ->whereIn('invoice_status', ['partial', 'completed'])
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('poSuppliers.goodsReceipts', function ($query) {
+                $query->where('status', '!=', 'cancelled')
+                    ->whereHas('details', function ($detailQuery) {
+                        $detailQuery->where('quantity_received', '>', 0);
+                    });
+            })
             ->orderBy('po_date', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (PoCustomer $poCustomer) =>
+                collect($this->getDeliverableQuantities($poCustomer->id))->contains(
+                    fn ($quantity) => $quantity > 0
+                )
+            );
 
         \Log::info('Jumlah PO Customer: ' . $poCustomers->count());
         
@@ -41,14 +51,21 @@ class DeliveryOrderController extends Controller
     {
         $poCustomer = PoCustomer::with(['details.product', 'customer'])->findOrFail($id);
         $items = [];
+        $deliverableQuantities = $this->getDeliverableQuantities($poCustomer->id);
+
         foreach ($poCustomer->details as $detail) {
+            $deliverable = (float) ($deliverableQuantities[$detail->product_id] ?? 0);
+            if ($deliverable <= 0) {
+                continue;
+            }
             $items[] = [
                 'product_id' => $detail->product_id,
                 'product_name' => $detail->product->name,
                 'product_code' => $detail->product->product_code,
                 'brand' => $detail->product->brand,
                 'unit' => $detail->product->unit,
-                'quantity' => $detail->quantity,
+                'quantity' => $deliverable,
+                'po_quantity' => $detail->quantity,
             ];
         }
         return response()->json([
@@ -118,6 +135,29 @@ class DeliveryOrderController extends Controller
         DB::beginTransaction();
         try {
             $poCustomer = PoCustomer::findOrFail($request->po_customer_id);
+            $deliverableQuantities = $this->getDeliverableQuantities($poCustomer->id);
+
+            $positiveItemCount = 0;
+            foreach ($request->items as $item) {
+                $requestedQuantity = (float) $item['quantity'];
+                if ($requestedQuantity <= 0) {
+                    continue;
+                }
+
+                $positiveItemCount++;
+                $availableQuantity = (float) ($deliverableQuantities[$item['product_id']] ?? 0);
+                if ($requestedQuantity > $availableQuantity) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Quantity Delivery Order melebihi quantity yang sudah diterima melalui Goods Receipt.',
+                    ]);
+                }
+            }
+
+            if ($positiveItemCount === 0) {
+                throw ValidationException::withMessages([
+                    'items' => 'Minimal satu quantity Delivery Order harus lebih dari nol.',
+                ]);
+            }
 
             // Generate DO Number
             $doDate = $request->delivery_date;
@@ -402,5 +442,39 @@ class DeliveryOrderController extends Controller
             7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
         ];
         return $romans[$month] ?? 'I';
+    }
+
+    /**
+     * Quantity yang boleh dikirim adalah Goods Receipt aktif dikurangi DO yang
+     * sudah pernah dibuat untuk PO Customer dan product yang sama.
+     */
+    private function getDeliverableQuantities(int $poCustomerId): array
+    {
+        $received = DB::table('goods_receipt_details as grd')
+            ->join('goods_receipts as gr', 'gr.id', '=', 'grd.goods_receipt_id')
+            ->join('po_supplier_details as psd', 'psd.id', '=', 'grd.po_supplier_detail_id')
+            ->join('po_suppliers as ps', 'ps.id', '=', 'psd.po_supplier_id')
+            ->where('ps.po_customer_id', $poCustomerId)
+            ->where('ps.status', '!=', 'cancelled')
+            ->where('gr.status', '!=', 'cancelled')
+            ->groupBy('grd.product_id')
+            ->selectRaw('grd.product_id, SUM(grd.quantity_received) as received_quantity')
+            ->pluck('received_quantity', 'grd.product_id');
+
+        $delivered = DB::table('delivery_order_details as dod')
+            ->join('delivery_orders as do', 'do.id', '=', 'dod.delivery_order_id')
+            ->where('do.po_customer_id', $poCustomerId)
+            ->groupBy('dod.product_id')
+            ->selectRaw('dod.product_id, SUM(dod.quantity) as delivered_quantity')
+            ->pluck('delivered_quantity', 'dod.product_id');
+
+        return $received->mapWithKeys(function ($quantity, $productId) use ($delivered) {
+            return [
+                (int) $productId => max(
+                    0,
+                    (float) $quantity - (float) ($delivered[$productId] ?? 0)
+                ),
+            ];
+        })->all();
     }
 }
