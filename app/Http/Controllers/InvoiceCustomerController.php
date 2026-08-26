@@ -60,20 +60,11 @@ class InvoiceCustomerController extends Controller
             ->get();
 
         $poCustomers->each(function ($po) {
-            $totalInvoiced = InvoiceCustomer::where('po_customer_id', $po->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('total');
-            $po->remaining_total = max(0, $po->total - $totalInvoiced);
+            $po->remaining_subtotal_before_tax = $this->remainingPreTaxAmount($po);
+            $po->remaining_total = $po->remaining_subtotal_before_tax;
         });
 
-        // Ambil daftar invoice yang bisa dijadikan parent (hanya yang status partial)
-        $parentInvoices = InvoiceCustomer::where('status', 'partial')
-            ->where('payment_status', '!=', 'paid')
-            ->with('poCustomer.customer')
-            ->orderBy('invoice_number')
-            ->get();
-
-        return view('invoice_customers.create', compact('poCustomers', 'parentInvoices'));
+        return view('invoice_customers.create', compact('poCustomers'));
     }
 
     // =====================================================
@@ -82,6 +73,8 @@ class InvoiceCustomerController extends Controller
     public function getPoCustomerDetails($id)
     {
         $poCustomer = PoCustomer::with(['details.product', 'customer'])->findOrFail($id);
+        $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
+        $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
         $items = [];
         foreach ($poCustomer->details as $detail) {
             $items[] = [
@@ -101,6 +94,14 @@ class InvoiceCustomerController extends Controller
             'items'       => $items,
             'payment_terms' => $poCustomer->payment_terms,
             'delivery_time' => $poCustomer->delivery_time,
+            'remaining_subtotal_before_tax' => $remainingPreTax,
+            'has_previous_invoice' => $rootInvoice !== null,
+            'root_invoice_number' => $rootInvoice?->invoice_number,
+            'recommended_percent' => (float) $poCustomer->subtotal > 0
+                ? min(100, ($remainingPreTax / (float) $poCustomer->subtotal) * 100)
+                : 0,
+            'tax_percent' => (float) ($poCustomer->tax_percent ?? 0),
+            'pph23_percent' => $this->poPphPercent($poCustomer),
         ]);
     }
 
@@ -132,17 +133,12 @@ class InvoiceCustomerController extends Controller
             'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
             'notes'          => 'nullable|string',
             'payment_status' => 'nullable|in:sent,paid',
-            'parent_invoice_id' => 'nullable|exists:invoice_customers,id',
         ]);
 
         try {
             $poCustomer = PoCustomer::findOrFail($request->po_customer_id);
 
-            // Hitung total invoice yang sudah dikeluarkan
-            $totalInvoiced = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('total');
-            $remaining = max(0, $poCustomer->total - $totalInvoiced);
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
 
             // Generate nomor invoice
             $invoiceDate = $request->invoice_date;
@@ -181,27 +177,15 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
-            // Jika ada DP, remaining = subtotal - dpAmount, jika tidak = 0
-            $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
+            // Sisa canonical selalu mengikuti nilai PO Customer dikurangi seluruh
+            // invoice aktif, baik invoice DP maupun payment-after-delivery.
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
 
-            // Validasi total tidak melebihi sisa PO
-            if ($total > $remaining) {
+            if (round($baseAmount) > round($remainingPreTax)) {
                 return back()->withInput()->with('error',
-                    'Total invoice Rp ' . number_format($total, 0, ',', '.') .
-                    ' melebihi sisa tagihan PO Customer yang tersisa: Rp ' . number_format($remaining, 0, ',', '.')
+                    'Payment Amount Rp ' . number_format($baseAmount, 0, ',', '.') .
+                    ' melebihi sisa PO Amount: Rp ' . number_format($remainingPreTax, 0, ',', '.')
                 );
-            }
-
-            // Validasi parent invoice
-            if ($request->filled('parent_invoice_id')) {
-                $parent = InvoiceCustomer::findOrFail($request->parent_invoice_id);
-                $totalChild = $parent->childInvoices()->where('status', '!=', 'cancelled')->sum('total');
-                if (($totalChild + $total) > $parent->total) {
-                    return back()->withInput()->with('error',
-                        'Total invoice anak melebihi total induk.'
-                    );
-                }
             }
 
             // Attachment
@@ -235,7 +219,7 @@ class InvoiceCustomerController extends Controller
                 'payment_terms' => $request->payment_terms,
                 'delivery_time' => $request->delivery_time,
                 'notes' => $request->notes,
-                'parent_invoice_id' => $request->parent_invoice_id ?? null,
+                'parent_invoice_id' => null,
             ];
 
             // Ã¢Å“â€¦ DEBUG: Log data sebelum simpan
@@ -243,7 +227,25 @@ class InvoiceCustomerController extends Controller
 
             DB::beginTransaction();
 
+            $poCustomer = PoCustomer::whereKey($poCustomer->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
+            if (round($baseAmount) > round($remainingPreTax)) {
+                throw ValidationException::withMessages([
+                    'items' => 'Payment Amount melebihi sisa PO Amount.',
+                ]);
+            }
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
+            $data['parent_invoice_id'] = $rootInvoice?->id;
+
             $invoice = InvoiceCustomer::create($data);
+
+            $invoice->update([
+                'remaining_amount' => $remainingAfterInvoice,
+                'status' => $remainingAfterInvoice > 0 ? 'partial' : 'completed',
+            ]);
 
             // Simpan detail
             foreach ($request->items as $item) {
@@ -336,7 +338,6 @@ class InvoiceCustomerController extends Controller
             'delete_attachment' => 'nullable|string',
             'notes' => 'nullable|string',
             'payment_status' => 'required|in:sent,paid',
-            'parent_invoice_id' => 'nullable|exists:invoice_customers,id',
         ]);
 
         try {
@@ -358,41 +359,15 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
-            $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
-
             // ===== VALIDASI SISA PO =====
             $poCustomer = PoCustomer::findOrFail($invoice->po_customer_id);
-            $totalInvoicedLain = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
-                ->where('status', '!=', 'cancelled')
-                ->where('id', '!=', $id)
-                ->sum('total');
-            $remainingPo = max(0, $poCustomer->total - $totalInvoicedLain);
-            if ($total > $remainingPo) {
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer, $invoice->id);
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
+            if (round($baseAmount) > round($remainingPreTax)) {
                 return back()->withInput()->with('error',
-                    'Total invoice baru Rp ' . number_format($total, 0, ',', '.') .
-                    ' melebihi sisa tagihan PO yang tersisa (Rp ' . number_format($remainingPo, 0, ',', '.') .
-                    ') setelah dikurangi invoice lain.'
+                    'Payment Amount baru Rp ' . number_format($baseAmount, 0, ',', '.') .
+                    ' melebihi sisa PO Amount (Rp ' . number_format($remainingPreTax, 0, ',', '.') . ').'
                 );
-            }
-
-            // ===== VALIDASI PARENT INVOICE =====
-            if ($request->filled('parent_invoice_id')) {
-                $parent = InvoiceCustomer::findOrFail($request->parent_invoice_id);
-                if ($parent->id == $id) {
-                    return back()->withInput()->with('error', 'Tidak bisa menjadikan diri sendiri sebagai induk.');
-                }
-                $totalChildLain = $parent->childInvoices()
-                    ->where('status', '!=', 'cancelled')
-                    ->where('id', '!=', $id)
-                    ->sum('total');
-                if (($totalChildLain + $total) > $parent->total) {
-                    return back()->withInput()->with('error',
-                        'Total invoice anak (' . number_format($total, 0, ',', '.') .
-                        ') ditambah total anak sebelumnya (' . number_format($totalChildLain, 0, ',', '.') .
-                        ') melebihi total induk (' . number_format($parent->total, 0, ',', '.') . ')'
-                    );
-                }
             }
 
             // Attachment
@@ -409,6 +384,17 @@ class InvoiceCustomerController extends Controller
 
             // Ã¢Å“â€¦ UPDATE termasuk remaining_amount
             DB::beginTransaction();
+
+            $poCustomer = PoCustomer::whereKey($poCustomer->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer, $invoice->id);
+            if (round($baseAmount) > round($remainingPreTax)) {
+                throw ValidationException::withMessages([
+                    'items' => 'Payment Amount melebihi sisa PO Amount.',
+                ]);
+            }
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
 
             $invoice->update([
                 'type' => $request->type,
@@ -432,7 +418,6 @@ class InvoiceCustomerController extends Controller
                 'payment_terms' => $request->payment_terms,
                 'delivery_time' => $request->delivery_time,
                 'notes' => $request->notes,
-                'parent_invoice_id' => $request->parent_invoice_id ?? null,
             ]);
 
             // Ã¢Å“â€¦ DEBUG: Log update
@@ -569,7 +554,8 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::with(['poCustomer.customer', 'details.product', 'parentInvoice'])->findOrFail($id);
         $company = Company::where('is_active', true)->first();
-        $pdf = Pdf::loadView('invoice_customers.print', compact('invoice', 'company'));
+        $printAssets = $this->invoicePrintAssets($company, $invoice);
+        $pdf = Pdf::loadView('invoice_customers.print', compact('invoice', 'company', 'printAssets'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('Invoice_' . str_replace('/', '_', $invoice->invoice_number) . '.pdf');
     }
@@ -578,7 +564,8 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::with(['poCustomer.customer', 'details.product', 'parentInvoice'])->findOrFail($id);
         $company = Company::where('is_active', true)->first();
-        $pdf = Pdf::loadView('invoice_customers.print_invoice', compact('invoice', 'company'));
+        $printAssets = $this->invoicePrintAssets($company, $invoice);
+        $pdf = Pdf::loadView('invoice_customers.print_invoice', compact('invoice', 'company', 'printAssets'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('Invoice_' . str_replace('/', '_', $invoice->invoice_number) . '.pdf');
     }
@@ -586,6 +573,51 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     // PRIVATE HELPERS
     // =====================================================
+
+    private function invoicePrintAssets(?Company $company, InvoiceCustomer $invoice): array
+    {
+        $signatureField = (float) $invoice->total > 5000000 ? 'ttd_inv2' : 'ttd_inv';
+
+        return [
+            'logo' => $this->publicImageDataUri([
+                $company?->logo,
+                'uploads/companies/logo/LogoBGS.png',
+                'uploads/ttd/logo baru BGS-FInal.png',
+            ]),
+            'signature' => $this->publicImageDataUri([
+                $company?->{$signatureField},
+                'uploads/ttd/' . $signatureField . '.jpg',
+            ]),
+        ];
+    }
+
+    private function publicImageDataUri(array $candidates): ?string
+    {
+        $publicRoot = realpath(public_path());
+        if ($publicRoot === false) {
+            return null;
+        }
+
+        foreach (array_filter($candidates) as $relativePath) {
+            $resolved = realpath(public_path(ltrim(str_replace('\\', '/', $relativePath), '/')));
+            if (
+                $resolved === false ||
+                !str_starts_with($resolved, $publicRoot . DIRECTORY_SEPARATOR) ||
+                !is_file($resolved)
+            ) {
+                continue;
+            }
+
+            $mime = mime_content_type($resolved);
+            if (!is_string($mime) || !str_starts_with($mime, 'image/')) {
+                continue;
+            }
+
+            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($resolved));
+        }
+
+        return null;
+    }
 
     private function parseRupiahToNumber($value)
     {
@@ -603,6 +635,65 @@ class InvoiceCustomerController extends Controller
             7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
         ];
         return $romans[$month] ?? 'I';
+    }
+
+    private function rootInvoiceForPo(int $poCustomerId): ?InvoiceCustomer
+    {
+        return InvoiceCustomer::where('po_customer_id', $poCustomerId)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function remainingPreTaxAmount(PoCustomer $poCustomer, ?int $excludeInvoiceId = null): float
+    {
+        $poPreTax = max(0, (float) $poCustomer->subtotal);
+        if ($poPreTax <= 0) {
+            $poPreTax = max(
+                0,
+                (float) $poCustomer->total - (float) $poCustomer->tax_amount
+            );
+        }
+
+        $query = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
+            ->where('status', '!=', 'cancelled');
+
+        if ($excludeInvoiceId !== null) {
+            $query->where('id', '!=', $excludeInvoiceId);
+        }
+
+        $invoicedPreTax = (float) $query->selectRaw(
+            'COALESCE(SUM(CASE WHEN dp_amount > 0 THEN dp_amount ELSE subtotal END), 0) as amount'
+        )->value('amount');
+
+        return max(0, $poPreTax - $invoicedPreTax);
+    }
+
+    private function poPphPercent(PoCustomer $poCustomer): float
+    {
+        $poPreTax = max(
+            0,
+            (float) $poCustomer->subtotal - (float) $poCustomer->discount_amount
+        );
+        if ($poPreTax <= 0) {
+            $poPreTax = max(
+                0,
+                (float) $poCustomer->total - (float) $poCustomer->tax_amount
+            );
+        }
+        if ($poPreTax <= 0) {
+            return 0;
+        }
+
+        // Legacy PO tidak memiliki kolom PPh, tetapi totalnya sudah net of PPh.
+        $derivedPphAmount = max(
+            0,
+            $poPreTax + (float) $poCustomer->tax_amount - (float) $poCustomer->total
+        );
+
+        // Nilai total PO tersimpan dalam rupiah bulat sehingga hasil pembagian
+        // dapat menghasilkan artefak floating point (contoh 2.500000668...).
+        return round(($derivedPphAmount / $poPreTax) * 100, 4);
     }
 
     /**

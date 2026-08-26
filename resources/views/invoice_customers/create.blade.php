@@ -173,7 +173,7 @@
                         <select name="po_customer_id" id="po_customer_id" class="form-select" required>
                             <option value="">-- Select PO Customer --</option>
                             @foreach($poCustomers as $po)
-                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
+                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" data-remaining-base="{{ $po->remaining_subtotal_before_tax ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
                                     {{ $po->po_number }} - {{ $po->customer->name }}
                                     (sisa: Rp {{ number_format($po->remaining_total ?? 0, 0, ',', '.') }})
                                 </option>
@@ -193,26 +193,16 @@
                     </div>
                 </div>
 
-                {{-- Tambahan: Parent Invoice untuk partial payment --}}
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
-                        <label class="form-label">Parent Invoice (optional)</label>
-                        <select name="parent_invoice_id" id="parent_invoice_id" class="form-select select2">
-                            <option value="">-- None (new invoice) --</option>
-                            @if(isset($parentInvoices))
-                                @foreach($parentInvoices as $parent)
-                                    <option value="{{ $parent->id }}" {{ old('parent_invoice_id') == $parent->id ? 'selected' : '' }}>
-                                        {{ $parent->invoice_number }} - {{ $parent->poCustomer->customer->name ?? '' }}
-                                        (sisa: Rp {{ number_format($parent->total - $parent->childInvoices->sum('total'), 0, ',', '.') }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <div class="form-text text-muted small">Pilih invoice induk jika ini adalah tagihan lanjutan (partial payment).</div>
+                        <div class="info-box" id="parentInvoiceInfo" style="display:none;">
+                            <strong>Parent invoice:</strong>
+                            <span id="parentInvoiceValue" class="highlight">Ditentukan otomatis oleh sistem</span>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="info-box" id="poRemainingInfo" style="display: none;">
-                            <strong>Sisa tagihan PO:</strong> <span id="poRemainingValue" class="highlight">Rp 0</span>
+                            <strong>Sisa PO Amount sebelum pajak:</strong> <span id="poRemainingBaseValue" class="highlight">Rp 0</span>
                             <span id="poRemainingWarning" class="text-danger ms-2" style="display: none;">(melebihi sisa!)</span>
                         </div>
                     </div>
@@ -343,10 +333,10 @@
                                     <th class="text-end" id="discount_amount_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="3" class="text-end">Payment (%)</th>
+                                    <th colspan="3" class="text-end">Payment Percentage (%)</th>
                                     <td>
                                         <input type="number" name="dp_percent" id="dp_percent"
-                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('dp_percent', 100) }}">
+                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('dp_percent', 0) }}">
                                     </td>
                                     <th class="text-end" id="dp_amount_display">Rp 0</th>
                                 </tr>
@@ -375,7 +365,7 @@
                                     <th class="text-end"><strong id="grand_total_display">Rp 0</strong></th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-end">Remaining Amount</th>
+                                    <th colspan="4" class="text-end">Remaining PO Amount Before Tax</th>
                                     <th class="text-end" id="remaining_display">Rp 0</th>
                                 </tr>
                             </tfoot>
@@ -469,13 +459,6 @@ $(function () {
         }
     });
 
-    // Init select2 untuk parent invoice
-    $('#parent_invoice_id').select2({
-        placeholder: "-- None (new invoice) --",
-        allowClear: true,
-        width: '100%'
-    });
-
     let rowIndex = 0;
 
     function formatRupiah(number) {
@@ -530,7 +513,8 @@ $(function () {
         let taxAmount = dpp * taxPercent / 100;
         let pph23Amount = dpp * pph23Percent / 100;
         let grandTotal = dpp + taxAmount - pph23Amount;
-        let remaining = (dpAmount > 0) ? (subtotal - dpAmount) : 0;
+        let poRemainingBase = parseFloat($('#po_customer_id option:selected').data('remaining-base')) || 0;
+        let remaining = Math.max(0, poRemainingBase - baseAmount);
 
         let dppLain = dpAmount * 11 / 12;
         $('#dpplain_display').html('Rp ' + formatRupiah(dppLain));
@@ -551,9 +535,10 @@ $(function () {
         $('#grand_total_value').val(grandTotal);
         $('#remaining_amount_value').val(remaining);
 
-        // Cek jika grandTotal melebihi sisa PO
-        let poRemaining = parseFloat($('#po_customer_id option:selected').data('remaining')) || 0;
-        if (grandTotal > poRemaining && poRemaining > 0) {
+        // Payment Amount dialokasikan sebelum diskon dan pajak.
+        const invoiceBaseRupiah = Math.round(baseAmount + Number.EPSILON);
+        const poRemainingBaseRupiah = Math.round(poRemainingBase + Number.EPSILON);
+        if (invoiceBaseRupiah > poRemainingBaseRupiah && poRemainingBaseRupiah > 0) {
             $('#poRemainingWarning').show();
         } else {
             $('#poRemainingWarning').hide();
@@ -584,7 +569,7 @@ $(function () {
         if (match) {
             $('#dp_percent').val(match[1]);
         } else {
-            $('#dp_percent').val(100);
+            $('#dp_percent').val(0);
         }
         calculateAll();
     });
@@ -602,8 +587,8 @@ $(function () {
 
         $('#invoiceDetails').show();
 
-        let poRemaining = parseFloat($(this).find('option:selected').data('remaining')) || 0;
-        $('#poRemainingValue').text('Rp ' + formatRupiah(poRemaining));
+        let poRemainingBase = parseFloat($(this).find('option:selected').data('remaining-base')) || 0;
+        $('#poRemainingBaseValue').text('Rp ' + formatRupiah(poRemainingBase));
         $('#poRemainingInfo').show();
         $('#poRemainingWarning').hide();
 
@@ -669,6 +654,23 @@ $(function () {
                     $deliveryTime.val(res.delivery_time).trigger('change.select2');
                 }
 
+                if (res.has_previous_invoice) {
+                    $('#parentInvoiceValue').text(res.root_invoice_number + ' (otomatis)');
+                    $('#parentInvoiceInfo').show();
+                    // Hilangkan nol desimal yang membingungkan (75.0000 berarti 75%, bukan Rp75 juta).
+                    const recommendedPercent = Number(Number(res.recommended_percent || 0).toFixed(4));
+                    $('#dp_percent').val(recommendedPercent);
+                    $('#discount_percent').val(0);
+                    $('#tax_percent').val(res.tax_percent || 0);
+                    const poPphPercent = Number(Number(res.pph23_percent || 0).toFixed(4));
+                    $('#pph23_percent').val(poPphPercent);
+                    $('#has_pph23').prop('checked', poPphPercent > 0);
+                    $('#pph23_row').toggle(poPphPercent > 0);
+                } else {
+                    $('#parentInvoiceValue').text('Invoice ini akan menjadi parent/root');
+                    $('#parentInvoiceInfo').show();
+                }
+
                 setTimeout(function () {
                     for (let i = 0; i < rowIndex; i++) {
                         calculateSubtotal(i);
@@ -717,11 +719,6 @@ $(function () {
     var oldDeliveryTime = "{{ old('delivery_time') }}";
     if (oldDeliveryTime) {
         $('select[name="delivery_time"]').val(oldDeliveryTime).trigger('change.select2');
-    }
-
-    var oldParentId = "{{ old('parent_invoice_id') }}";
-    if (oldParentId) {
-        $('#parent_invoice_id').val(oldParentId).trigger('change.select2');
     }
 
     var oldStatus = "{{ old('status') }}";

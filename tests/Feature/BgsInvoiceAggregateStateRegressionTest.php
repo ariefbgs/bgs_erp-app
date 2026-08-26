@@ -141,6 +141,9 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
             'po_date'        => now()->toDateString(),
             'status'         => 'received',
             'invoice_status' => $invoiceStatus,
+            'subtotal'       => $total,
+            'discount_amount' => 0,
+            'tax_amount'     => 0,
             'total'          => $total,
         ]);
 
@@ -160,6 +163,11 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
             'status'         => $status,
             'invoice_status' => 'issue yet',
             'payment_status' => $paymentStatus,
+            'subtotal'       => $total,
+            'dp_amount'      => 0,
+            'discount_amount' => 0,
+            'tax_amount'     => 0,
+            'pph23_amount'   => 0,
             'total'          => $total,
             'remaining_amount' => 0,
         ]);

@@ -2,195 +2,37 @@
 @section('title', 'Detail Sales Invoice')
 @section('content')
 <style>
-    .table td,
-    .table th {
-        vertical-align: middle;
-    }
-    .info-table th {
-        width: 35%;
-        background-color: #f8f9fa;
-    }
-    .amount-text {
-        text-align: right;
-        white-space: nowrap;
-    }
-    .card-tools .btn {
-        margin-left: 5px;
-    }
+body{background:#f1f5f9}.main-card{border:0;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.05);overflow:hidden}.card-header-custom{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}.card-header-custom h4{color:#fff;font-weight:700;margin:0}.section-sub-title{font-size:1rem;text-transform:uppercase;letter-spacing:1px;color:#475569;font-weight:700;margin-bottom:1rem;border-bottom:2px solid #e2e8f0;padding-bottom:5px;display:inline-block}.section-sub-title i{color:#0ea5e9}.info-box-bg{background:#f8fafc;border:1px solid #e2e8f0}.info-table{margin:0}.info-table td{padding:.65rem .5rem;border:0;font-size:.92rem;vertical-align:top}.info-table .label{font-weight:600;color:#1e293b;width:40%}.info-table .value{color:#334155}.table-modern thead th{background:#0369a1;color:#f0f9ff;font-weight:600;text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;padding:14px;border:0}.table-modern tbody tr:nth-child(even){background:#fcfdfe}.table-modern tbody td{padding:1rem .75rem;vertical-align:middle;font-size:.9rem;color:#334155;border-color:#f1f5f9}.summary-card{background:#1e293b;border-radius:8px;padding:1.25rem;color:#f1f5f9;box-shadow:0 5px 15px rgba(0,0,0,.1)}.summary-line{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;font-size:.9rem;color:#cbd5e1}.summary-line.grand-total{border-top:2px solid #334155;margin-top:.5rem;padding-top:1rem;font-size:1.2rem;font-weight:700;color:#fff}.summary-line.remaining{border-top:1px solid #475569;margin-top:.5rem;padding-top:.9rem;color:#facc15;font-weight:700}.total-rp{color:#38bdf8;white-space:nowrap}.badge-custom{padding:.5em .9em;font-size:.75rem;font-weight:700;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
 </style>
-<div class="card shadow-sm">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">Detail Sales Invoice</h4>
-        <div class="card-tools">
-            <a href="{{ route('invoice-customers.index') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
-            <a href="{{ route('invoice-customers.edit', $invoice->id) }}" class="btn btn-warning btn-sm">
-                <i class="bi bi-pencil"></i> Edit
-            </a>
-            <a href="{{ route('invoice-customers.print', $invoice->id) }}" class="btn btn-primary btn-sm" target="_blank">
-                <i class="bi bi-printer"></i> Print PDF
-            </a>
-            <a href="{{ route('invoice-customers.print_invoice', $invoice->id) }}" class="btn btn-success btn-sm" target="_blank">
-                <i class="bi bi-file-earmark-pdf"></i> Print Invoice
-            </a>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <table class="table table-bordered info-table">
-                    <tr><th>Invoice Number</th><td>{{ $invoice->invoice_number }}</td></tr>
-                    <tr><th>Invoice Date</th><td>{{ date('d/m/Y', strtotime($invoice->invoice_date)) }}</td></tr>
-                    <tr><th>Due Date</th><td>{{ $invoice->due_date ? date('d/m/Y', strtotime($invoice->due_date)) : '-' }}</td></tr>
-                    <tr>
-                        <th>Invoice Type</th>
-                        <td>
-                            @if($invoice->type == 'proforma')
-                                <span class="badge bg-secondary">Proforma</span>
-                            @else
-                                <span class="badge bg-primary">Sales Invoice</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr><th>Payment Terms</th><td>{{ $invoice->payment_terms ?? '-' }}</td></tr>
-                    <tr><th>Delivery Time</th><td>{{ $invoice->delivery_time ?? '-' }}</td></tr>
-                    <tr>
-                        <th>Status</th>
-                        <td>
-                            @if($invoice->status == 'proforma')
-                                <span class="badge bg-secondary">Proforma</span>
-                            @elseif($invoice->status == 'partial')
-                                <span class="badge bg-warning">Partial</span>
-                            @elseif($invoice->status == 'completed')
-                                <span class="badge bg-success">Completed</span>
-                            @elseif($invoice->status == 'cancelled')
-                                <span class="badge bg-danger">Cancelled</span>
-                            @else
-                                <span class="badge bg-secondary">{{ ucfirst($invoice->status) }}</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Payment Status</th>
-                        <td>
-                            @if($invoice->payment_status == 'sent')
-                                <span class="badge bg-secondary">Sent</span>
-                            @elseif($invoice->payment_status == 'paid')
-                                <span class="badge bg-success">Paid</span>
-                            @else
-                                <span class="badge bg-secondary">-</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr><th>Remarks</th><td>{{ $invoice->notes ?? '-' }}</td></tr>
-                </table>
-            </div>
-            <div class="col-md-6 mb-3">
-                <table class="table table-bordered info-table">
-                    <tr><th>Customer Name</th><td>{{ $invoice->poCustomer->customer->name ?? '-' }}</td></tr>
-                    <tr><th>PO Customer Number</th><td>{{ $invoice->poCustomer->po_number ?? '-' }}</td></tr>
-                    <tr>
-                        <th>PO Customer Status</th>
-                        <td>
-                            @if($invoice->poCustomer->status == 'issue yet')
-                                <span class="badge bg-secondary">Issue Yet</span>
-                            @elseif($invoice->poCustomer->status == 'partial')
-                                <span class="badge bg-warning">Partial</span>
-                            @elseif($invoice->poCustomer->status == 'completed')
-                                <span class="badge bg-success">Completed</span>
-                            @elseif($invoice->poCustomer->status == 'paid')
-                                <span class="badge bg-primary">Paid</span>
-                            @else
-                                <span class="badge bg-secondary">{{ ucfirst($invoice->poCustomer->status) }}</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr><th>Tax Invoice Number</th><td>{{ $invoice->tax_invoice_number ?? '-' }}</td></tr>
-                    <tr>
-                        <th>Tax Invoice Attachment</th>
-                        <td>
-                            @if(!empty($invoice->tax_invoice_attachment))
-                                <a href="{{ route('tax-invoice.view', $invoice->id) }}" target="_blank" class="btn btn-sm btn-info text-white">
-                                    <i class="bi bi-file-earmark-arrow-down-fill"></i> View File
-                                </a>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr><th>Total Item</th><td>{{ $invoice->details->count() }} Item</td></tr>
-                </table>
-            </div>
-        </div>
-        <hr>
-        <h5 class="mb-3">Product Details</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="text-center" width="5%">No</th>
-                        <th class="text-center">Brand</th>
-                        <th class="text-center">Product Code</th>
-                        <th class="text-center">Product Name</th>
-                        <th class="text-center" width="10%">Qty</th>
-                        <th class="text-center" width="10%">Unit</th>
-                        <th class="text-center" width="15%">Unit Price</th>
-                        <th class="text-center" width="15%">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($invoice->details as $index => $detail)
-                    <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $detail->product->brand ?? '-' }}</td>
-                        <td>{{ $detail->product->product_code }}</td>
-                        <td>{{ $detail->product->name }}</td>
-                        <td class="text-center">{{ number_format($detail->quantity, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ $detail->product->unit ?? '-' }}</td>
-                        <td class="amount-text">Rp {{ number_format($detail->unit_price, 0, ',', '.') }}</td>
-                        <td class="amount-text">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="text-center">No product data available</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-                <tfoot>
-                    <tr><th colspan="7" class="text-end">Subtotal</th><th class="amount-text">Rp {{ number_format($invoice->subtotal, 0, ',', '.') }}</th></tr>
-                    @if($invoice->dp_amount > 0)
-                    <tr><th colspan="6" class="text-end">Payment</th><th class="text-center">{{ $invoice->dp_percent ?? 0 }}%</th><th class="amount-text">Rp {{ number_format($invoice->dp_amount, 0, ',', '.') }}</th></tr>
-                    @endif
-                    @if($invoice->discount_amount > 0)
-                    <tr><th colspan="6" class="text-end">Discount</th><th class="text-center">{{ $invoice->discount_percent ?? 0 }}%</th><th class="amount-text text-danger">- Rp {{ number_format($invoice->discount_amount, 0, ',', '.') }}</th></tr>
-                    @endif
-                    @if($invoice->tax_amount > 0)
-                    <tr>
-                        <th colspan="6" class="text-end">PPN</th>
-                        <!--<th class="text-center">{{ $invoice->tax_percent ?? 0 }}%</th>-->
-                        <th class="text-center"> </th>
-                        <th class="amount-text">Rp {{ number_format($invoice->tax_amount, 0, ',', '.') }}</th>
-                    </tr>
-                    @endif
-                    @if($invoice->pph23_amount > 0)
-                    <tr>
-                        <th colspan="6" class="text-end">PPH23</th>
-                        <!--<th class="text-center">{{ $invoice->pph23_percent ?? 0 }}%</th>-->
-                        <th class="text-center"> </th>
-                        <th class="amount-text text-danger">- Rp {{ number_format($invoice->pph23_amount, 0, ',', '.') }}</th>
-                    </tr>
-                    @endif
-                    <tr class="table-primary">
-                        <th colspan="7" class="text-end"><strong>Grand Total</strong></th>
-                        <th class="amount-text"><strong>Rp {{ number_format($invoice->total, 0, ',', '.') }}</strong></th>
-                    </tr>
-                    @if($invoice->remaining_amount > 0)
-                    <tr><th colspan="7" class="text-end">Remaining Amount</th><th class="amount-text">Rp {{ number_format($invoice->remaining_amount, 0, ',', '.') }}</th></tr>
-                    @endif
-                </tfoot>
-            </table>
-        </div>
-    </div>
-</div>
+<div class="container-fluid py-4"><div class="card main-card">
+<div class="card-header card-header-custom py-3"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+<h4><i class="bi bi-receipt-cutoff me-2"></i>Detail Sales Invoice</h4><div class="d-flex gap-2 flex-wrap">
+<a href="{{ route('invoice-customers.edit',$invoice->id) }}" class="btn btn-warning btn-sm fw-bold px-3"><i class="bi bi-pencil-square me-1"></i>Edit Invoice</a>
+<a href="{{ route('invoice-customers.print',$invoice->id) }}" class="btn btn-primary btn-sm fw-bold px-3" target="_blank"><i class="bi bi-printer me-1"></i>Print PDF</a>
+<a href="{{ route('invoice-customers.print_invoice',$invoice->id) }}" class="btn btn-success btn-sm fw-bold px-3" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Print Invoice</a>
+<a href="{{ route('invoice-customers.index') }}" class="btn btn-outline-light btn-sm fw-bold px-3"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div></div></div>
+<div class="card-body p-4">
+<div class="row g-4 mb-5">
+<div class="col-md-6"><div class="h-100 p-3 rounded-3 info-box-bg"><div class="section-sub-title"><i class="bi bi-info-circle-fill me-2"></i>Invoice Information</div><table class="table info-table">
+<tr><td class="label">Invoice #</td><td class="value fw-bold text-dark">: {{ $invoice->invoice_number }}</td></tr>
+<tr><td class="label">Invoice Date</td><td class="value">: {{ date('d M Y',strtotime($invoice->invoice_date)) }}</td></tr>
+<tr><td class="label">Due Date</td><td class="value">: {{ $invoice->due_date?date('d M Y',strtotime($invoice->due_date)):'-' }}</td></tr>
+<tr><td class="label">Invoice Type</td><td class="value">: <span class="badge {{ $invoice->type==='proforma'?'bg-secondary':'bg-primary' }} badge-custom">{{ $invoice->type==='proforma'?'Proforma':'Sales Invoice' }}</span></td></tr>
+<tr><td class="label">Invoice Status</td><td class="value">: <span class="badge {{ $invoice->status==='completed'?'bg-success':($invoice->status==='cancelled'?'bg-danger':'bg-warning text-dark') }} badge-custom">{{ ucfirst($invoice->status??'-') }}</span></td></tr>
+<tr><td class="label">Payment Status</td><td class="value">: <span class="badge {{ $invoice->payment_status==='paid'?'bg-success':'bg-secondary' }} badge-custom">{{ ucfirst($invoice->payment_status??'-') }}</span></td></tr>
+<tr><td class="label">Payment Terms</td><td class="value fw-semibold">: {{ $invoice->payment_terms??'-' }}</td></tr><tr><td class="label">Delivery Time</td><td class="value">: {{ $invoice->delivery_time??'-' }}</td></tr>
+</table></div></div>
+<div class="col-md-6"><div class="h-100 p-3 rounded-3 info-box-bg"><div class="section-sub-title"><i class="bi bi-building-fill me-2"></i>Customer & PO Reference</div><table class="table info-table">
+<tr><td class="label">Customer</td><td class="value fw-bold text-dark">: {{ $invoice->poCustomer->customer->name??'-' }}</td></tr><tr><td class="label">PO Customer #</td><td class="value fw-semibold text-primary">: {{ $invoice->poCustomer->po_number??'-' }}</td></tr>
+<tr><td class="label">PO Status</td><td class="value">: <span class="badge bg-info text-dark badge-custom">{{ ucfirst($invoice->poCustomer->status??'-') }}</span></td></tr><tr><td class="label">PO Invoice Status</td><td class="value">: <span class="badge {{ $invoice->poCustomer->invoice_status==='completed'?'bg-success':'bg-warning text-dark' }} badge-custom">{{ ucfirst($invoice->poCustomer->invoice_status??'-') }}</span></td></tr>
+<tr><td class="label">Tax Invoice #</td><td class="value">: {{ $invoice->tax_invoice_number??'-' }}</td></tr><tr><td class="label">Tax Attachment</td><td class="value">: @if($invoice->tax_invoice_attachment)<a href="{{ route('tax-invoice.view',$invoice->id) }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold"><i class="bi bi-file-earmark-arrow-down-fill me-1"></i>View / Download</a>@else<span class="text-muted">No attachment</span>@endif</td></tr><tr><td class="label">Total Item</td><td class="value">: {{ $invoice->details->count() }} Item</td></tr>
+</table></div></div></div>
+<div class="mb-5"><div class="section-sub-title"><i class="bi bi-box-seam-fill me-2"></i>Product Specification Details</div><div class="border rounded-3 overflow-hidden shadow-sm"><div class="table-responsive"><table class="table table-modern align-middle m-0">
+<thead><tr><th class="text-center">No</th><th>Brand</th><th>Product Code</th><th>Product Name</th><th class="text-center">Qty</th><th class="text-center">Unit</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead><tbody>
+@forelse($invoice->details as $index=>$detail)<tr><td class="text-center">{{ $index+1 }}</td><td>{{ $detail->product->brand??'-' }}</td><td>{{ $detail->product->product_code??'-' }}</td><td class="fw-semibold text-dark">{{ $detail->product->name??'-' }}</td><td class="text-center">{{ number_format($detail->quantity,0,',','.') }}</td><td class="text-center">{{ $detail->product->unit??'-' }}</td><td class="text-end">Rp {{ number_format($detail->unit_price,0,',','.') }}</td><td class="text-end fw-bold text-dark">Rp {{ number_format($detail->subtotal,0,',','.') }}</td></tr>@empty<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No product detail available.</td></tr>@endforelse
+</tbody></table></div></div></div>
+<div class="row g-4 text-start mt-2"><div class="col-md-7"><div class="p-3 border rounded-3 h-100 info-box-bg"><div class="section-sub-title mb-2"><i class="bi bi-pencil-square me-2"></i>Remarks & Internal Notes</div><p class="text-secondary mb-0" style="white-space:pre-line;line-height:1.6">{!! nl2br(e($invoice->notes??'-')) !!}</p></div></div>
+<div class="col-md-5"><div class="summary-card"><div class="summary-line"><span>Subtotal</span><span class="fw-bold">Rp {{ number_format($invoice->subtotal??0,0,',','.') }}</span></div>@if($invoice->dp_amount>0)<div class="summary-line"><span>Payment / DP ({{ $invoice->dp_percent??0 }}%)</span><span class="fw-bold">Rp {{ number_format($invoice->dp_amount,0,',','.') }}</span></div>@endif<div class="summary-line"><span>Discount ({{ $invoice->discount_percent??0 }}%)</span><span class="text-warning fw-bold">- Rp {{ number_format($invoice->discount_amount??0,0,',','.') }}</span></div><div class="summary-line"><span>PPN ({{ $invoice->tax_percent??0 }}%)</span><span class="fw-bold">+ Rp {{ number_format($invoice->tax_amount??0,0,',','.') }}</span></div><div class="summary-line"><span>PPh 23 ({{ $invoice->pph23_percent??0 }}%)</span><span class="text-danger fw-bold">- Rp {{ number_format($invoice->pph23_amount??0,0,',','.') }}</span></div><div class="summary-line grand-total"><span>Grand Total Invoice</span><span class="total-rp">Rp {{ number_format($invoice->total??0,0,',','.') }}</span></div><div class="summary-line remaining"><span>Remaining PO</span><span>Rp {{ number_format($invoice->remaining_amount??0,0,',','.') }}</span></div></div></div></div>
+</div></div></div>
 @endsection

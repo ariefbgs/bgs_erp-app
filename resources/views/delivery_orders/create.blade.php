@@ -295,7 +295,7 @@ $(document).ready(function() {
                 $('#selected-po-number').text(res.po_customer.po_number || '-');
 
                 // Buat tabel produk
-                var html = '<h5>Product Details (Qty can be changed)</h5>';
+                var html = '<h5>Product Details (limited by active Goods Receipt)</h5>';
                 html += '<div class="table-responsive"><table class="table table-bordered">';
                 html += '<thead class="table-dark"><tr><th>Product</th><th>Brand</th><th>Qty PO</th><th>Qty Send</th></tr></thead><tbody>';
                 if (res.items && res.items.length > 0) {
@@ -303,8 +303,8 @@ $(document).ready(function() {
                         html += '<tr>';
                         html += '<td>' + (item.product_name || '') + '<br><small>' + (item.product_code || '') + '</small>' + '</td>';
                         html += '<td>' + (item.brand || '-') + '</td>';
-                        html += '<td class="text-center">' + (item.quantity || 0) + ' ' + (item.unit || '') + '</td>';
-                        html += '<td><input type="number" name="items[' + i + '][quantity]" class="form-control qty-input" value="' + (item.quantity || 0) + '" min="0" required>';
+                        html += '<td class="text-center">' + (item.po_quantity || 0) + ' ' + (item.unit || '') + '<br><small class="text-success">Available from GR: ' + (item.quantity || 0) + '</small></td>';
+                        html += '<td><input type="number" name="items[' + i + '][quantity]" class="form-control qty-input" value="' + (item.quantity || 0) + '" min="0" max="' + (item.quantity || 0) + '" required>';
                         html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + (item.product_id || '') + '">' + '</td>';
                         html += '</tr>';
                     });

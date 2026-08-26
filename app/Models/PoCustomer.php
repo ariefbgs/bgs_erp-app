@@ -28,6 +28,7 @@ class PoCustomer extends Model
         'discount_percent',
         'discount_amount',
         'total',
+        'remaining_amount',
         'attachment',
         'notes'
     ];
@@ -35,6 +36,7 @@ class PoCustomer extends Model
     protected $casts = [
         'po_date' => 'date',
         'delivery_date' => 'date',
+        'remaining_amount' => 'decimal:2',
     ];
 
     // Default values (bisa juga di migrasi)
@@ -111,17 +113,30 @@ class PoCustomer extends Model
      */
     public function updateInvoiceStatus()
     {
-        $totalInvoiced = $this->total_invoiced;
+        $poPreTax = max(0, (float) $this->subtotal);
+        if ($poPreTax <= 0) {
+            $poPreTax = max(0, (float) $this->total - (float) $this->tax_amount);
+        }
+        $totalInvoicedPreTax = (float) $this->invoiceCustomers()
+            ->where('status', '!=', 'cancelled')
+            ->selectRaw('COALESCE(SUM(CASE WHEN dp_amount > 0 THEN dp_amount ELSE subtotal END), 0) as amount')
+            ->value('amount');
+        $remainingPreTax = max(0, $poPreTax - $totalInvoicedPreTax);
         
-        if ($totalInvoiced >= $this->total) {
+        if (round($remainingPreTax) <= 0) {
             $status = 'completed';
-        } elseif ($totalInvoiced > 0) {
+        } elseif ($totalInvoicedPreTax > 0) {
             $status = 'partial';
         } else {
             $status = 'issue yet';
         }
         
-        $this->update(['invoice_status' => $status]);
+        $remainingAmount = $remainingPreTax;
+
+        $this->update([
+            'invoice_status' => $status,
+            'remaining_amount' => $remainingAmount,
+        ]);
         return $this;
     }
 
