@@ -33,4 +33,26 @@ class BgsLaravel13RouteParameterCompatibilityTest extends TestCase
             $view
         );
     }
+
+    public function test_document_receipt_create_supplies_ajax_route_placeholders(): void
+    {
+        $view = file_get_contents(resource_path('views/document-receipts/create.blade.php'));
+
+        $this->assertStringContainsString(
+            "route('document-receipts.get-do-details', ['id' => '__ID__'])",
+            $view
+        );
+        $this->assertStringContainsString(
+            "route('document-receipts.get-invoices-by-po', ['po_customer_id' => '__ID__'])",
+            $view
+        );
+        $this->assertStringNotContainsString(
+            'route("document-receipts.get-do-details", "")',
+            $view
+        );
+        $this->assertStringNotContainsString(
+            'route("document-receipts.get-invoices-by-po", "")',
+            $view
+        );
+    }
 }

@@ -24,8 +24,8 @@ Versi utama:
 Verifikasi terakhir:
 
 ```text
-399 tests passed
-1090 assertions
+400 tests passed
+1094 assertions
 Composer security advisories: 0
 npm vulnerabilities: 0
 Production frontend build: PASS
@@ -57,10 +57,12 @@ DB_DATABASE=erp_app_staging_upgrade
 - frontend dinaikkan ke Vite 8 dan paket stabil terbaru yang kompatibel.
 - URL AJAX pada Create PO Customer dan Create Sales Invoice sekarang memasok
   placeholder `{id}` secara eksplisit agar kompatibel dengan Laravel 13.
+- Dua URL AJAX pada Create Document Receipt juga memasok parameter dinamis
+  secara eksplisit; halaman tersebut sudah lulus UAT browser setelah perbaikan.
 
 UAT browser read-only sudah membuka halaman daftar Customer, Quotation, PO
 Customer, Delivery Order, Sales Invoice, Expense, Reports, serta enam halaman
-Create utama tanpa error server atau JavaScript. Tidak ada transaksi UAT yang
+Create utama beserta Create Document Receipt tanpa error server atau JavaScript. Tidak ada transaksi UAT yang
 disimpan.
 
 Peringatan deprecation Sass pada build berasal terutama dari SCSS internal Bootstrap 5.3.8. Build berhasil. Jangan melakukan rewrite styling secara spekulatif hanya untuk menghilangkan warning tersebut.
@@ -92,4 +94,4 @@ Empat deletion di `audit-output/BGS-REM-R1A*.txt` dan folder untracked `output/`
 
 ## Prompt untuk chat baru
 
-> Lanjutkan BGS ERP dari `docs/BGS_ERP_CODEX_HANDOVER_2026-08-27.md` di `D:\projects\bgs_erp-app`. Pertahankan seluruh perubahan lama yang belum di-commit. Branch modernisasi adalah `codex/upgrade-laravel-13`; Laravel 13.29.0, Vite 8.2.2, dan full suite 399 test/1090 assertion sudah hijau. Automated test wajib memakai `erp_app_testing`; UAT modernisasi memakai `erp_app_staging_upgrade`; jangan menyentuh `erp_app`. Pertahankan ZIP security, checksum, private storage, RBAC, duplicate protection, dan canonical Upload → ApplicationRelease. Mulai dengan inspeksi read-only status/diff dan jangan merge/deploy tanpa persetujuan user.
+> Lanjutkan BGS ERP dari `docs/BGS_ERP_CODEX_HANDOVER_2026-08-27.md` di `D:\projects\bgs_erp-app`. Pertahankan seluruh perubahan lama yang belum di-commit. Branch modernisasi adalah `codex/upgrade-laravel-13`; Laravel 13.29.0, Vite 8.2.2, dan full suite 400 test/1094 assertion sudah hijau. Automated test wajib memakai `erp_app_testing`; UAT modernisasi memakai `erp_app_staging_upgrade`; jangan menyentuh `erp_app`. Pertahankan ZIP security, checksum, private storage, RBAC, duplicate protection, dan canonical Upload → ApplicationRelease. Mulai dengan inspeksi read-only status/diff dan jangan merge/deploy tanpa persetujuan user.

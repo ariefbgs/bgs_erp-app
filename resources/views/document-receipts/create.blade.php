@@ -444,7 +444,7 @@ $(document).ready(function() {
 
         // Ambil detail DO
         $.ajax({
-            url: '{{ route("document-receipts.get-do-details", "") }}/' + doId,
+            url: @json(route('document-receipts.get-do-details', ['id' => '__ID__'])).replace('__ID__', encodeURIComponent(doId)),
             type: 'GET',
             dataType: 'json',
             success: function(res) {
@@ -463,7 +463,7 @@ $(document).ready(function() {
 
                 // Load daftar invoice berdasarkan po_customer_id
                 $.ajax({
-                    url: '{{ route("document-receipts.get-invoices-by-po", "") }}/' + res.po_customer_id,
+                    url: @json(route('document-receipts.get-invoices-by-po', ['po_customer_id' => '__ID__'])).replace('__ID__', encodeURIComponent(res.po_customer_id)),
                     type: 'GET',
                     dataType: 'json',
                     success: function(invoices) {
