@@ -593,7 +593,7 @@ $(function () {
         $('#poRemainingWarning').hide();
 
         $.ajax({
-            url: '{{ route("invoice-customers.get-po-customer-details", "") }}/' + poId,
+            url: @json(route('invoice-customers.get-po-customer-details', ['id' => '__ID__'])).replace('__ID__', encodeURIComponent(poId)),
             type: 'GET',
             success: function (res) {
                 let rows = '';
