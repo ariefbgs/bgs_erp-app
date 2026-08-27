@@ -6,6 +6,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Deserialization Allow-list
+    |--------------------------------------------------------------------------
+    |
+    | Cached PHP objects are rejected unless their classes are explicitly
+    | allow-listed. This keeps the Laravel 13 hardened default behavior.
+    |
+    */
+
+    'serializable_classes' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Cache Store
     |--------------------------------------------------------------------------
     |
