@@ -526,7 +526,7 @@ $(document).ready(function() {
         let qid = $(this).val();
         if (qid) {
             $.ajax({
-                url: '{{ route("po-customers.get-quotation", "") }}/' + qid,
+                url: @json(route('po-customers.get-quotation', ['id' => '__ID__'])).replace('__ID__', encodeURIComponent(qid)),
                 method: 'GET',
                 success: function(resp) {
                     // 1. Customer & Alamat

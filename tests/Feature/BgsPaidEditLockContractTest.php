@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BgsPaidEditLockContractTest extends TestCase
@@ -20,7 +21,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function quotation_has_separate_paid_edit_lock_helper(): void
     {
         $source = $this->quotationController();
@@ -44,7 +45,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function quotation_edit_and_update_use_paid_lock_not_usage_lock(): void
     {
         $source = $this->quotationController();
@@ -87,7 +88,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function quotation_delete_keeps_existing_usage_protection(): void
     {
         $source = $this->quotationController();
@@ -107,7 +108,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function po_customer_has_separate_paid_edit_lock_helper(): void
     {
         $source = $this->poCustomerController();
@@ -131,7 +132,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function po_customer_edit_and_update_use_paid_lock_not_usage_lock(): void
     {
         $source = $this->poCustomerController();
@@ -174,7 +175,7 @@ class BgsPaidEditLockContractTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function po_customer_delete_keeps_existing_usage_protection(): void
     {
         $source = $this->poCustomerController();

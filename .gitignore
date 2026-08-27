@@ -28,5 +28,6 @@ yarn-error.log
 
 # Local database/application snapshots (never publish)
 /erp_app.sql
+/erp_app_staging_backup_*.sql
 /docs/smartlo1_erp_app (3).sql
 /public.zip
