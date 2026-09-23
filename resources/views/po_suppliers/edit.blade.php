@@ -749,7 +749,7 @@
                                     <th
                                         width="45%"
                                         class="ps-3"
-                                    >
+                                     style="text-align: right;">
                                         Subtotal Items Amount
                                     </th>
 
@@ -768,14 +768,14 @@
 
                                 <tr>
 
-                                    <th class="ps-3">
+                                    <th class="ps-3" style="text-align: right;">
                                         Discount Allowance
                                     </th>
 
                                     <td
                                         width="25%"
                                         class="px-2"
-                                    >
+                                     style="text-align: right;">
 
                                         <div
                                             class="input-group
@@ -833,7 +833,7 @@
                                         class="ps-3
                                                fw-semibold
                                                text-secondary"
-                                    >
+                                     style="text-align: right;">
                                         Subtotal After Discount
                                     </th>
 
@@ -856,7 +856,7 @@
                                         VAT
                                     </th>
 
-                                    <td class="px-2">
+                                    <td class="px-2" style="text-align: right;">
 
                                         <div
                                             class="input-group
@@ -909,7 +909,7 @@
                                         class="ps-3
                                                fs-6
                                                text-dark"
-                                    >
+                                     style="text-align: right;">
                                         <strong>
                                             Grand Total
                                         </strong>
@@ -1887,7 +1887,7 @@ $(document).ready(function() {
                     ) +
                     '</td>' +
 
-                    '<td>' +
+                    '<td style="text-align: right;">' +
                     '<select ' +
                     'class="form-select form-select-sm ' +
                     'price-decision-select" ' +

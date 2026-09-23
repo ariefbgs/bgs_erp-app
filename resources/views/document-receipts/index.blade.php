@@ -144,7 +144,7 @@
                     @forelse($receipts as $index => $receipt)
                         <tr>
                             <td class="text-center">{{ $receipts->firstItem() + $index }}</td>
-                            <td>{{ $receipt->deliveryOrder->poCustomer->customer->name ?? '-' }}</td>
+                            <td>{{ $receipt->poCustomer->customer->name ?? '-' }}</td>
                             <td>{{ $receipt->receipt_number }}</td>
                             <td class="text-center">
                                 {{ $receipt->receipt_date ? \Carbon\Carbon::parse($receipt->receipt_date)->format('d/m/Y') : '-' }}

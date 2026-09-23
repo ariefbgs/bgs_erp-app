@@ -22,8 +22,20 @@ class GoodsReceiptController extends Controller
 
     public function create()
     {
-        $poSuppliers = PoSupplier::where('status', 'confirmed')
+        $poSuppliers = PoSupplier::where('status', '!=', 'cancelled')
             ->where('receipt_status', '!=', 'completed')
+            ->whereHas('details', function ($detailQuery) {
+                $detailQuery->whereRaw(
+                    'po_supplier_details.quantity > (
+                        SELECT COALESCE(SUM(grd.quantity_received), 0)
+                        FROM goods_receipt_details grd
+                        INNER JOIN goods_receipts gr ON gr.id = grd.goods_receipt_id
+                        WHERE grd.po_supplier_detail_id = po_supplier_details.id
+                          AND gr.status != ?
+                    )',
+                    ['cancelled']
+                );
+            })
             ->with('supplier')
             ->orderBy('po_date', 'desc')
             ->get();
@@ -92,7 +104,15 @@ class GoodsReceiptController extends Controller
 
             DB::beginTransaction();
 
-            $poSupplier = PoSupplier::findOrFail($request->po_supplier_id);
+            $poSupplier = PoSupplier::whereKey($request->po_supplier_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($poSupplier->status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'po_supplier_id' => 'PO Supplier sudah dibatalkan.',
+                ]);
+            }
 
             // Generate nomor receipt
             $receipt_date = $request->receipt_date;
@@ -126,8 +146,24 @@ class GoodsReceiptController extends Controller
             // Simpan detail receipt & update stok
             foreach ($request->items as $item) {
                 if ($item['quantity_received'] > 0) {
-                    $poDetail = PoSupplierDetail::find($item['po_supplier_detail_id']);
+                    $poDetail = PoSupplierDetail::whereKey($item['po_supplier_detail_id'])
+                        ->where('po_supplier_id', $poSupplier->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
                     $receivedQty = $item['quantity_received'];
+
+                    $alreadyReceived = GoodsReceiptDetail::where(
+                        'po_supplier_detail_id',
+                        $poDetail->id
+                    )->whereHas('goodsReceipt', function ($query) {
+                        $query->where('status', '!=', 'cancelled');
+                    })->sum('quantity_received');
+
+                    if ($receivedQty > ((float) $poDetail->quantity - (float) $alreadyReceived)) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Quantity Goods Receipt melebihi sisa quantity PO Supplier.',
+                        ]);
+                    }
 
                     GoodsReceiptDetail::create([
                         'goods_receipt_id'       => $receipt->id,

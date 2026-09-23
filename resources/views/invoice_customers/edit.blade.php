@@ -307,9 +307,6 @@
                     <div class="section-title mb-0" style="border-bottom: none; padding-bottom: 0;">
                         <i class="bi bi-box-fill"></i> Product Details
                     </div>
-                    <button type="button" class="btn btn-success btn-sm" id="add-product">
-                        <i class="bi bi-plus-circle"></i> Add Product
-                    </button>
                 </div>
 
                 <div id="products-container">
@@ -331,13 +328,18 @@
                             <div class="col-md-2">
                                 <label class="form-label fw-semibold">Qty</label>
                                 <input type="number" name="items[{{ $index }}][quantity]"
-                                    class="form-control qty-input" data-row-id="{{ $index }}"
-                                    value="{{ $detail->quantity }}" min="1">
+                                    class="form-control qty-input readonly-bg"
+                                    data-row-id="{{ $index }}"
+                                    value="{{ $detail->quantity }}"
+                                    min="1" readonly>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label fw-semibold">Price</label>
-                                <input type="text" class="form-control price-display" data-row-id="{{ $index }}"
-                                    value="{{ number_format($detail->unit_price, 0, ',', '.') }}">
+                                <input type="text"
+                                    class="form-control price-display readonly-bg"
+                                    data-row-id="{{ $index }}"
+                                    value="{{ number_format($detail->unit_price, 0, ',', '.') }}"
+                                    readonly>
                                 <input type="hidden" name="items[{{ $index }}][unit_price]"
                                     class="price-hidden" value="{{ $detail->unit_price }}">
                                 <input type="hidden" name="items[{{ $index }}][unit_price_numeric]"
@@ -349,9 +351,6 @@
                                     value="{{ number_format($detail->subtotal, 0, ',', '.') }}" readonly>
                                 <input type="hidden" name="items[{{ $index }}][subtotal]"
                                     class="subtotal-hidden" value="{{ $detail->subtotal }}">
-                                <button type="button" class="btn btn-danger btn-sm mt-2 remove-product btn-remove">
-                                    <i class="bi bi-trash"></i> Remove
-                                </button>
                             </div>
                         </div>
                         <div class="row mt-3">
@@ -482,20 +481,24 @@
                         <textarea name="notes" rows="2" class="form-control">{{ old('notes', $invoice->notes) }}</textarea>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Status</label>
-                        <select name="status" id="status" class="form-select">
-                            <option value="proforma" {{ $invoice->status == 'proforma' ? 'selected' : '' }}>Proforma</option>
-                            <option value="partial" {{ $invoice->status == 'partial' ? 'selected' : '' }}>Partial</option>
-                            <option value="completed" {{ $invoice->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ $invoice->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        </select>
-                    </div>
+    <label class="form-label">Invoice Status</label>
+    <input type="text"
+           class="form-control"
+           value="{{ ucfirst($invoice->status ?? '-') }}"
+           readonly>
+    <div class="form-text">
+        Invoice status is calculated automatically from the remaining PO amount.
+    </div>
+</div>
                     <div class="col-md-6">
                         <label class="form-label">Payment Status</label>
                         <select name="payment_status" class="form-select" required>
-                            <option value="sent" {{ $invoice->payment_status == 'sent' ? 'selected' : '' }}>Sent</option>
-                            <option value="paid" {{ $invoice->payment_status == 'paid' ? 'selected' : '' }}>Paid</option>
-                        </select>
+    <option value="sent" selected>Sent</option>
+    <option value="paid">Paid</option>
+</select>
+<div class="form-text">
+    Payment status can only move from Sent to Paid. Paid invoices are locked.
+</div>
                     </div>
                 </div>
             </div>
@@ -566,18 +569,6 @@ $(document).ready(function () {
         return parseInt(str.toString().replace(/\./g, '')) || 0;
     }
 
-    function updateStatus(type, remaining) {
-        if (type === 'proforma') {
-            $('#status').val('proforma');
-        } else if (type === 'sales') {
-            if (remaining <= 1) {
-                $('#status').val('completed');
-            } else {
-                $('#status').val('partial');
-            }
-        }
-    }
-
     function calculateRowSubtotal(row) {
         let qty = parseInt(row.find('.qty-input').val()) || 0;
         let price = parseRupiahToNumber(row.find('.price-display').val());
@@ -633,7 +624,7 @@ $(document).ready(function () {
         }
 
         let invoiceType = $('#type').val();
-        updateStatus(invoiceType, remaining);
+
     }
 
     // =========================================================
@@ -663,118 +654,11 @@ $(document).ready(function () {
         calculateGrandTotal();
     });
 
-    $(document).on('input change', '.qty-input, .price-display', function () {
-        let row = $(this).closest('.product-row');
-        if ($(this).hasClass('price-display')) {
-            let raw = parseRupiahToNumber($(this).val());
-            $(this).val(formatRupiah(raw));
-            row.find('.price-hidden').val(raw);
-            row.find('.price-numeric-hidden').val(raw);
-        }
-        calculateRowSubtotal(row);
-        calculateGrandTotal();
-    });
-
     $('#dp_percent, #discount_percent, #tax_percent, #pph23_percent').on('input change', calculateGrandTotal);
-
-    // =========================================================
-    // REMOVE PRODUCT
-    // =========================================================
-    $(document).on('click', '.remove-product', function () {
-        $(this).closest('.product-row').remove();
-        calculateGrandTotal();
-    });
-
-    // =========================================================
-    // ADD PRODUCT
-    // =========================================================
-    let productList = @json($products ?? []);
-    $('#add-product').on('click', function () {
-        let newIndex = Date.now();
-        let productOptions = '<option value="">-- Pilih Produk --</option>';
-        if (productList.length === 0) {
-            productOptions = '<option value="">Tidak ada produk tersedia</option>';
-        } else {
-            $.each(productList, function (key, product) {
-                productOptions += `<option value="${product.id}"
-                    data-brand="${product.brand || '-'}"
-                    data-price="${product.price || 0}"
-                    data-product-code2="${product.product_code2 || ''}"
-                    data-name2="${product.name2 || ''}">
-                    ${product.product_code} - ${product.name}
-                </option>`;
-            });
-        }
-
-        let newRow = `
-            <div class="product-card product-row" data-row-id="${newIndex}">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">Product</label>
-                        <select name="items[${newIndex}][product_id]" class="form-select product-select" required>
-                            ${productOptions}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Brand</label>
-                        <input type="text" class="form-control brand-display" readonly>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Qty</label>
-                        <input type="number" name="items[${newIndex}][quantity]" class="form-control qty-input" value="1" min="1">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Price</label>
-                        <input type="text" class="form-control price-display" value="0">
-                        <input type="hidden" name="items[${newIndex}][unit_price]" class="price-hidden" value="0">
-                        <input type="hidden" name="items[${newIndex}][unit_price_numeric]" class="price-numeric-hidden" value="0">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Subtotal</label>
-                        <input type="text" class="form-control subtotal-display" readonly value="Rp 0">
-                        <input type="hidden" name="items[${newIndex}][subtotal]" class="subtotal-hidden" value="0">
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-product btn-remove">
-                            <i class="bi bi-trash"></i> Remove
-                        </button>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Product Code 2</label>
-                        <input type="text" class="form-control code2-display" readonly>
-                    </div>
-                    <div class="col-md-9">
-                        <label class="form-label fw-semibold">Product Name 2</label>
-                        <input type="text" class="form-control name2-display" readonly>
-                    </div>
-                </div>
-            </div>
-        `;
-        $('#products-container').append(newRow);
-        calculateGrandTotal();
-    });
 
     // =========================================================
     // PRODUCT SELECT CHANGE
     // =========================================================
-    $(document).on('change', '.product-select', function () {
-        let row = $(this).closest('.product-row');
-        let opt = $(this).find('option:selected');
-        let brand = opt.data('brand') || '-';
-        let price = opt.data('price') || 0;
-        let code2 = opt.data('product-code2') || '';
-        let name2 = opt.data('name2') || '';
-
-        row.find('.brand-display').val(brand);
-        row.find('.price-display').val(formatRupiah(price)).trigger('change');
-        row.find('.price-hidden').val(price);
-        row.find('.price-numeric-hidden').val(price);
-        row.find('.code2-display').val(code2);
-        row.find('.name2-display').val(name2);
-        calculateRowSubtotal(row);
-        calculateGrandTotal();
-    });
-
     // =========================================================
     // INITIAL CALCULATION
     // =========================================================

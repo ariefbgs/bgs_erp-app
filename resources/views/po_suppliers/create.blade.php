@@ -207,8 +207,8 @@
               <th class="text-center" width="30%">Product</th>
               <th class="text-center" width="15%">Remaining Qty</th>
               <th class="text-center" width="15%">Qty PO Supplier</th>
-              <th class="text-center" width="20%">Purchase Price (Rp)</th>
-              <th class="text-center" width="15%">Subtotal (Rp)</th>
+              <th class="text-center" width="20%" style="text-align: right;">Purchase Price (Rp)</th>
+              <th class="text-center" width="15%" style="text-align: right;">Subtotal (Rp)</th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
@@ -221,14 +221,14 @@
                             </tr>
                             <tr>
                                 <th colspan="4" class="text-end">Discount (%)</th>
-                                <td class="text-start">
+                                <td class="text-start" style="text-align: right;">
                                     <input type="number" name="discount_percent" id="discount_percent" class="form-control" step="0.01" min="0" max="100" value="0" style="width: 100px;">
                                 </td>
                                 <th class="text-end" id="discount_amount_display">Rp 0</th>
                             </tr>
                             <tr>
                                 <th colspan="4" class="text-end">VAT (%)</th>
-                                <td class="text-start">
+                                <td class="text-start" style="text-align: right;">
                                     <input type="number" name="tax_percent" id="tax_percent" class="form-control" step="0.01" min="0" max="100" value="11" style="width: 100px;">
                                 </td>
                                 <th class="text-end" id="tax_amount_display">Rp 0</th>
@@ -557,7 +557,7 @@ $(document).ready(function() {
                         'max="' + item.remaining_quantity + '" ' +
                         'disabled></td>';
 
-                    rows += '<td><input type="text" ' +
+                    rows += '<td style="text-align: right;"><input type="text" ' +
                         'name="items[' + rowIndex + '][purchase_price]" ' +
                         'id="price_' + rowIndex + '" ' +
                         'class="form-control price-input" ' +

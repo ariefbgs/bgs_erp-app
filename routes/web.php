@@ -125,6 +125,17 @@ Route::resource('quotations', QuotationController::class);
 
     // Delivery Order
     Route::resource('delivery-orders', DeliveryOrderController::class);
+    Route::patch(
+        'delivery-orders/{id}/mark-delivered',
+        [DeliveryOrderController::class, 'markDelivered']
+    )->name('delivery-orders.mark-delivered');
+
+    Route::patch(
+        'delivery-orders/{id}/reopen',
+        [DeliveryOrderController::class, 'reopen']
+    )->name('delivery-orders.reopen');
+
+
     Route::get('delivery-orders/get-po-customer-details/{id}', [DeliveryOrderController::class, 'getPoCustomerDetails'])->name('delivery-orders.get-po-customer-details');
     Route::get('delivery-orders/get-invoices-by-po/{po_customer_id}', [DeliveryOrderController::class, 'getInvoicesByPo'])->name('delivery-orders.get-invoices-by-po');
     Route::get('delivery-orders/{id}/print', [DeliveryOrderController::class, 'print'])->name('delivery-orders.print');
@@ -133,15 +144,14 @@ Route::resource('quotations', QuotationController::class);
     // Document Receipt
     Route::resource('document-receipts', DocumentReceiptController::class);
     Route::get('document-receipts/get-do-details/{id}', [DocumentReceiptController::class, 'getDoDetails'])->name('document-receipts.get-do-details');
+    Route::get('document-receipts/get-create-options-by-po/{po_customer_id}', [DocumentReceiptController::class, 'getCreateOptionsByPo'])->name('document-receipts.get-create-options-by-po');
+    Route::get('document-receipts/get-create-options-by-do/{id}', [DocumentReceiptController::class, 'getCreateOptionsByDo'])->name('document-receipts.get-create-options-by-do');
     Route::get('document-receipts/get-invoices-by-po/{po_customer_id}', [DocumentReceiptController::class, 'getInvoicesByPo'])->name('document-receipts.get-invoices-by-po');
     Route::get('document-receipts/{id}/print', [DocumentReceiptController::class, 'print'])->name('document-receipts.print');
 
     // Invoice Customer
     Route::resource('invoice-customers', InvoiceCustomerController::class);
     Route::get('invoice-customers/get-po-customer-details/{id}', [InvoiceCustomerController::class, 'getPoCustomerDetails'])->name('invoice-customers.get-po-customer-details');
-    Route::get('invoice-customers/{id}/edit', [InvoiceCustomerController::class, 'edit'])->name('invoice-customers.edit');
-    Route::put('invoice-customers/{id}', [InvoiceCustomerController::class, 'update'])->name('invoice-customers.update');
-    Route::delete('invoice-customers/{id}', [InvoiceCustomerController::class, 'destroy'])->name('invoice-customers.destroy');
     Route::patch('/invoice-customers/{id}/cancel', [InvoiceCustomerController::class, 'cancel'])->name('invoice-customers.cancel');
     Route::get('invoice-customers/{id}/print', [InvoiceCustomerController::class, 'print'])->name('invoice-customers.print');
     Route::get('invoice-customers/{id}/print_invoice', [InvoiceCustomerController::class, 'printInvoice'])->name('invoice-customers.print_invoice');

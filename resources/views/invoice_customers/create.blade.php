@@ -173,7 +173,7 @@
                         <select name="po_customer_id" id="po_customer_id" class="form-select" required>
                             <option value="">-- Select PO Customer --</option>
                             @foreach($poCustomers as $po)
-                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
+                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" data-remaining-base="{{ $po->remaining_subtotal_before_tax ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
                                     {{ $po->po_number }} - {{ $po->customer->name }}
                                     (sisa: Rp {{ number_format($po->remaining_total ?? 0, 0, ',', '.') }})
                                 </option>
@@ -193,26 +193,16 @@
                     </div>
                 </div>
 
-                {{-- Tambahan: Parent Invoice untuk partial payment --}}
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
-                        <label class="form-label">Parent Invoice (optional)</label>
-                        <select name="parent_invoice_id" id="parent_invoice_id" class="form-select select2">
-                            <option value="">-- None (new invoice) --</option>
-                            @if(isset($parentInvoices))
-                                @foreach($parentInvoices as $parent)
-                                    <option value="{{ $parent->id }}" {{ old('parent_invoice_id') == $parent->id ? 'selected' : '' }}>
-                                        {{ $parent->invoice_number }} - {{ $parent->poCustomer->customer->name ?? '' }}
-                                        (sisa: Rp {{ number_format($parent->total - $parent->childInvoices->sum('total'), 0, ',', '.') }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <div class="form-text text-muted small">Pilih invoice induk jika ini adalah tagihan lanjutan (partial payment).</div>
+                        <div class="info-box" id="parentInvoiceInfo" style="display:none;">
+                            <strong>Parent invoice:</strong>
+                            <span id="parentInvoiceValue" class="highlight">Ditentukan otomatis oleh sistem</span>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="info-box" id="poRemainingInfo" style="display: none;">
-                            <strong>Sisa tagihan PO:</strong> <span id="poRemainingValue" class="highlight">Rp 0</span>
+                            <strong>Sisa PO Amount sebelum pajak:</strong> <span id="poRemainingBaseValue" class="highlight">Rp 0</span>
                             <span id="poRemainingWarning" class="text-danger ms-2" style="display: none;">(melebihi sisa!)</span>
                         </div>
                     </div>
@@ -279,6 +269,17 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="col-12">
+                        <small id="termsInheritanceInfo"
+                               class="text-muted"
+                               style="display:none;">
+                            <i class="bi bi-arrow-return-right me-1"></i>
+                            Payment Terms & Delivery Time inherited from
+                            <strong id="termsInheritanceSource"></strong>.
+                            You may adjust them for this invoice.
+                        </small>
+                    </div>
                 </div>
 
                 {{-- 2b. Tax Invoice Number & Attachment --}}
@@ -306,7 +307,12 @@
 
                 {{-- 2c. PPH23 Checkbox --}}
                 <div class="form-check mb-3">
-                    <input type="checkbox" class="form-check-input" id="has_pph23" {{ old('has_pph23') ? 'checked' : '' }}>
+                    <input type="checkbox"
+                           class="form-check-input"
+                           id="has_pph23"
+                           name="has_pph23"
+                           value="1"
+                           {{ old('has_pph23') ? 'checked' : '' }}>
                     <label class="form-check-label fw-semibold" for="has_pph23">With PPH23</label>
                 </div>
 
@@ -317,11 +323,11 @@
                         <table class="table table-bordered table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
-                                    <th width="35%">Product</th>
-                                    <th width="15%">Qty PO</th>
-                                    <th width="15%">Qty Invoice</th>
-                                    <th width="20%">Unit Price</th>
-                                    <th width="15%">Subtotal</th>
+                                    <th>Product</th>
+                                    <th class="text-center" style="width: 90px;">Qty PO</th>
+                                    <th class="text-center" style="width: 105px;">Qty Invoice</th>
+                                    <th class="text-end" style="width: 135px;">Unit Price</th>
+                                    <th class="text-end text-nowrap" style="min-width: 165px;">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody id="itemsBody">
@@ -343,10 +349,10 @@
                                     <th class="text-end" id="discount_amount_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="3" class="text-end">Payment (%)</th>
+                                    <th colspan="3" class="text-end">Payment Percentage (%)</th>
                                     <td>
                                         <input type="number" name="dp_percent" id="dp_percent"
-                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('dp_percent', 100) }}">
+                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('dp_percent', 0) }}">
                                     </td>
                                     <th class="text-end" id="dp_amount_display">Rp 0</th>
                                 </tr>
@@ -365,8 +371,18 @@
                                 <tr id="pph23_row" style="display: none;">
                                     <th colspan="3" class="text-end">PPH23 (%)</th>
                                     <td>
-                                        <input type="number" name="pph23_percent" id="pph23_percent"
-                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('pph23_percent', 0) }}">
+                                        <input type="number"
+                                               id="pph23_percent"
+                                               class="form-control text-end"
+                                               step="0.01"
+                                               min="0"
+                                               max="100"
+                                               value="{{ old('pph23_percent', 0) }}">
+
+                                        <input type="hidden"
+                                               name="pph23_percent"
+                                               id="pph23_percent_submit"
+                                               value="{{ old('pph23_percent', 0) }}">
                                     </td>
                                     <th class="text-end" id="pph23_amount_display">Rp 0</th>
                                 </tr>
@@ -375,7 +391,7 @@
                                     <th class="text-end"><strong id="grand_total_display">Rp 0</strong></th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-end">Remaining Amount</th>
+                                    <th colspan="4" class="text-end">Remaining PO Amount Before Tax</th>
                                     <th class="text-end" id="remaining_display">Rp 0</th>
                                 </tr>
                             </tfoot>
@@ -392,21 +408,25 @@
                             <textarea name="notes" rows="2" class="form-control">{{ old('notes') }}</textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Status</label>
-                            <select name="status" id="status" class="form-select">
-                                <option value="proforma">Proforma</option>
-                                <option value="partial" selected>Partial</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                        </div>
+    <label class="form-label">Invoice Status</label>
+    <input type="text"
+           class="form-control"
+           value="Calculated automatically"
+           readonly>
+    <div class="form-text">
+        Partial or Completed is determined automatically from the remaining PO amount.
+    </div>
+</div>
                         <div class="col-md-6">
-                            <label class="form-label">Payment Status</label>
-                            <select name="payment_status" class="form-select" required>
-                                <option value="sent" selected>Sent</option>
-                                <option value="paid">Paid</option>
-                            </select>
-                        </div>
+    <label class="form-label">Payment Status</label>
+    <input type="text"
+           class="form-control"
+           value="Sent"
+           readonly>
+    <div class="form-text">
+        New invoices always start with payment status Sent.
+    </div>
+</div>
                     </div>
                 </div>
 
@@ -469,29 +489,10 @@ $(function () {
         }
     });
 
-    // Init select2 untuk parent invoice
-    $('#parent_invoice_id').select2({
-        placeholder: "-- None (new invoice) --",
-        allowClear: true,
-        width: '100%'
-    });
-
     let rowIndex = 0;
 
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID').format(Math.round(number || 0));
-    }
-
-    function updateStatus(type, remaining) {
-        if (type === 'proforma') {
-            $('#status').val('proforma');
-        } else if (type === 'sales') {
-            if (remaining <= 1) {
-                $('#status').val('completed');
-            } else {
-                $('#status').val('partial');
-            }
-        }
     }
 
     function parseNumber(value) {
@@ -521,7 +522,9 @@ $(function () {
         let dpPercent = parseFloat($('#dp_percent').val()) || 0;
         let discountPercent = parseFloat($('#discount_percent').val()) || 0;
         let taxPercent = parseFloat($('#tax_percent').val()) || 0;
-        let pph23Percent = parseFloat($('#pph23_percent').val()) || 0;
+        let pph23Percent = $('#has_pph23').is(':checked')
+            ? (parseFloat($('#pph23_percent').val()) || 0)
+            : 0;
 
         let dpAmount = subtotal * dpPercent / 100;
         let baseAmount = (dpAmount > 0) ? dpAmount : subtotal;
@@ -530,7 +533,8 @@ $(function () {
         let taxAmount = dpp * taxPercent / 100;
         let pph23Amount = dpp * pph23Percent / 100;
         let grandTotal = dpp + taxAmount - pph23Amount;
-        let remaining = (dpAmount > 0) ? (subtotal - dpAmount) : 0;
+        let poRemainingBase = parseFloat($('#po_customer_id option:selected').data('remaining-base')) || 0;
+        let remaining = Math.max(0, poRemainingBase - baseAmount);
 
         let dppLain = dpAmount * 11 / 12;
         $('#dpplain_display').html('Rp ' + formatRupiah(dppLain));
@@ -547,20 +551,22 @@ $(function () {
         $('#dp_amount_value').val(dpAmount);
         $('#discount_amount_value').val(discountAmount);
         $('#tax_amount_value').val(taxAmount);
+        $('#pph23_percent_submit').val(pph23Percent);
         $('#pph23_amount_value').val(pph23Amount);
         $('#grand_total_value').val(grandTotal);
         $('#remaining_amount_value').val(remaining);
 
-        // Cek jika grandTotal melebihi sisa PO
-        let poRemaining = parseFloat($('#po_customer_id option:selected').data('remaining')) || 0;
-        if (grandTotal > poRemaining && poRemaining > 0) {
+        // Payment Amount dialokasikan sebelum diskon dan pajak.
+        const invoiceBaseRupiah = Math.round(baseAmount + Number.EPSILON);
+        const poRemainingBaseRupiah = Math.round(poRemainingBase + Number.EPSILON);
+        if (invoiceBaseRupiah > poRemainingBaseRupiah && poRemainingBaseRupiah > 0) {
             $('#poRemainingWarning').show();
         } else {
             $('#poRemainingWarning').hide();
         }
 
         let invoiceType = $('#type').val();
-        updateStatus(invoiceType, remaining);
+
     }
 
     // =========================================================
@@ -574,18 +580,58 @@ $(function () {
         } else {
             $('#pph23_row').hide();
             $('#pph23_percent').val(0);
+            $('#pph23_percent_submit').val(0);
         }
         calculateAll();
     });
 
-    $('#payment_terms').on('change', function () {
-        let terms = $(this).val();
-        let match = terms.match(/(\d+)%/);
+    function percentageFromPaymentTerms(terms, fallbackPercent = 100) {
+        terms = (terms || '').trim();
+
+        const match = terms.match(/(\d+(?:\.\d+)?)%/);
         if (match) {
-            $('#dp_percent').val(match[1]);
-        } else {
-            $('#dp_percent').val(100);
+            return Math.min(100, Math.max(0, parseFloat(match[1]) || 0));
         }
+
+        const normalized = terms.toLowerCase();
+
+        if (
+            normalized.includes('100%') ||
+            normalized.includes('cash before delivery') ||
+            normalized.includes('(cbd)') ||
+            normalized.includes('cash on delivery') ||
+            normalized.includes('(cod)') ||
+            normalized.includes('days after delivery')
+        ) {
+            return 100;
+        }
+
+        return Math.min(100, Math.max(0, parseFloat(fallbackPercent) || 0));
+    }
+
+    $('#payment_terms').on('change', function () {
+        const terms = $(this).val();
+        const selectedPo = $('#po_customer_id option:selected');
+        const poRemainingBase = parseFloat(selectedPo.data('remaining-base')) || 0;
+
+        let poSubtotal = 0;
+        $('[id^="subtotal_"]').each(function () {
+            poSubtotal += parseFloat($(this).attr('data-value')) || 0;
+        });
+
+        const remainingPercent = poSubtotal > 0
+            ? Math.min(100, (poRemainingBase / poSubtotal) * 100)
+            : 100;
+
+        const derivedPercent = percentageFromPaymentTerms(
+            terms,
+            remainingPercent
+        );
+
+        $('#dp_percent').val(
+            Number(Number(derivedPercent).toFixed(4))
+        );
+
         calculateAll();
     });
 
@@ -602,8 +648,8 @@ $(function () {
 
         $('#invoiceDetails').show();
 
-        let poRemaining = parseFloat($(this).find('option:selected').data('remaining')) || 0;
-        $('#poRemainingValue').text('Rp ' + formatRupiah(poRemaining));
+        let poRemainingBase = parseFloat($(this).find('option:selected').data('remaining-base')) || 0;
+        $('#poRemainingBaseValue').text('Rp ' + formatRupiah(poRemainingBase));
         $('#poRemainingInfo').show();
         $('#poRemainingWarning').hide();
 
@@ -616,39 +662,77 @@ $(function () {
 
                 $.each(res.items, function (i, item) {
                     rows += `
-                    <tr id="row_${rowIndex}">
+                    <tr id="row_${rowIndex}" class="invoice-item-row">
                         <td>
                             ${item.product_name}
                             <br>
-                            <small class="text-muted">${item.product_code} -${item.brand || '-'}</small>
+                            <small class="text-muted">
+                                ${item.product_code} - ${item.brand || '-'}
+                            </small>
+
+                            <input type="hidden"
+                                name="items[${rowIndex}][po_customer_detail_id]"
+                                value="${item.po_customer_detail_id}">
+
+                            <input type="hidden"
+                                name="items[${rowIndex}][product_id]"
+                                value="${item.product_id}">
                         </td>
-                        <td class="text-center">${item.quantity}${item.unit}</td>
+
+                        <td class="text-center">
+                            ${item.po_quantity} ${item.unit || ''}
+                        </td>
+
                         <td>
                             <input type="number"
                                 name="items[${rowIndex}][quantity]"
                                 id="qty_${rowIndex}"
-                                class="form-control qty-input"
+                                class="form-control qty-input text-end"
+                                style="min-width: 90px;"
                                 data-row="${rowIndex}"
-                                value="${item.quantity}"
-                                min="1" required>
+                                value="${item.po_quantity}"
+                                readonly>
                         </td>
+
                         <td>
                             <input type="text"
                                 id="price_${rowIndex}"
-                                class="form-control price-input"
+                                class="form-control price-input text-end"
+                                style="min-width: 125px;"
                                 data-row="${rowIndex}"
-                                value="${formatRupiah(item.unit_price)}" required>
+                                value="${formatRupiah(item.unit_price)}"
+                                readonly>
+
                             <input type="hidden"
                                 name="items[${rowIndex}][unit_price_numeric]"
                                 id="price_hidden_${rowIndex}"
                                 value="${item.unit_price}">
                         </td>
-                        <td class="text-end" id="subtotal_${rowIndex}" data-value="0">Rp 0</td>
-                        <input type="hidden" name="items[${rowIndex}][product_id]" value="${item.product_id}">
-                        <input type="hidden" id="subtotal_hidden_${rowIndex}" name="items[${rowIndex}][subtotal]" value="0">
+
+                        <td class="text-end text-nowrap"
+                            style="min-width: 165px;"
+                            id="subtotal_${rowIndex}"
+                            data-value="0">
+                            Rp 0
+                        </td>
+
+                        <input type="hidden"
+                            id="subtotal_hidden_${rowIndex}"
+                            name="items[${rowIndex}][subtotal]"
+                            value="0">
                     </tr>`;
                     rowIndex++;
                 });
+
+                if (!rows) {
+                    rows = `
+                        <tr>
+                            <td colspan="5"
+                                class="text-center text-muted">
+                                PO Customer tidak memiliki detail item.
+                            </td>
+                        </tr>`;
+                }
 
                 $('#itemsBody').html(rows);
 
@@ -667,6 +751,66 @@ $(function () {
                         $deliveryTime.append(new Option(res.delivery_time, res.delivery_time, true, true));
                     }
                     $deliveryTime.val(res.delivery_time).trigger('change.select2');
+                }
+
+                if (res.terms_source_label) {
+                    $('#termsInheritanceSource').text(res.terms_source_label);
+                    $('#termsInheritanceInfo').show();
+                } else {
+                    $('#termsInheritanceInfo').hide();
+                    $('#termsInheritanceSource').text('');
+                }
+
+                if (res.has_previous_invoice) {
+                    $('#parentInvoiceValue').text(res.root_invoice_number + ' (otomatis)');
+                    $('#parentInvoiceInfo').show();
+                    // Invoice berikutnya default ke canonical remaining percentage.
+                    // User tetap boleh mengubah Payment Percentage secara manual.
+                    const recommendedPercent = Number(
+                        Number(res.recommended_percent || 0).toFixed(4)
+                    );
+                    $('#dp_percent').val(recommendedPercent);
+
+                    const poDiscountPercent = Number(
+                        Number(res.discount_percent || 0).toFixed(4)
+                    );
+                    $('#discount_percent').val(poDiscountPercent);
+
+                    $('#tax_percent').val(res.tax_percent || 0);
+
+                    const poPphPercent = Number(
+                        Number(res.pph23_percent || 0).toFixed(4)
+                    );
+                    $('#pph23_percent').val(poPphPercent);
+                    $('#has_pph23').prop('checked', poPphPercent > 0);
+                    $('#pph23_row').toggle(poPphPercent > 0);
+                } else {
+                    $('#parentInvoiceValue').text('Invoice ini akan menjadi parent/root');
+                    $('#parentInvoiceInfo').show();
+
+                    const initialTerms = $paymentTerms.val() || '';
+                    const initialPercent = percentageFromPaymentTerms(
+                        initialTerms,
+                        Number(res.recommended_percent || 100)
+                    );
+
+                    $('#dp_percent').val(
+                        Number(Number(initialPercent).toFixed(4))
+                    );
+
+                    const poDiscountPercent = Number(
+                        Number(res.discount_percent || 0).toFixed(4)
+                    );
+                    $('#discount_percent').val(poDiscountPercent);
+
+                    $('#tax_percent').val(res.tax_percent || 0);
+
+                    const poPphPercent = Number(
+                        Number(res.pph23_percent || 0).toFixed(4)
+                    );
+                    $('#pph23_percent').val(poPphPercent);
+                    $('#has_pph23').prop('checked', poPphPercent > 0);
+                    $('#pph23_row').toggle(poPphPercent > 0);
                 }
 
                 setTimeout(function () {
@@ -719,20 +863,43 @@ $(function () {
         $('select[name="delivery_time"]').val(oldDeliveryTime).trigger('change.select2');
     }
 
-    var oldParentId = "{{ old('parent_invoice_id') }}";
-    if (oldParentId) {
-        $('#parent_invoice_id').val(oldParentId).trigger('change.select2');
-    }
+    // =========================================================
+    // RM-004O SUBMIT SAFETY
+    // Product / Qty / Price are PO Customer controlled.
+    // =========================================================
 
-    var oldStatus = "{{ old('status') }}";
-    if (oldStatus) {
-        $('#status').val(oldStatus);
-    }
+    $('form').on('submit', function (event) {
+        const submittedPph23Percent =
+            $('#has_pph23').is(':checked')
+                ? (parseFloat($('#pph23_percent').val()) || 0)
+                : 0;
 
-    var oldPaymentStatus = "{{ old('payment_status') }}";
-    if (oldPaymentStatus) {
-        $('select[name="payment_status"]').val(oldPaymentStatus);
-    }
+        $('#pph23_percent_submit').val(submittedPph23Percent);
+
+        if ($('.invoice-item-row').length === 0) {
+            event.preventDefault();
+            alert('At least one invoice item is required.');
+            return false;
+        }
+
+        let invalidQty = false;
+
+        $('.qty-input').each(function () {
+            let qty = parseFloat($(this).val()) || 0;
+            let maxQty = parseFloat($(this).attr('max')) || 0;
+
+            if (qty < 1 || (maxQty > 0 && qty > maxQty)) {
+                invalidQty = true;
+            }
+        });
+
+        if (invalidQty) {
+            event.preventDefault();
+            alert('Qty Invoice cannot exceed Remaining Qty.');
+            return false;
+        }
+    });
+
 });
 </script>
 @endsection

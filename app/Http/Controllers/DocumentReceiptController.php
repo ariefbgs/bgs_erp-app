@@ -10,6 +10,8 @@ use App\Models\PoCustomer;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\ImageManager;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -17,14 +19,17 @@ class DocumentReceiptController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DocumentReceipt::with('deliveryOrder.poCustomer.customer');
+        $query = DocumentReceipt::with([
+            'poCustomer.customer',
+            'deliveryOrders',
+        ]);
 
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('receipt_number', 'LIKE', "%{$search}%")
-                    ->orWhereHas('deliveryOrder.poCustomer.customer', function ($cq) use ($search) {
+                    ->orWhereHas('poCustomer.customer', function ($cq) use ($search) {
                         $cq->where('name', 'LIKE', "%{$search}%");
                     });
             });
@@ -37,7 +42,7 @@ class DocumentReceiptController extends Controller
 
         // Filter berdasarkan status Delivery Order (opsional)
         if ($request->filled('do_status') && $request->do_status != '') {
-            $query->whereHas('deliveryOrder', function ($q) use ($request) {
+            $query->whereHas('deliveryOrders', function ($q) use ($request) {
                 $q->where('status', $request->do_status);
             });
         }
@@ -50,183 +55,478 @@ class DocumentReceiptController extends Controller
 
     public function create()
     {
-        // ✅ Hanya tampilkan DO dengan status pending atau partial
-        $deliveryOrders = DeliveryOrder::with('poCustomer.customer')
-            ->whereIn('status', ['pending', 'partial'])
-            ->orderBy('created_at', 'desc')
+        /*
+         * PO Customer is the business context for Document Receipt.
+         * Only PO Customers having at least one DO and one active
+         * Sales Invoice are eligible for Create DR.
+         */
+        $poCustomers = PoCustomer::with('customer')
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('deliveryOrders')
+            ->whereHas('invoiceCustomers', function ($query) {
+                $query->where('status', '!=', 'cancelled');
+            })
+            ->orderByDesc('po_date')
+            ->orderByDesc('id')
             ->get();
 
-        return view('document-receipts.create', compact('deliveryOrders'));
+        return view(
+            'document-receipts.create',
+            compact('poCustomers')
+        );
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'delivery_order_id' => 'required|exists:delivery_orders,id',
+        $validated = $request->validate([
+            'po_customer_id' => 'required|exists:po_customers,id',
+
+            'delivery_order_ids' => 'required|array|min:1',
+            'delivery_order_ids.*' =>
+                'required|integer|distinct|exists:delivery_orders,id',
+
+            'invoice_customer_ids' => 'required|array|min:1',
+            'invoice_customer_ids.*' =>
+                'required|integer|distinct|exists:invoice_customers,id',
+
             'receipt_date' => 'required|date',
-            'invoice_number' => 'required|array|min:1',
-            'invoice_number.*' => 'exists:invoice_customers,invoice_number',
-            'tax_invoice_number' => 'nullable|string|max:255',
-            'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'attachment' =>
+                'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
             'notes' => 'nullable|string',
         ]);
 
-        // Gabungkan invoice_number menjadi string dengan koma
-        $invoiceNumbers = implode(', ', $request->invoice_number);
+        $poCustomerId = (int) $validated['po_customer_id'];
 
-        // Ambil tax_invoice_number dari invoice pertama yang dipilih
-         $taxInvoiceNumbers = [];
-        if (!empty($request->invoice_number)) {
-            $invoices = InvoiceCustomer::whereIn('invoice_number', $request->invoice_number)->get();
-            foreach ($invoices as $inv) {
-                if (!empty($inv->tax_invoice_number)) {
-                    $taxInvoiceNumbers[] = $inv->tax_invoice_number;
-                }
-            }
+        /*
+         * Every selected DO must belong to the DR PO Customer.
+         */
+        $deliveryOrders = DeliveryOrder::query()
+            ->whereIn('id', $validated['delivery_order_ids'])
+            ->get();
+
+        if (
+            $deliveryOrders->count()
+            !== count($validated['delivery_order_ids'])
+        ) {
+            throw ValidationException::withMessages([
+                'delivery_order_ids' =>
+                    'One or more Delivery Orders are invalid.',
+            ]);
         }
-        $taxInvoiceNumber = !empty($taxInvoiceNumbers) ? implode(', ', $taxInvoiceNumbers) : null;
-        
-        // Generate receipt number
-        $receiptDate = $request->receipt_date;
+
+        $crossPoDo = $deliveryOrders->first(
+            fn ($do) =>
+                (int) $do->po_customer_id !== $poCustomerId
+        );
+
+        if ($crossPoDo) {
+            throw ValidationException::withMessages([
+                'delivery_order_ids' =>
+                    'All Delivery Orders must belong to the selected PO Customer.',
+            ]);
+        }
+
+        /*
+         * Every selected Sales Invoice must belong to the same
+         * PO Customer. Cancelled invoices are not allowed.
+         */
+        $invoices = InvoiceCustomer::query()
+            ->whereIn('id', $validated['invoice_customer_ids'])
+            ->get();
+
+        if (
+            $invoices->count()
+            !== count($validated['invoice_customer_ids'])
+        ) {
+            throw ValidationException::withMessages([
+                'invoice_customer_ids' =>
+                    'One or more Sales Invoices are invalid.',
+            ]);
+        }
+
+        $crossPoInvoice = $invoices->first(
+            fn ($invoice) =>
+                (int) $invoice->po_customer_id !== $poCustomerId
+        );
+
+        if ($crossPoInvoice) {
+            throw ValidationException::withMessages([
+                'invoice_customer_ids' =>
+                    'All Sales Invoices must belong to the selected PO Customer.',
+            ]);
+        }
+
+        $cancelledInvoice = $invoices->first(
+            fn ($invoice) =>
+                $invoice->status === 'cancelled'
+                || $invoice->payment_status === 'cancelled'
+        );
+
+        if ($cancelledInvoice) {
+            throw ValidationException::withMessages([
+                'invoice_customer_ids' =>
+                    'Cancelled Sales Invoice cannot be used in Document Receipt.',
+            ]);
+        }
+
+        /*
+         * FP is system-derived from selected Sales Invoices.
+         * No tax invoice number is accepted from the DR request.
+         */
+        $invoiceNumbers = $invoices
+            ->pluck('invoice_number')
+            ->filter()
+            ->values()
+            ->implode(', ');
+
+        $taxInvoiceNumbers = $invoices
+            ->pluck('tax_invoice_number')
+            ->filter()
+            ->unique()
+            ->values()
+            ->implode(', ');
+
+        /*
+         * Generate DR number.
+         */
+        $receiptDate = $validated['receipt_date'];
         $currentYear = date('Y', strtotime($receiptDate));
         $currentMonth = date('n', strtotime($receiptDate));
 
-        $lastReceipt = DocumentReceipt::whereYear('receipt_date', $currentYear)
+        $lastReceipt = DocumentReceipt::whereYear(
+            'receipt_date',
+            $currentYear
+        )
             ->orderBy('id', 'desc')
             ->first();
 
         if ($lastReceipt) {
-            $lastNumber = (int) explode('/', $lastReceipt->receipt_number)[0];
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            $lastNumber =
+                (int) explode('/', $lastReceipt->receipt_number)[0];
+
+            $newNumber = str_pad(
+                $lastNumber + 1,
+                4,
+                '0',
+                STR_PAD_LEFT
+            );
         } else {
             $newNumber = '0001';
         }
 
-        $romanMonthStr = $this->romanMonth($currentMonth);
-        $receiptNumber = $newNumber . '/DR/BGS/' . $romanMonthStr . '/' . $currentYear;
+        $receiptNumber =
+            $newNumber .
+            '/DR/BGS/' .
+            $this->romanMonth($currentMonth) .
+            '/' .
+            $currentYear;
 
-        // Upload attachment
+        /*
+         * Attachment.
+         */
         $attachmentPath = null;
+
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $file->getClientOriginalExtension();
+
+            $originalName = pathinfo(
+                $file->getClientOriginalName(),
+                PATHINFO_FILENAME
+            );
+
+            $safeName =
+                time() .
+                '_' .
+                preg_replace(
+                    '/[^A-Za-z0-9_-]/',
+                    '_',
+                    $originalName
+                ) .
+                '.' .
+                $file->getClientOriginalExtension();
+
             $folder = 'document-receipts';
-            
+
             if (!Storage::disk('public')->exists($folder)) {
                 Storage::disk('public')->makeDirectory($folder);
             }
-            
-            if (in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png'])) {
-                $manager = new ImageManager(['driver' => 'gd']);
-                $image = $manager->make($file->getRealPath());
-                $image->resize(800, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-                $image->encode('jpg', 80);
-                Storage::disk('public')->put($folder . '/' . $safeName, (string) $image->encode());
-            } else {
-                Storage::disk('public')->putFileAs($folder, $file, $safeName);
-            }
+
+            /*
+             * Preserve existing upload behavior for now.
+             * Image processing modernization is outside RM-012C.
+             */
+            Storage::disk('public')->putFileAs(
+                $folder,
+                $file,
+                $safeName
+            );
+
             $attachmentPath = $folder . '/' . $safeName;
         }
 
-        DocumentReceipt::create([
-            'receipt_number' => $receiptNumber,
-            'delivery_order_id' => $request->delivery_order_id,
-            'receipt_date' => $request->receipt_date,
-            'invoice_number' => $invoiceNumbers,
-            'tax_invoice_number' => $taxInvoiceNumber ?? $request->tax_invoice_number,
-            'attachment' => $attachmentPath,
-            'notes' => $request->notes,
-            'status' => 'draft',
-        ]);
+        DB::transaction(function () use (
+            $validated,
+            $poCustomerId,
+            $deliveryOrders,
+            $invoices,
+            $receiptNumber,
+            $invoiceNumbers,
+            $taxInvoiceNumbers,
+            $attachmentPath
+        ) {
+            /*
+             * Legacy header columns remain populated temporarily
+             * so current Show/Edit/Print stay backward compatible
+             * until they are migrated in the next stages.
+             *
+             * delivery_order_id is NOT the new source of truth.
+             */
+            $receipt = DocumentReceipt::create([
+                'receipt_number' => $receiptNumber,
+                'po_customer_id' => $poCustomerId,
 
-        return redirect()->route('document-receipts.index')->with('success', 'Document Receipt created successfully.');
+
+
+
+                'receipt_date' => $validated['receipt_date'],
+                'attachment' => $attachmentPath,
+                'notes' => $validated['notes'] ?? null,
+                'status' => 'draft',
+            ]);
+
+            $receipt->deliveryOrders()->sync(
+                $deliveryOrders->pluck('id')->all()
+            );
+
+            $receipt->invoices()->sync(
+                $invoices->pluck('id')->all()
+            );
+        });
+
+        return redirect()
+            ->route('document-receipts.index')
+            ->with(
+                'success',
+                'Document Receipt created successfully.'
+            );
     }
 
     public function show($id)
     {
-        $receipt = DocumentReceipt::with('deliveryOrder.poCustomer.customer')->findOrFail($id);
-        return view('document-receipts.show', compact('receipt'));
+        $receipt = DocumentReceipt::with([
+            'poCustomer.customer',
+            'deliveryOrders',
+            'invoices',
+        ])->findOrFail($id);
+
+        return view(
+            'document-receipts.show',
+            compact('receipt')
+        );
     }
 
     public function edit($id)
     {
-        $receipt = DocumentReceipt::findOrFail($id);
-        $deliveryOrders = DeliveryOrder::with('poCustomer.customer')
-            ->whereIn('status', ['pending', 'partial', 'shipped', 'delivered'])
+        $receipt = DocumentReceipt::with([
+            'poCustomer.customer',
+            'deliveryOrders',
+            'invoices',
+        ])->findOrFail($id);
+
+        $poCustomers = PoCustomer::with('customer')
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('deliveryOrders')
+            ->whereHas('invoiceCustomers', function ($query) {
+                $query->where('status', '!=', 'cancelled');
+            })
+            ->orderByDesc('po_date')
+            ->orderByDesc('id')
             ->get();
-        $selectedInvoices = !empty($receipt->invoice_number) ? explode(', ', $receipt->invoice_number) : [];
-        return view('document-receipts.edit', compact('receipt', 'deliveryOrders', 'selectedInvoices'));
+
+        return view(
+            'document-receipts.edit',
+            compact('receipt', 'poCustomers')
+        );
     }
 
     public function update(Request $request, $id)
     {
-        $receipt = DocumentReceipt::findOrFail($id);
+        $receipt = DocumentReceipt::with([
+            'deliveryOrders',
+            'invoices',
+        ])->findOrFail($id);
 
-        $request->validate([
-            'delivery_order_id' => 'required|exists:delivery_orders,id',
+        $validated = $request->validate([
+            'po_customer_id' => 'required|exists:po_customers,id',
+            'delivery_order_ids' => 'required|array|min:1',
+            'delivery_order_ids.*' => 'required|distinct|exists:delivery_orders,id',
+            'invoice_customer_ids' => 'required|array|min:1',
+            'invoice_customer_ids.*' => 'required|distinct|exists:invoice_customers,id',
             'receipt_date' => 'required|date',
-            'invoice_number' => 'required|array|min:1',
-            'invoice_number.*' => 'exists:invoice_customers,invoice_number',
-            'tax_invoice_number' => 'nullable|string|max:255',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'notes' => 'nullable|string',
             'status' => 'required|in:draft,sent,delivered',
         ]);
 
-        $invoiceNumbers = implode(', ', $request->invoice_number);
+        $poCustomerId = (int) $validated['po_customer_id'];
 
-        $taxInvoiceNumber = null;
-        if (!empty($request->invoice_number)) {
-            $firstInvoice = InvoiceCustomer::where('invoice_number', $request->invoice_number[0])->first();
-            if ($firstInvoice) {
-                $taxInvoiceNumber = $firstInvoice->tax_invoice_number;
-            }
+        $poCustomer = PoCustomer::query()
+            ->where('status', '!=', 'cancelled')
+            ->findOrFail($poCustomerId);
+
+        $deliveryOrders = DeliveryOrder::query()
+            ->whereIn('id', $validated['delivery_order_ids'])
+            ->get();
+
+        if (
+            $deliveryOrders->count()
+            !== count($validated['delivery_order_ids'])
+        ) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'delivery_order_ids' =>
+                        'One or more Delivery Orders are invalid.',
+                ]);
         }
+
+        $crossPoDo = $deliveryOrders->first(
+            function ($deliveryOrder) use ($poCustomerId) {
+                return (int) $deliveryOrder->po_customer_id
+                    !== $poCustomerId;
+            }
+        );
+
+        if ($crossPoDo) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'delivery_order_ids' =>
+                        'All Delivery Orders must belong to the selected PO Customer.',
+                ]);
+        }
+
+        $invoices = InvoiceCustomer::query()
+            ->whereIn('id', $validated['invoice_customer_ids'])
+            ->get();
+
+        if (
+            $invoices->count()
+            !== count($validated['invoice_customer_ids'])
+        ) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'invoice_customer_ids' =>
+                        'One or more Sales Invoices are invalid.',
+                ]);
+        }
+
+        $crossPoInvoice = $invoices->first(
+            function ($invoice) use ($poCustomerId) {
+                return (int) $invoice->po_customer_id
+                    !== $poCustomerId;
+            }
+        );
+
+        if ($crossPoInvoice) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'invoice_customer_ids' =>
+                        'All Sales Invoices must belong to the selected PO Customer.',
+                ]);
+        }
+
+        $cancelledInvoice = $invoices->first(
+            function ($invoice) {
+                return $invoice->status === 'cancelled';
+            }
+        );
+
+        if ($cancelledInvoice) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'invoice_customer_ids' =>
+                        'Cancelled Sales Invoice cannot be included.',
+                ]);
+        }
+
+        $invoiceNumbers = $invoices
+            ->sortBy('id')
+            ->pluck('invoice_number')
+            ->filter()
+            ->implode(', ');
+
+        $taxInvoiceNumbers = $invoices
+            ->sortBy('id')
+            ->pluck('tax_invoice_number')
+            ->filter()
+            ->implode(', ');
 
         $attachmentPath = $receipt->attachment;
-        if ($request->hasFile('attachment')) {
-            if ($attachmentPath && Storage::disk('public')->exists($attachmentPath)) {
-                Storage::disk('public')->delete($attachmentPath);
-            }
-            $file = $request->file('attachment');
-            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $file->getClientOriginalExtension();
-            $folder = 'document-receipts';
-            
-            if (!Storage::disk('public')->exists($folder)) {
-                Storage::disk('public')->makeDirectory($folder);
-            }
-            
-            if (in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png'])) {
-                $manager = new ImageManager(['driver' => 'gd']);
-                $image = $manager->make($file->getRealPath());
-                $image->resize(800, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-                $image->encode('jpg', 80);
-                Storage::disk('public')->put($folder . '/' . $safeName, (string) $image->encode());
-            } else {
-                Storage::disk('public')->putFileAs($folder, $file, $safeName);
-            }
-            $attachmentPath = $folder . '/' . $safeName;
-        }
 
-        $receipt->update([
-            'delivery_order_id' => $request->delivery_order_id,
-            'receipt_date' => $request->receipt_date,
-            'invoice_number' => $invoiceNumbers,
-            'tax_invoice_number' => $taxInvoiceNumber ?? $request->tax_invoice_number,
-            'attachment' => $attachmentPath,
-            'notes' => $request->notes,
-            'status' => $request->status,
-        ]);
+        DB::transaction(function () use (
+            $receipt,
+            $validated,
+            $poCustomer,
+            $deliveryOrders,
+            $invoices,
+            $invoiceNumbers,
+            $taxInvoiceNumbers,
+            &$attachmentPath,
+            $request
+        ) {
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
 
-        return redirect()->route('document-receipts.index')
-            ->with('success', 'Document Receipt updated successfully.');
+                $safeName =
+                    time().'_'.
+                    preg_replace(
+                        '/[^A-Za-z0-9_-]/',
+                        '_',
+                        pathinfo(
+                            $file->getClientOriginalName(),
+                            PATHINFO_FILENAME
+                        )
+                    ).
+                    '.'.
+                    $file->getClientOriginalExtension();
+
+                $attachmentPath = $file->storeAs(
+                    'document-receipts',
+                    $safeName,
+                    'public'
+                );
+            }
+
+            $receipt->update([
+                'po_customer_id' => $poCustomer->id,
+                'receipt_date' => $validated['receipt_date'],
+                'attachment' => $attachmentPath,
+                'notes' => $validated['notes'] ?? null,
+                'status' => $validated['status'],
+            ]);
+
+            $receipt->deliveryOrders()->sync(
+                $deliveryOrders->pluck('id')->all()
+            );
+
+            $receipt->invoices()->sync(
+                $invoices->pluck('id')->all()
+            );
+        });
+
+        return redirect()
+            ->route(
+                'document-receipts.show',
+                $receipt->id
+            )
+            ->with(
+                'success',
+                'Document Receipt updated successfully.'
+            );
     }
 
     public function destroy($id)
@@ -253,6 +553,106 @@ class DocumentReceiptController extends Controller
         ]);
     }
 
+    public function getCreateOptionsByPo($poCustomerId)
+    {
+        $poCustomer = PoCustomer::with('customer')
+            ->where('status', '!=', 'cancelled')
+            ->findOrFail($poCustomerId);
+
+        $deliveryOrders = DeliveryOrder::query()
+            ->where('po_customer_id', $poCustomer->id)
+            ->orderBy('delivery_date')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'do_number',
+                'delivery_date',
+                'status',
+                'shipping_address',
+                'receiver_name',
+            ]);
+
+        $invoices = InvoiceCustomer::query()
+            ->where('po_customer_id', $poCustomer->id)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('invoice_date')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'invoice_number',
+                'type',
+                'invoice_date',
+                'tax_invoice_number',
+                'status',
+                'payment_status',
+            ]);
+
+        return response()->json([
+            'po_customer_id' => $poCustomer->id,
+            'po_number' => $poCustomer->po_number,
+            'po_date' => optional($poCustomer->po_date)
+                ->format('Y-m-d'),
+            'po_status' => $poCustomer->status,
+            'customer_name' =>
+                $poCustomer->customer->name ?? '',
+            'customer_address' =>
+                $poCustomer->customer->address ?? '',
+            'delivery_orders' => $deliveryOrders,
+            'invoices' => $invoices,
+        ]);
+    }
+
+    public function getCreateOptionsByDo($id)
+    {
+        $selectedDo = DeliveryOrder::with('poCustomer.customer')
+            ->findOrFail($id);
+
+        $poCustomerId = (int) $selectedDo->po_customer_id;
+
+        $deliveryOrders = DeliveryOrder::query()
+            ->where('po_customer_id', $poCustomerId)
+            ->orderByDesc('delivery_date')
+            ->orderByDesc('id')
+            ->get([
+                'id',
+                'do_number',
+                'delivery_date',
+                'status',
+                'shipping_address',
+                'receiver_name',
+            ]);
+
+        $invoices = InvoiceCustomer::query()
+            ->where('po_customer_id', $poCustomerId)
+            ->where(function ($query) {
+                $query->whereNull('payment_status')
+                    ->orWhere('payment_status', '!=', 'cancelled');
+            })
+            ->orderBy('invoice_date')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'invoice_number',
+                'type',
+                'invoice_date',
+                'tax_invoice_number',
+                'payment_status',
+            ]);
+
+        return response()->json([
+            'po_customer_id' => $poCustomerId,
+            'po_number' =>
+                $selectedDo->poCustomer->po_number ?? '',
+            'customer_name' =>
+                $selectedDo->poCustomer->customer->name ?? '',
+            'customer_address' =>
+                $selectedDo->poCustomer->customer->address ?? '',
+            'selected_do_id' => $selectedDo->id,
+            'delivery_orders' => $deliveryOrders,
+            'invoices' => $invoices,
+        ]);
+    }
+
     public function getInvoicesByPo($po_customer_id)
     {
         $invoices = InvoiceCustomer::where('po_customer_id', $po_customer_id)
@@ -263,7 +663,11 @@ class DocumentReceiptController extends Controller
 
     public function print($id)
     {
-        $receipt = DocumentReceipt::with('deliveryOrder.poCustomer.customer')->findOrFail($id);
+        $receipt = DocumentReceipt::with([
+            'poCustomer.customer',
+            'deliveryOrders',
+            'invoices',
+        ])->findOrFail($id);
         $company = Company::where('is_active', true)->first();
         $pdf = Pdf::loadView('document-receipts.print', compact('receipt', 'company'));
         $pdf->setPaper('a4', 'portrait');

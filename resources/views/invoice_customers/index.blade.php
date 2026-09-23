@@ -32,6 +32,33 @@
         margin: 2px;
     }
 
+    /* Sales Invoice Index frozen Action column */
+    .sticky-action {
+        position: sticky;
+        left: 0;
+        min-width: 145px;
+        width: 145px;
+        white-space: nowrap;
+    }
+
+    thead .sticky-action {
+        z-index: 4;
+        background: #212529;
+    }
+
+    tbody .sticky-action {
+        z-index: 3;
+        background: #ffffff;
+    }
+
+    .table-striped > tbody > tr:nth-of-type(odd) > .sticky-action {
+        background: #f2f2f2;
+    }
+
+    .table-hover > tbody > tr:hover > .sticky-action {
+        background: #ececec;
+    }
+
     .badge {
         font-size: 12px;
         padding: 6px 8px;
@@ -216,6 +243,9 @@
             <table class="table table-bordered table-hover table-striped">
                 <thead class="table-dark">
                     <tr>
+                        <th class="text-center sticky-action">
+                            Actions
+                        </th>
                         <th width="3%" class="text-center">No</th>
                         <th width="12%" class="text-center">
                             Invoice #
@@ -251,14 +281,64 @@
                         <th width="8%" class="text-center">
                             Payment
                         </th>
-                        <th width="12%" class="text-center">
-                            Actions
-                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($invoices as $index => $inv)
                         <tr>
+                            {{-- ACTIONS --}}
+                            <td class="text-center action-buttons sticky-action">
+                                {{-- VIEW --}}
+                                <a href="{{ route('invoice-customers.show', $inv->id) }}"
+                                   class="btn btn-info btn-sm"
+                                   title="View">
+                                   <i class="bi bi-eye"></i>
+                                </a>
+                                {{-- EDIT --}}
+                                @if($inv->status != 'cancelled')
+                                    <a href="{{ route('invoice-customers.edit', $inv->id) }}"
+                                       class="btn btn-warning btn-sm"
+                                       title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                @endif
+                                {{-- CANCEL --}}
+                                @if(
+                                    $inv->status != 'cancelled' &&
+                                    $inv->payment_status != 'paid'
+                                )
+                                    <form action="{{ route('invoice-customers.cancel', $inv->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure want to cancel this invoice?')">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                class="btn btn-secondary btn-sm"
+                                                title="Cancel">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                                {{-- DELETE --}}
+                                @if(
+                                    $inv->status == 'cancelled' &&
+                                    $inv->payment_status != 'paid'
+                                )
+                                    <form action="{{ route('invoice-customers.destroy', $inv->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Delete this invoice permanently?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </td>
                             {{-- NO --}}
                             <td class="text-center">
                                 {{ $invoices->firstItem() + $index }}
@@ -360,59 +440,6 @@
                                     <span class="badge bg-dark">
                                         -
                                     </span>
-                                @endif
-                            </td>
-                            {{-- ACTIONS --}}
-                            <td class="text-center action-buttons">
-                                {{-- VIEW --}}
-                                <a href="{{ route('invoice-customers.show', $inv->id) }}"
-                                   class="btn btn-info btn-sm"
-                                   title="View">
-                                   <i class="bi bi-eye"></i>
-                                </a>
-                                {{-- EDIT --}}
-                                @if($inv->status != 'cancelled')
-                                    <a href="{{ route('invoice-customers.edit', $inv->id) }}"
-                                       class="btn btn-warning btn-sm"
-                                       title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                @endif
-                                {{-- CANCEL --}}
-                                @if(
-                                    $inv->status != 'cancelled' &&
-                                    $inv->payment_status != 'paid'
-                                )
-                                    <form action="{{ route('invoice-customers.cancel', $inv->id) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Are you sure want to cancel this invoice?')">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit"
-                                                class="btn btn-secondary btn-sm"
-                                                title="Cancel">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                                {{-- DELETE --}}
-                                @if(
-                                    $inv->status == 'cancelled' &&
-                                    $inv->payment_status != 'paid'
-                                )
-                                    <form action="{{ route('invoice-customers.destroy', $inv->id) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Delete this invoice permanently?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="btn btn-danger btn-sm"
-                                                title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
                                 @endif
                             </td>
                         </tr>

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Delivery Order & Document Receipt Management')
+@section('title', 'Delivery Order Management')
 @section('content')
 <style> 
     .qty-input { text-align: right; }
@@ -40,7 +40,7 @@
 </style>
 <div class="card">
     <div class="card-header bg-primary text-white">
-        <h4>Add New Delivery Order & Document Receipt</h4>
+        <h4>Add New Delivery Order</h4>
     </div>
     <div class="card-body">
         <form id="doForm" action="{{ route('delivery-orders.store') }}" method="POST" enctype="multipart/form-data">
@@ -98,63 +98,6 @@
             <!-- Detail Produk -->
             <div id="products-container"></div>
 
-            <!-- Tanda Terima Dokumen -->
-            <div id="tandaTerimaContainer" style="display: none;">
-                <hr>
-                <h5 class="mb-3">Document Receipt</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th width="5%" class="text-center">No</th>
-                                <th>Description</th>
-                                <th width="25%">Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Invoice -->
-                            <tr>
-                                <td class="text-center">1</td>
-                                <td>
-                                    <strong>Invoice</strong><br>
-                                    <select name="invoice_number" id="invoice_number" class="form-control form-control-sm select2-invoice" data-placeholder="-- Select Invoice --">
-                                        <option value="">-- Select Invoice --</option>
-                                    </select>
-                                 </td>
-                                <td class="align-middle">1 Rangkap (Asli)</td>
-                            </tr>
-                            <!-- Faktur Pajak (akan terisi otomatis berdasarkan pilihan invoice) -->
-                            <tr>
-                                <td class="text-center">2</td>
-                                <td>
-                                    <strong>Faktur Pajak</strong><br>
-                                    <input type="text" name="tax_invoice_number" id="tax_invoice_number" class="form-control form-control-sm mt-2" readonly placeholder="Will be filled automatically">
-                                 </td>
-                                <td class="align-middle">2 Rangkap (Asli + Copy)</td>
-                            </tr>
-                            <!-- PO -->
-                            <tr>
-                                <td class="text-center">3</td>
-                                <td>
-                                    <strong>PO Customer</strong><br>
-                                    <span id="selected-po-number" class="text-primary">-</span>
-                                 </td>
-                                <td class="align-middle">1 Rangkap</td>
-                            </tr>
-                            <!-- DO -->
-                            <tr>
-                                <td class="text-center">4</td>
-                                <td>
-                                    <strong>Delivery Order</strong><br>
-                                    <small class="text-muted">DO number will be generated automatically after saving</small>
-                                 </td>
-                                <td class="align-middle">3 Rangkap (Asli + Copy)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- Remarks -->
             <div id="catatanContainer" style="display: none;">
                 <div class="mb-3">
@@ -165,9 +108,9 @@
             <div id="deliveryByContainer" class="col-md-6 mb-3" style="display: none;">
                 <label class="form-label">Delivery By <span class="text-danger">*</span></label>
                 <select name="delivery_by" id="delivery_by" class="form-control" required>
-                    <option value="">Select</option>
-                    <option value="JNE">JNE</option>
-                    <option value="Courier Online">Courier Online</option>
+                    <option value="Wisnu" {{ old('delivery_by', 'JNE') == 'Wisnu' ? 'selected' : '' }}>Wisnu</option>
+                    <option value="JNE" {{ old('delivery_by', 'JNE') == 'JNE' ? 'selected' : '' }}>JNE</option>
+                    <option value="Courier Online" {{ old('delivery_by', 'JNE') == 'Courier Online' ? 'selected' : '' }}>Courier Online</option>
                 </select>
             </div>
             <div id="attachmentContainer" class="col-md-6 mb-3" style="display: none;">
@@ -211,19 +154,6 @@ $(document).ready(function() {
             });
         });
 
-        // Select2 untuk Invoice
-        $('.select2-invoice').each(function() {
-            if ($(this).data('select2')) {
-                $(this).select2('destroy');
-            }
-            $(this).select2({
-                placeholder: $(this).data('placeholder') || 'Select Invoice',
-                allowClear: true,
-                width: '100%',
-                minimumResultsForSearch: 0,
-                // dropdownParent dihapus karena menyebabkan error
-            });
-        });
     }
 
     // =============================================================
@@ -250,18 +180,10 @@ $(document).ready(function() {
             $('#poInfoContainer').hide();
             $('#products-container').html('');
             $('#selected-po-number').text('-');
-            $('#tandaTerimaContainer').hide();
             $('#catatanContainer').hide();
             $('#deliveryByContainer').hide();
             $('#attachmentContainer').hide();
 
-            // Hancurkan Select2 invoice, ganti HTML, lalu inisialisasi ulang
-            var $invoiceSelect = $('#invoice_number');
-            if ($invoiceSelect.data('select2')) {
-                $invoiceSelect.select2('destroy');
-            }
-            $invoiceSelect.html('<option value="">-- Select Invoice --</option>');
-            $('#tax_invoice_number').val('');
             $('#shipping_address_hidden').val('');
             $('#receiver_name_hidden').val('');
             initSelect2();
@@ -270,7 +192,6 @@ $(document).ready(function() {
 
         $('#poInfoContainer').hide();
         $('#products-container').html('<div class="alert alert-info">Loading...</div>');
-        $('#tandaTerimaContainer').hide();
         $('#catatanContainer').hide();
         $('#deliveryByContainer').hide();
         $('#attachmentContainer').hide();
@@ -295,7 +216,7 @@ $(document).ready(function() {
                 $('#selected-po-number').text(res.po_customer.po_number || '-');
 
                 // Buat tabel produk
-                var html = '<h5>Product Details (Qty can be changed)</h5>';
+                var html = '<h5>Product Details (limited by active Goods Receipt)</h5>';
                 html += '<div class="table-responsive"><table class="table table-bordered">';
                 html += '<thead class="table-dark"><tr><th>Product</th><th>Brand</th><th>Qty PO</th><th>Qty Send</th></tr></thead><tbody>';
                 if (res.items && res.items.length > 0) {
@@ -303,9 +224,9 @@ $(document).ready(function() {
                         html += '<tr>';
                         html += '<td>' + (item.product_name || '') + '<br><small>' + (item.product_code || '') + '</small>' + '</td>';
                         html += '<td>' + (item.brand || '-') + '</td>';
-                        html += '<td class="text-center">' + (item.quantity || 0) + ' ' + (item.unit || '') + '</td>';
-                        html += '<td><input type="number" name="items[' + i + '][quantity]" class="form-control qty-input" value="' + (item.quantity || 0) + '" min="0" required>';
-                        html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + (item.product_id || '') + '">' + '</td>';
+                        html += '<td class="text-center">' + (item.po_quantity || 0) + ' ' + (item.unit || '') + '<br><small class="text-success">Available from GR: ' + (item.quantity || 0) + '</small></td>';
+                        html += '<td><input type="number" name="items[' + i + '][quantity]" class="form-control qty-input" value="' + (item.quantity || 0) + '" min="0" max="' + (item.quantity || 0) + '" required>';
+                        html += '<input type="hidden" name="items[' + i + '][po_customer_detail_id]" value="' + (item.po_customer_detail_id || '') + '">' + '</td>';
                         html += '</tr>';
                     });
                 } else {
@@ -314,48 +235,6 @@ $(document).ready(function() {
                 html += '</tbody></table></div>';
                 $('#products-container').html(html);
 
-                // Ambil daftar invoice berdasarkan PO Customer ID
-                $.ajax({
-                    url: '{{ url("delivery-orders/get-invoices-by-po") }}/' + poId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(invoices) {
-                        // Hancurkan Select2 invoice sebelum mengganti HTML
-                        var $invoiceSelect = $('#invoice_number');
-                        if ($invoiceSelect.data('select2')) {
-                            $invoiceSelect.select2('destroy');
-                        }
-
-                        var options = '<option value="">-- Select Invoice --</option>';
-                        if (invoices && invoices.length > 0) {
-                            $.each(invoices, function(i, inv) {
-                                options += '<option value="' + inv.invoice_number + '" data-tax="' + (inv.tax_invoice_number || '') + '">' + inv.invoice_number + ' (' + inv.type + ')</option>';
-                            });
-                        } else {
-                            options += '<option value="">No invoice available</option>';
-                        }
-                        $invoiceSelect.html(options);
-
-                        // Jika hanya ada satu invoice, langsung pilih dan isi tax
-                        if (invoices && invoices.length === 1) {
-                            $invoiceSelect.val(invoices[0].invoice_number).trigger('change');
-                        }
-
-                        // Re-init Select2 untuk invoice yang baru
-                        initSelect2();
-                    },
-                    error: function() {
-                        var $invoiceSelect = $('#invoice_number');
-                        if ($invoiceSelect.data('select2')) {
-                            $invoiceSelect.select2('destroy');
-                        }
-                        $invoiceSelect.html('<option value="">Error loading invoices</option>');
-                        initSelect2();
-                    }
-                });
-
-                // Tampilkan semua container
-                $('#tandaTerimaContainer').show();
                 $('#catatanContainer').show();
                 $('#deliveryByContainer').show();
                 $('#attachmentContainer').show();
@@ -363,41 +242,17 @@ $(document).ready(function() {
             error: function() {
                 $('#products-container').html('<div class="alert alert-danger">Failed to load PO details.</div>');
                 $('#poInfoContainer').hide();
-                $('#tandaTerimaContainer').hide();
                 $('#catatanContainer').hide();
                 $('#deliveryByContainer').hide();
                 $('#attachmentContainer').hide();
                 $('#shipping_address_hidden').val('');
                 $('#receiver_name_hidden').val('');
 
-                var $invoiceSelect = $('#invoice_number');
-                if ($invoiceSelect.data('select2')) {
-                    $invoiceSelect.select2('destroy');
-                }
-                $invoiceSelect.html('<option value="">-- Select Invoice --</option>');
-                $('#tax_invoice_number').val('');
                 initSelect2();
             }
         });
     });
 
-    // =============================================================
-    // EVENT: INVOICE CHANGE -> AUTO FILL TAX NUMBER
-    // =============================================================
-    $(document).on('change', '#invoice_number', function() {
-        var selected = $(this).find(':selected');
-        var taxNumber = selected.data('tax') || '';
-        $('#tax_invoice_number').val(taxNumber);
-    });
-
-    // =============================================================
-    // EVENT: SELECT2 INVOICE SELECT -> AUTO FILL TAX NUMBER
-    // =============================================================
-    $(document).on('select2:select', '#invoice_number', function(e) {
-        var selected = $(this).find(':selected');
-        var taxNumber = selected.data('tax') || '';
-        $('#tax_invoice_number').val(taxNumber);
-    });
 
     // =============================================================
     // SUBMIT FORM HANDLER

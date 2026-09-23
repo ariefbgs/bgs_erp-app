@@ -1,211 +1,733 @@
 @extends('layouts.app')
+
 @section('title', 'Edit Document Receipt')
+
 @section('content')
 
+<link
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+    rel="stylesheet"
+/>
+
 <style>
-    .qty-input {
-        text-align: right;
-    }
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection {
+    min-height: 40px !important;
+    border: 1px solid #ced4da !important;
+    border-radius: .375rem !important;
+}
+
+.select2-container--default
+.select2-selection--single
+.select2-selection__rendered {
+    line-height: 38px !important;
+}
+
+.select2-container--default
+.select2-selection--single
+.select2-selection__arrow {
+    height: 38px !important;
+}
+
+.document-row {
+    border-bottom: 1px solid #e9ecef;
+    padding: 10px 0;
+}
+
+.document-row:last-child {
+    border-bottom: 0;
+}
+
+.document-meta {
+    font-size: .82rem;
+    color: #64748b;
+}
+
+.readonly-value {
+    background: #f8fafc;
+}
+
+.section-title {
+    font-weight: 700;
+    color: #334155;
+}
 </style>
 
-<div class="card">
-    <div class="card-header bg-warning text-dark">
-        <h4>Edit Document Receipt</h4>
+<div class="card shadow-sm border-0">
+
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+            <i class="bi bi-file-earmark-plus-fill me-2"></i>
+            Create Document Receipt
+        </h4>
     </div>
 
-    <div class="card-body">
+    <div class="card-body p-4">
+
         @if ($errors->any())
             <div class="alert alert-danger">
-                <ul class="mb-0">
+                <strong>Terjadi kesalahan.</strong>
+                <ul class="mb-0 mt-1">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
             </div>
-        @endif 
+        @endif
 
-        <form action="{{ route('document-receipts.update', $receipt->id) }}" method="POST" enctype="multipart/form-data">
+        <form
+            id="receiptForm"
+            action="{{ route('document-receipts.update', $receipt->id) }}"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
             @csrf
             @method('PUT')
 
-            <!-- Pilih Delivery Order -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">Delivery Order <span class="text-danger">*</span></label>
-                    <select name="delivery_order_id" id="delivery_order_id" class="form-control" required>
-                        <option value="">-- Select Delivery Order --</option>
-                        @foreach($deliveryOrders as $do)
-                            <option value="{{ $do->id }}" {{ $receipt->delivery_order_id == $do->id ? 'selected' : '' }}>
-                                {{ $do->do_number }} - {{ $do->poCustomer->customer->name ?? '' }}
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-8">
+
+                    <label class="form-label fw-semibold">
+                        PO Customer
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <select
+                        name="po_customer_id"
+                        id="po_customer_id"
+                        class="form-control"
+                        required
+                    >
+
+                        <option value=""></option>
+
+                        @foreach($poCustomers as $po)
+
+                            <option
+                                value="{{ $po->id }}"
+                                {{ (string) old('po_customer_id', $receipt->po_customer_id) === (string) $po->id ? 'selected' : '' }}
+                            >
+                                {{ $po->po_number }}
+                                — {{ $po->customer->name ?? '-' }}
                             </option>
+
                         @endforeach
+
                     </select>
+
+                    <div class="form-text">
+                        Pilih Nomor PO Customer. Semua dokumen terkait
+                        akan dimuat otomatis.
+                    </div>
+
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Receipt Date</label>
-                    <input type="date" name="receipt_date" class="form-control" value="{{ $receipt->receipt_date ?? date('Y-m-d') }}" required>
+
+                <div class="col-md-4">
+
+                    <label class="form-label fw-semibold">
+                        Receipt Date
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input
+                        type="date"
+                        name="receipt_date"
+                        class="form-control"
+                        value="{{ old('receipt_date', $receipt->receipt_date) }}"
+                        required
+                    >
+
                 </div>
+
             </div>
 
-            <!-- Informasi PO Customer (diambil dari DO yang dipilih, via AJAX) -->
-            <div id="poInfoContainer" class="card mb-3" style="display: none;">
-                <div class="card-header bg-info text-white">
-                    <strong>PO Customer Information</strong>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <th width="35%">No. PO</th>
-                                    <td id="info_po_number">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Customer</th>
-                                    <td id="info_customer_name">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Address</th>
-                                    <td id="info_customer_address">-</td>
-                                </tr>
-                            </table>
+            <div id="documentWorkspace" style="display:none;">
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-info text-white py-2">
+                        <strong>PO Customer Information</strong>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">
+                                    PO Number
+                                </label>
+                                <input
+                                    id="display_po_number"
+                                    class="form-control readonly-value"
+                                    readonly
+                                >
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">
+                                    PO Date
+                                </label>
+                                <input
+                                    id="display_po_date"
+                                    class="form-control readonly-value"
+                                    readonly
+                                >
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">
+                                    Customer
+                                </label>
+                                <input
+                                    id="display_customer"
+                                    class="form-control readonly-value"
+                                    readonly
+                                >
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">
+                                    PO Status
+                                </label>
+                                <input
+                                    id="display_po_status"
+                                    class="form-control readonly-value"
+                                    readonly
+                                >
+                            </div>
+
                         </div>
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <th>Shipping Address</th>
-                                    <td id="info_shipping_address">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Receiver Name</th>
-                                    <td id="info_receiver_name">-</td>
-                                </tr>
-                            </table>
-                        </div>
+
                     </div>
                 </div>
-            </div>
 
-            <!-- Pilihan Invoice Number berdasarkan DO (AJAX) -->
-            <div class="row mb-3" id="invoiceSelector" style="display: none;">
-                <div class="col-md-6">
-                    <label class="form-label">Invoice Number <span class="text-danger">*</span></label>
-                    <select name="invoice_number" id="invoice_number" class="form-control" required>
-                        <option value="">-- Select Invoice --</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Tax Invoice Number</label>
-                    <input type="text" name="tax_invoice_number" id="tax_invoice_number" class="form-control" readonly>
-                </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label fw-semibold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="draft" {{ $receipt->status == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="sent" {{ $receipt->status == 'sent' ? 'selected' : '' }}>Sent</option>
-                    <option value="delivered" {{ $receipt->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
-                </select>
-            </div>
+                <div class="card border-0 shadow-sm mb-4">
 
-            <!-- Attachment -->
-            <div class="mb-3">
-                <label class="form-label">Attachment (PDF/Image)</label>
-                @if($receipt->attachment)
-                    <div class="mb-2">
-                        <a href="{{ Storage::url($receipt->attachment) }}" target="_blank" class="btn btn-sm btn-info">View Current Attachment</a>
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+
+                        <span class="section-title">
+                            Delivery Orders
+                        </span>
+
+                        <span
+                            id="doCount"
+                            class="badge bg-primary"
+                        >
+                            0
+                        </span>
+
                     </div>
-                @endif
-                <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
-                <small class="text-muted">Leave empty if you do not want to change it. Max 5MB. Images will be compressed.</small>
+
+                    <div class="card-body">
+
+                        <div class="form-text mb-2">
+                            Semua Delivery Order dari PO Customer
+                            otomatis dipilih. Uncheck jika dokumen
+                            tersebut tidak disertakan pada DR ini.
+                        </div>
+
+                        <div id="deliveryOrderRows"></div>
+
+                    </div>
+
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+
+                        <span class="section-title">
+                            Sales Invoice & Faktur Pajak
+                        </span>
+
+                        <span
+                            id="invoiceCount"
+                            class="badge bg-primary"
+                        >
+                            0
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="form-text mb-2">
+                            Sales Invoice aktif dari PO Customer
+                            otomatis dipilih. Faktur Pajak mengikuti
+                            masing-masing Sales Invoice.
+                        </div>
+
+                        <div id="invoiceRows"></div>
+
+                    </div>
+
+                </div>
+
+                <div class="row g-3 mb-3">
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Attachment
+                        </label>
+
+                        @if($receipt->attachment)
+                            <div class="mb-2">
+                                <a
+                                    href="{{ Storage::url($receipt->attachment) }}"
+                                    target="_blank"
+                                    class="btn btn-sm btn-info"
+                                >
+                                    View Current Attachment
+                                </a>
+                            </div>
+                        @endif
+
+                        <input
+                            type="file"
+                            name="attachment"
+                            class="form-control"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                        >
+
+                        <div class="form-text">
+                            Maximum 5 MB.
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Remarks
+                        </label>
+
+                        <textarea
+                            name="notes"
+                            class="form-control"
+                            rows="3"
+                        >{{ old('notes', $receipt->notes) }}</textarea>
+
+                    </div>
+
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Status
+                            <span class="text-danger">*</span>
+                        </label>
+                
+                        <select
+                            name="status"
+                            class="form-select"
+                            required
+                        >
+                            <option value="draft" {{ old('status', $receipt->status) === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="sent" {{ old('status', $receipt->status) === 'sent' ? 'selected' : '' }}>Sent</option>
+                            <option value="delivered" {{ old('status', $receipt->status) === 'delivered' ? 'selected' : '' }}>Delivered</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-end border-top pt-3">
+
+                    <a
+                        href="{{ route('document-receipts.index') }}"
+                        class="btn btn-secondary"
+                    >
+                        Cancel
+                    </a>
+
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="btn btn-primary"
+                    >
+                        <i class="bi bi-save-fill me-1"></i>
+                        Update Document Receipt
+                    </button>
+
+                </div>
+
             </div>
 
-            <!-- Remarks -->
-            <div class="mb-3">
-                <label>Remarks</label>
-                <textarea name="notes" class="form-control" rows="3">{{ $receipt->notes }}</textarea>
-            </div>
-
-            <!-- Button -->
-            <div class="text-end mt-4">
-                <button type="submit" class="btn btn-primary">Update</button>
-                <a href="{{ route('document-receipts.index') }}" class="btn btn-danger">Cancel</a>
-            </div>
         </form>
     </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-$(document).ready(function() {
-    // Saat delivery order dipilih
-    $('#delivery_order_id').change(function() {
-        var doId = $(this).val();
-        if (!doId) {
-            $('#poInfoContainer').hide();
-            $('#invoiceSelector').hide();
-            $('#invoice_number').html('<option value="">-- Select Invoice --</option>');
-            $('#tax_invoice_number').val('');
+$(function () {
+
+    const initialDoIds = @json(
+        array_map(
+            'strval',
+            (array) old(
+                'delivery_order_ids',
+                $receipt->deliveryOrders->pluck('id')->all()
+            )
+        )
+    );
+
+    const initialInvoiceIds = @json(
+        array_map(
+            'strval',
+            (array) old(
+                'invoice_customer_ids',
+                $receipt->invoices->pluck('id')->all()
+            )
+        )
+    );
+
+    const initialPoId = String(
+        @json(old('po_customer_id', $receipt->po_customer_id))
+    );
+
+    const $po = $('#po_customer_id');
+
+    let initialSelectionLoaded = false;
+
+    function esc(value) {
+        return $('<div>')
+            .text(value ?? '')
+            .html();
+    }
+
+    function resetWorkspace() {
+
+        $('#documentWorkspace').hide();
+
+        $('#display_po_number').val('');
+        $('#display_po_date').val('');
+        $('#display_customer').val('');
+        $('#display_po_status').val('');
+
+        $('#deliveryOrderRows').empty();
+        $('#invoiceRows').empty();
+
+        $('#doCount').text('0');
+        $('#invoiceCount').text('0');
+    }
+
+    function renderDeliveryOrders(rows, selectedIds = null) {
+
+        let html = '';
+
+        rows.forEach(function (row) {
+
+            const id = String(row.id);
+
+            const checked =
+                selectedIds === null
+                    ? true
+                    : selectedIds.includes(id);
+
+            html += `
+                <label class="document-row d-block">
+
+                    <div class="form-check">
+
+                        <input
+                            class="form-check-input do-checkbox"
+                            type="checkbox"
+                            name="delivery_order_ids[]"
+                            value="${esc(id)}"
+                            ${checked ? 'checked' : ''}
+                        >
+
+                        <span class="form-check-label">
+
+                            <strong>
+                                ${esc(row.do_number)}
+                            </strong>
+
+                            <span class="badge bg-secondary ms-2">
+                                ${esc(row.status || '')}
+                            </span>
+
+                            <div class="document-meta mt-1">
+                                Delivery Date:
+                                ${esc(row.delivery_date || '-')}
+                                &nbsp; | &nbsp;
+                                Receiver:
+                                ${esc(row.receiver_name || '-')}
+                            </div>
+
+                        </span>
+
+                    </div>
+
+                </label>
+            `;
+        });
+
+        $('#deliveryOrderRows').html(html);
+
+        updateDocumentCounts();
+    }
+
+    function renderInvoices(rows, selectedIds = null) {
+
+        let html = '';
+
+        rows.forEach(function (row) {
+
+            const id = String(row.id);
+
+            const checked =
+                selectedIds === null
+                    ? true
+                    : selectedIds.includes(id);
+
+            html += `
+                <label class="document-row d-block">
+
+                    <div class="form-check">
+
+                        <input
+                            class="form-check-input invoice-checkbox"
+                            type="checkbox"
+                            name="invoice_customer_ids[]"
+                            value="${esc(id)}"
+                            ${checked ? 'checked' : ''}
+                        >
+
+                        <span class="form-check-label">
+
+                            <strong>
+                                ${esc(row.invoice_number)}
+                            </strong>
+
+                            ${row.type
+                                ? `<span class="text-muted ms-2">
+                                    ${esc(row.type)}
+                                   </span>`
+                                : ''
+                            }
+
+                            <div class="document-meta mt-1">
+
+                                Invoice Date:
+                                ${esc(row.invoice_date || '-')}
+
+                                &nbsp; | &nbsp;
+
+                                Faktur Pajak:
+                                <strong>
+                                    ${esc(
+                                        row.tax_invoice_number || '-'
+                                    )}
+                                </strong>
+
+                                &nbsp; | &nbsp;
+
+                                Payment:
+                                ${esc(row.payment_status || '-')}
+
+                            </div>
+
+                        </span>
+
+                    </div>
+
+                </label>
+            `;
+        });
+
+        $('#invoiceRows').html(html);
+
+        updateDocumentCounts();
+    }
+
+    function updateDocumentCounts() {
+
+        const totalDo =
+            $('.do-checkbox').length;
+
+        const selectedDo =
+            $('.do-checkbox:checked').length;
+
+        const totalInvoice =
+            $('.invoice-checkbox').length;
+
+        const selectedInvoice =
+            $('.invoice-checkbox:checked').length;
+
+        $('#doCount').text(
+            selectedDo + ' / ' + totalDo + ' DO'
+        );
+
+        $('#invoiceCount').text(
+            selectedInvoice + ' / ' + totalInvoice + ' Invoice'
+        );
+    }
+
+    function loadPo(poId, selectedDoIds = null, selectedInvoiceIds = null) {
+
+        resetWorkspace();
+
+        if (!poId) {
             return;
         }
 
-        // Ambil detail DO (PO Customer, shipping address, dll)
-        $.ajax({
-            url: '{{ url("document-receipts/get-do-details") }}/' + doId,
+        return $.ajax({
+
+            url:
+                '{{ route("document-receipts.get-create-options-by-po", "") }}'
+                + '/' + poId,
+
             type: 'GET',
             dataType: 'json',
-            success: function(res) {
-                // Isi info PO
-                $('#info_po_number').text(res.po_number || '-');
-                $('#info_customer_name').text(res.customer_name || '-');
-                $('#info_customer_address').text(res.customer_address || '-');
-                $('#info_shipping_address').text(res.shipping_address || '-');
-                $('#info_receiver_name').text(res.receiver_name || '-');
-                $('#poInfoContainer').show();
 
-                // Ambil daftar invoice untuk PO customer ini
-                $.ajax({
-                    url: '{{ url("document-receipts/get-invoices-by-po") }}/' + res.po_customer_id,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(invoices) {
-                        var options = '<option value="">-- Select Invoice --</option>';
-                        var selectedInvoice = '{{ $receipt->invoice_number }}';
-                        if (invoices.length > 0) {
-                            $.each(invoices, function(i, inv) {
-                                var selected = (inv.invoice_number == selectedInvoice) ? 'selected' : '';
-                                options += '<option value="' + inv.invoice_number + '" data-tax="' + (inv.tax_invoice_number || '') + '" ' + selected + '>' + inv.invoice_number + ' (' + inv.type + ')</option>';
-                            });
-                        } else {
-                            options = '<option value="">No invoice available</option>';
-                        }
-                        $('#invoice_number').html(options);
-                        $('#invoiceSelector').show();
-                        // Trigger change untuk isi tax invoice number
-                        $('#invoice_number').trigger('change');
-                    },
-                    error: function() {
-                        $('#invoice_number').html('<option value="">Error loading invoices</option>');
-                    }
-                });
+            success: function (res) {
+
+                $('#display_po_number')
+                    .val(res.po_number || '-');
+
+                $('#display_po_date')
+                    .val(res.po_date || '-');
+
+                $('#display_customer')
+                    .val(res.customer_name || '-');
+
+                $('#display_po_status')
+                    .val(res.po_status || '-');
+
+                renderDeliveryOrders(
+                    res.delivery_orders || [],
+                    selectedDoIds
+                );
+
+                renderInvoices(
+                    res.invoices || [],
+                    selectedInvoiceIds
+                );
+
+                $('#documentWorkspace').show();
             },
-            error: function() {
-                alert('Failed to load DO details');
-                $('#poInfoContainer').hide();
-                $('#invoiceSelector').hide();
+
+            error: function (xhr) {
+
+                console.error(
+                    xhr.responseText
+                );
+
+                resetWorkspace();
+
+                alert(
+                    'Failed to load PO Customer documents.'
+                );
             }
+
         });
+    }
+
+    $po.select2({
+        width: '100%',
+        placeholder:
+            '-- Select PO Customer --',
+        allowClear: true
     });
 
-    // Saat invoice dipilih, isi tax invoice number
-    $('#invoice_number').change(function() {
-        var selected = $(this).find(':selected');
-        var taxNumber = selected.data('tax') || '';
-        $('#tax_invoice_number').val(taxNumber);
+    $(document).on(
+        'change',
+        '.do-checkbox, .invoice-checkbox',
+        function () {
+            updateDocumentCounts();
+        }
+    );
+
+    $('#receiptForm').on(
+        'submit',
+        function (e) {
+
+            const poId =
+                $po.val();
+
+            const doCount =
+                $('.do-checkbox:checked')
+                    .length;
+
+            const invoiceCount =
+                $('.invoice-checkbox:checked')
+                    .length;
+
+            if (!poId) {
+
+                e.preventDefault();
+
+                alert(
+                    'Select PO Customer.'
+                );
+
+                return false;
+            }
+
+            if (doCount < 1) {
+
+                e.preventDefault();
+
+                alert(
+                    'Select at least one Delivery Order.'
+                );
+
+                return false;
+            }
+
+            if (invoiceCount < 1) {
+
+                e.preventDefault();
+
+                alert(
+                    'Select at least one Sales Invoice.'
+                );
+
+                return false;
+            }
+
+            $('#submitBtn')
+                .prop('disabled', true)
+                .html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Updating...'
+                );
+
+            return true;
+        }
+    );
+
+    if (initialPoId) {
+        loadPo(
+            initialPoId,
+            initialDoIds,
+            initialInvoiceIds
+        ).always(function () {
+            initialSelectionLoaded = true;
+        });
+    } else {
+        initialSelectionLoaded = true;
+    }
+
+    $po.on('select2:select select2:clear', function () {
+        if (!initialSelectionLoaded) {
+            return;
+        }
+
+        loadPo(
+            $(this).val()
+        );
     });
 
-    // Trigger change awal untuk prefill data jika sedang edit
-    $('#delivery_order_id').trigger('change');
 });
 </script>
+
 @endsection

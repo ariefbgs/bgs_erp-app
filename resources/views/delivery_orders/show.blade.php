@@ -93,6 +93,12 @@
                         </td>
                     </tr>
                     <tr>
+                        <th>PO Customer #</th>
+                        <td>
+                            {{ $do->poCustomer->po_number ?? '-' }}
+                        </td>
+                    </tr>
+                    <tr>
                         <th>DO Date</th>
                         <td>
                             {{ $do->delivery_date }}
@@ -101,7 +107,13 @@
                     <tr>
                         <th>Shipping Address</th>
                         <td>
-                            {{ $do->shipping_address }}
+                            {!! nl2br(e($do->shipping_address ?? '-')) !!}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <td>
+                            {{ $do->receiver_name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -113,10 +125,13 @@
                     <tr>
                         <th>Status</th>
                         <td>
-                            @if($do->status == 'pending') <span class="badge bg-warning">Pending</span>
-                            @elseif($do->status == 'shipped') <span class="badge bg-primary">Shipped</span>
-                            @else <span class="badge bg-success">Delivered</span> @endif
-                        </span>
+                            @if($do->status == 'pending')
+                                <span class="badge bg-warning">Pending</span>
+                            @elseif($do->status == 'delivered')
+                                <span class="badge bg-success">Delivered</span>
+                            @else
+                                <span class="badge bg-secondary">Legacy: {{ ucfirst($do->status) }}</span>
+                            @endif
                         </td>
                     </tr>
                 </table>
@@ -233,6 +248,46 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- ADDITIONAL INFORMATION --}}
+        <hr>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="section-title">
+                    Attachment
+                </div>
+
+                @if($do->attachment)
+                    <a href="{{ Storage::url($do->attachment) }}"
+                       target="_blank"
+                       class="btn btn-info btn-sm">
+                        <i class="bi bi-paperclip"></i>
+                        View Attachment
+                    </a>
+                @else
+                    <div class="empty-text">
+                        No attachment available.
+                    </div>
+                @endif
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="section-title">
+                    Remarks
+                </div>
+
+                <div class="notes-box">
+                    @if(!empty($do->notes))
+                        {!! nl2br(e($do->notes)) !!}
+                    @else
+                        <span class="empty-text">
+                            No remarks.
+                        </span>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>

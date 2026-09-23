@@ -101,25 +101,25 @@
                     <tr>
                         <th>DO #</th>
                         <td>
-                            {{ $receipt->deliveryOrder->do_number ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('do_number')->filter()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>DO Date</th>
                         <td>
-                            {{ $receipt->deliveryOrder->delivery_date ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('delivery_date')->filter()->map(fn($v) => (string) $v)->unique()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Shipping Address</th>
                         <td>
-                            {{ $receipt->deliveryOrder->shipping_address ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('shipping_address')->filter()->unique()->implode(' | ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Delivery by</th>
                         <td>
-                            {{ $receipt->deliveryOrder->delivery_by ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('delivery_by')->filter()->unique()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -147,31 +147,31 @@
                     <tr>
                         <th>Customer</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->name ?? '-' }}
+                            {{ $receipt->poCustomer->customer->name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>PIC Customer</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->pic_do_name ?? '-' }}
+                            {{ $receipt->poCustomer->customer->pic_do_name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>PIC Phone</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->pic_quotation_phone ?? '-' }}
+                            {{ $receipt->poCustomer->customer->pic_quotation_phone ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Customer Address</th>
                         <td>
-                            {!! nl2br(e($receipt->deliveryOrder->poCustomer->customer->address ?? '-')) !!}
+                            {!! nl2br(e($receipt->poCustomer->customer->address ?? '-')) !!}
                         </td>
                     </tr>
                     <tr>
                         <th>Email</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->email ?? '-' }}
+                            {{ $receipt->poCustomer->customer->email ?? '-' }}
                         </td>
                     </tr>
                 </table>
@@ -182,52 +182,104 @@
         <!-- TANDA TERIMA DOKUMEN (DIAMBIL DARI $receipt)              -->
         <!-- ========================================================= -->
         <hr>
-        <h5 class="mb-3">Document Receipt</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th width="5%" class="text-center">No</th>
-                        <th>Description</th>
-                        <th width="25%">Qty</th>
-                    </tr>
-                </thead>
+            <h5 class="mb-3">Document Receipt</h5>
+
+            <table class="table table-bordered align-middle">
                 <tbody>
-                    <!-- Invoice - DIAMBIL DARI $receipt, BUKAN dari deliveryOrder -->
                     <tr>
-                        <td class="text-center">1</td>
+                        <th style="width: 24%;">PO Customer</th>
                         <td>
-                            <strong>Invoice</strong><br>
-                            {{ $receipt->invoice_number ?? '-' }}
+                            <strong>
+                                {{ $receipt->poCustomer->po_number ?? '-' }}
+                            </strong>
+                            <div class="text-muted">
+                                {{ $receipt->poCustomer->customer->name ?? '-' }}
+                            </div>
                         </td>
-                        <td class="align-middle">1 Rangkap (Asli)</td>
                     </tr>
-                    <!-- Faktur Pajak - DIAMBIL DARI $receipt -->
+
                     <tr>
-                        <td class="text-center">2</td>
+                        <th>Delivery Orders</th>
                         <td>
-                            <strong>Faktur Pajak</strong><br>
-                            {{ $receipt->tax_invoice_number ?? '-' }}
+                            <div class="mb-2">
+                                <span class="badge bg-primary">
+                                    {{ $receipt->deliveryOrders->count() }} Selected
+                                </span>
+                            </div>
+
+                            @forelse($receipt->deliveryOrders as $deliveryOrder)
+                                <div class="border rounded p-2 mb-2">
+                                    <strong>{{ $deliveryOrder->do_number ?? '-' }}</strong>
+
+                                    <div class="small text-muted mt-1">
+                                        Delivery Date:
+                                        {{ $deliveryOrder->delivery_date ?? '-' }}
+                                        |
+                                        Status:
+                                        {{ ucfirst($deliveryOrder->status ?? '-') }}
+                                    </div>
+
+                                    @if(!empty($deliveryOrder->shipping_address))
+                                        <div class="small mt-1">
+                                            Shipping Address:
+                                            {{ $deliveryOrder->shipping_address }}
+                                        </div>
+                                    @endif
+
+                                    @if(!empty($deliveryOrder->receiver_name))
+                                        <div class="small">
+                                            Receiver:
+                                            {{ $deliveryOrder->receiver_name }}
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <span class="text-muted">
+                                    No Delivery Order selected.
+                                </span>
+                            @endforelse
                         </td>
-                        <td class="align-middle">2 Rangkap (Asli + Copy)</td>
                     </tr>
-                    <!-- PO -->
+
                     <tr>
-                        <td class="text-center">3</td>
+                        <th>Sales Invoices</th>
                         <td>
-                            <strong>PO Customer</strong><br>
-                            <span class="text-primary">{{ $receipt->deliveryOrder->poCustomer->po_number ?? '-' }}</span>
+                            <div class="mb-2">
+                                <span class="badge bg-success">
+                                    {{ $receipt->invoices->count() }} Selected
+                                </span>
+                            </div>
+
+                            @forelse($receipt->invoices as $invoice)
+                                <div class="border rounded p-2 mb-2">
+                                    <strong>
+                                        {{ $invoice->invoice_number ?? '-' }}
+                                    </strong>
+
+                                    @if(!empty($invoice->type))
+                                        <span class="badge bg-secondary ms-1">
+                                            {{ $invoice->type }}
+                                        </span>
+                                    @endif
+
+                                    <div class="small text-muted mt-1">
+                                        Status:
+                                        {{ ucfirst($invoice->status ?? '-') }}
+                                    </div>
+
+                                    <div class="small mt-1">
+                                        Faktur Pajak:
+                                        <strong>
+                                            {{ $invoice->tax_invoice_number ?: '-' }}
+                                        </strong>
+                                    </div>
+                                </div>
+                            @empty
+                                <span class="text-muted">
+                                    No Sales Invoice selected.
+                                </span>
+                            @endforelse
                         </td>
-                        <td class="align-middle">1 Rangkap</td> 
-                    </tr>
-                    <!-- DO -->
-                    <tr>
-                        <td class="text-center">4</td>
-                        <td>
-                            <strong>Delivery Order</strong><br>
-                            <span class="text-success">{{ $receipt->deliveryOrder->do_number ?? '-' }}</span>
-                        </td>
-                        <td class="align-middle">3 Rangkap (Asli + Copy)</td>
                     </tr>
                 </tbody>
             </table>

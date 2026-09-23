@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InvoiceCustomer;
 use App\Models\InvoiceCustomerDetail;
 use App\Models\PoCustomer;
+use App\Models\PoCustomerDetail;
 use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Http\Request;
@@ -56,24 +57,16 @@ class InvoiceCustomerController extends Controller
         $poCustomers = PoCustomer::with('customer')
             ->whereIn('status', ['received', 'proceed'])
             ->whereIn('invoice_status', ['issue yet', 'partial'])
-            ->orderBy('po_date', 'desc')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->get();
 
         $poCustomers->each(function ($po) {
-            $totalInvoiced = InvoiceCustomer::where('po_customer_id', $po->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('total');
-            $po->remaining_total = max(0, $po->total - $totalInvoiced);
+            $po->remaining_subtotal_before_tax = $this->remainingPreTaxAmount($po);
+            $po->remaining_total = $po->remaining_subtotal_before_tax;
         });
 
-        // Ambil daftar invoice yang bisa dijadikan parent (hanya yang status partial)
-        $parentInvoices = InvoiceCustomer::where('status', 'partial')
-            ->where('payment_status', '!=', 'paid')
-            ->with('poCustomer.customer')
-            ->orderBy('invoice_number')
-            ->get();
-
-        return view('invoice_customers.create', compact('poCustomers', 'parentInvoices'));
+        return view('invoice_customers.create', compact('poCustomers'));
     }
 
     // =====================================================
@@ -81,26 +74,97 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     public function getPoCustomerDetails($id)
     {
-        $poCustomer = PoCustomer::with(['details.product', 'customer'])->findOrFail($id);
-        $items = [];
-        foreach ($poCustomer->details as $detail) {
-            $items[] = [
-                'product_id'   => $detail->product_id,
-                'product_name' => $detail->product->name ?? '-',
-                'product_code' => $detail->product->product_code ?? '-',
-                'brand'        => $detail->product->brand ?? '-',
-                'unit'         => $detail->product->unit ?? '-',
-                'quantity'     => $detail->quantity,
-                'unit_price'   => $detail->unit_price,
-            ];
-        }
+        $poCustomer = PoCustomer::with([
+            'details.product',
+            'customer'
+        ])->findOrFail($id);
+
+        $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
+        $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
+
+        /*
+        |--------------------------------------------------------------------------
+        | RM-004O
+        | Sales Invoice always represents the FULL PO Customer detail set.
+        |--------------------------------------------------------------------------
+        |
+        | Quantity, product and unit price are copied from PO Customer.
+        | Multi-invoice allocation is controlled ONLY by Payment Percentage.
+        |
+        */
+
+        $items = $poCustomer->details
+            ->sortBy('id')
+            ->values()
+            ->map(function ($detail) {
+                return [
+                    'po_customer_detail_id' => $detail->id,
+                    'product_id' => $detail->product_id,
+                    'product_name' => $detail->product->name ?? '-',
+                    'product_code' => $detail->product->product_code ?? '-',
+                    'brand' => $detail->product->brand ?? '-',
+                    'unit' => $detail->product->unit ?? '-',
+                    'po_quantity' => (float) $detail->quantity,
+                    'quantity' => (float) $detail->quantity,
+                    'unit_price' => (float) $detail->unit_price,
+                    'subtotal' =>
+                        (float) $detail->quantity
+                        * (float) $detail->unit_price,
+                ];
+            })
+            ->all();
 
         return response()->json([
             'po_customer' => $poCustomer,
-            'customer'    => $poCustomer->customer,
-            'items'       => $items,
-            'payment_terms' => $poCustomer->payment_terms,
-            'delivery_time' => $poCustomer->delivery_time,
+            'customer' => $poCustomer->customer,
+            'items' => $items,
+
+            'payment_terms' =>
+                $rootInvoice?->payment_terms
+                ?? $poCustomer->payment_terms,
+
+            'delivery_time' =>
+                $rootInvoice?->delivery_time
+                ?? $poCustomer->delivery_time,
+
+            'terms_source' =>
+                $rootInvoice ? 'invoice' : 'po_customer',
+
+            'terms_source_label' =>
+                $rootInvoice
+                    ? 'Invoice ' . $rootInvoice->invoice_number
+                    : 'PO Customer ' . $poCustomer->po_number,
+
+            'remaining_subtotal_before_tax' => $remainingPreTax,
+
+            'has_previous_invoice' =>
+                $rootInvoice !== null,
+
+            'root_invoice_number' =>
+                $rootInvoice?->invoice_number,
+
+            /*
+             * Invoice #2+ defaults to canonical remaining percentage.
+             * Invoice #1 is derived by UI from Payment Terms.
+             */
+            'recommended_percent' =>
+                (float) $poCustomer->subtotal > 0
+                    ? min(
+                        100,
+                        ($remainingPreTax
+                            / (float) $poCustomer->subtotal)
+                        * 100
+                    )
+                    : 0,
+
+            'discount_percent' =>
+                (float) ($poCustomer->discount_percent ?? 0),
+
+            'tax_percent' =>
+                (float) ($poCustomer->tax_percent ?? 0),
+
+            'pph23_percent' =>
+                $this->poPphPercent($poCustomer),
         ]);
     }
 
@@ -115,11 +179,12 @@ class InvoiceCustomerController extends Controller
             'po_customer_id' => 'required|exists:po_customers,id',
             'invoice_date'   => 'required|date',
             'type'           => 'required|in:proforma,sales',
-            'items'          => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.unit_price_numeric' => 'required|numeric|min:0',
-            'dp_percent'     => 'nullable|numeric|min:0|max:100',
+            /*
+             * RM-004O:
+             * Product, quantity and unit price are NOT accepted as financial
+             * authority from the browser. They are rebuilt from PO Customer.
+             */
+            'dp_percent'     => 'required|numeric|min:0.01|max:100',
             'discount_percent' => 'nullable|numeric|min:0|max:100',
             'discount_amount' => 'nullable|numeric',
             'payment_amount' => 'nullable|numeric',
@@ -131,18 +196,22 @@ class InvoiceCustomerController extends Controller
             'tax_invoice_number' => 'nullable|string|max:100',
             'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
             'notes'          => 'nullable|string',
-            'payment_status' => 'nullable|in:sent,paid',
-            'parent_invoice_id' => 'nullable|exists:invoice_customers,id',
+            // New invoices always start with payment status sent.
         ]);
 
         try {
-            $poCustomer = PoCustomer::findOrFail($request->po_customer_id);
+            $poCustomer = PoCustomer::with('details')
+                ->findOrFail($request->po_customer_id);
 
-            // Hitung total invoice yang sudah dikeluarkan
-            $totalInvoiced = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('total');
-            $remaining = max(0, $poCustomer->total - $totalInvoiced);
+            if ($poCustomer->details->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'po_customer_id' =>
+                        'PO Customer tidak memiliki detail item.',
+                ]);
+            }
+
+            $remainingPreTax =
+                $this->remainingPreTaxAmount($poCustomer);
 
             // Generate nomor invoice
             $invoiceDate = $request->invoice_date;
@@ -163,11 +232,18 @@ class InvoiceCustomerController extends Controller
             $romanMonthStr = $this->romanMonth($month);
             $invoiceNumber = $newNumber . '/INV/BGS/' . $romanMonthStr . '/' . $year;
 
-            // Hitung subtotal
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $subtotal += (float) $item['quantity'] * (float) $item['unit_price_numeric'];
-            }
+            /*
+             * RM-004O:
+             * Invoice subtotal is always the FULL PO Customer subtotal.
+             * Browser item values are intentionally ignored.
+             */
+            $subtotal = (float) $poCustomer->details->sum(
+                function ($detail) {
+                    return
+                        (float) $detail->quantity
+                        * (float) $detail->unit_price;
+                }
+            );
 
             $dpPercent = (float) ($request->dp_percent ?? 0);
             $dpAmount = $subtotal * $dpPercent / 100;
@@ -181,33 +257,24 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
-            // Jika ada DP, remaining = subtotal - dpAmount, jika tidak = 0
-            $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
+            // Sisa canonical selalu mengikuti nilai PO Customer dikurangi seluruh
+            // invoice aktif, baik invoice DP maupun payment-after-delivery.
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
 
-            // Validasi total tidak melebihi sisa PO
-            if ($total > $remaining) {
+            if (round($baseAmount) > round($remainingPreTax)) {
                 return back()->withInput()->with('error',
-                    'Total invoice Rp ' . number_format($total, 0, ',', '.') .
-                    ' melebihi sisa tagihan PO Customer yang tersisa: Rp ' . number_format($remaining, 0, ',', '.')
+                    'Payment Amount Rp ' . number_format($baseAmount, 0, ',', '.') .
+                    ' melebihi sisa PO Amount: Rp ' . number_format($remainingPreTax, 0, ',', '.')
                 );
-            }
-
-            // Validasi parent invoice
-            if ($request->filled('parent_invoice_id')) {
-                $parent = InvoiceCustomer::findOrFail($request->parent_invoice_id);
-                $totalChild = $parent->childInvoices()->where('status', '!=', 'cancelled')->sum('total');
-                if (($totalChild + $total) > $parent->total) {
-                    return back()->withInput()->with('error',
-                        'Total invoice anak melebihi total induk.'
-                    );
-                }
             }
 
             // Attachment
             $taxAttachmentPath = null;
+            $newTaxAttachmentPath = null;
+
             if ($request->hasFile('tax_invoice_attachment')) {
-                $taxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $newTaxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $taxAttachmentPath = $newTaxAttachmentPath;
             }
 
             // Ã¢Å“â€¦ PASTIKAN remaining_amount DIKIRIM KE DATABASE
@@ -231,11 +298,11 @@ class InvoiceCustomerController extends Controller
                 'total' => $total,
                 'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
-                'payment_status' => $request->payment_status ?? 'sent',
+                'payment_status' => 'sent',
                 'payment_terms' => $request->payment_terms,
                 'delivery_time' => $request->delivery_time,
                 'notes' => $request->notes,
-                'parent_invoice_id' => $request->parent_invoice_id ?? null,
+                'parent_invoice_id' => null,
             ];
 
             // Ã¢Å“â€¦ DEBUG: Log data sebelum simpan
@@ -243,16 +310,133 @@ class InvoiceCustomerController extends Controller
 
             DB::beginTransaction();
 
+            $poCustomer = PoCustomer::whereKey($poCustomer->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
+
+            if (round($baseAmount) > round($remainingPreTax)) {
+                throw ValidationException::withMessages([
+                    'items' => 'Payment Amount melebihi sisa PO Amount.',
+                ]);
+            }
+
+            /*
+             * RM-004O canonical line authority.
+             *
+             * Lock every PO Customer Detail so the invoice snapshot cannot
+             * be influenced by manipulated browser item payload.
+             */
+            $poDetails = PoCustomerDetail::query()
+                ->where('po_customer_id', $poCustomer->id)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($poDetails->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'po_customer_id' =>
+                        'PO Customer tidak memiliki detail item.',
+                ]);
+            }
+
+            /*
+             * Recalculate FULL PO subtotal while details are locked.
+             */
+            $subtotal = (float) $poDetails->sum(
+                function ($detail) {
+                    return
+                        (float) $detail->quantity
+                        * (float) $detail->unit_price;
+                }
+            );
+
+            $dpAmount =
+                $subtotal * $dpPercent / 100;
+
+            $baseAmount =
+                ($dpAmount > 0)
+                    ? $dpAmount
+                    : $subtotal;
+
+            $discountAmount =
+                $baseAmount
+                * $discountPercent
+                / 100;
+
+            $afterDiscount =
+                $baseAmount
+                - $discountAmount;
+
+            $taxAmount =
+                $afterDiscount
+                * $taxPercent
+                / 100;
+
+            $pph23Amount =
+                $afterDiscount
+                * $pph23Percent
+                / 100;
+
+            $total =
+                $afterDiscount
+                + $taxAmount
+                - $pph23Amount;
+
+            /*
+             * Rebuild financial data after locked canonical calculation.
+             */
+            $data['subtotal'] = $subtotal;
+            $data['dp_amount'] = $dpAmount;
+            $data['discount_amount'] = $discountAmount;
+            $data['tax_amount'] = $taxAmount;
+            $data['pph23_amount'] = $pph23Amount;
+            $data['total'] = $total;
+
+            if (round($baseAmount) > round($remainingPreTax)) {
+                throw ValidationException::withMessages([
+                    'dp_percent' =>
+                        'Payment Percentage menghasilkan Payment Amount ' .
+                        'yang melebihi sisa PO Customer.',
+                ]);
+            }
+
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
+            $data['parent_invoice_id'] = $rootInvoice?->id;
+
             $invoice = InvoiceCustomer::create($data);
 
-            // Simpan detail
-            foreach ($request->items as $item) {
+            $invoice->update([
+                'remaining_amount' => $remainingAfterInvoice,
+                'status' => $remainingAfterInvoice > 0 ? 'partial' : 'completed',
+            ]);
+
+            /*
+             * RM-004O:
+             * Every invoice stores the COMPLETE PO Customer detail set.
+             * Quantity and unit price are copied exactly from PO Customer.
+             */
+            foreach ($poDetails as $poDetail) {
                 InvoiceCustomerDetail::create([
-                    'invoice_customer_id' => $invoice->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => (float) $item['quantity'],
-                    'unit_price' => (float) $item['unit_price_numeric'],
-                    'subtotal' => (float) $item['quantity'] * (float) $item['unit_price_numeric'],
+                    'invoice_customer_id' =>
+                        $invoice->id,
+
+                    'po_customer_detail_id' =>
+                        $poDetail->id,
+
+                    'product_id' =>
+                        $poDetail->product_id,
+
+                    'quantity' =>
+                        (float) $poDetail->quantity,
+
+                    'unit_price' =>
+                        (float) $poDetail->unit_price,
+
+                    'subtotal' =>
+                        (float) $poDetail->quantity
+                        * (float) $poDetail->unit_price,
                 ]);
             }
 
@@ -264,9 +448,19 @@ class InvoiceCustomerController extends Controller
 
         } catch (ValidationException $e) {
             DB::rollBack();
+
+            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
+                Storage::disk('public')->delete($newTaxAttachmentPath);
+            }
+
             return back()->withInput()->withErrors($e->validator);
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
+
+            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
+                Storage::disk('public')->delete($newTaxAttachmentPath);
+            }
+
             if ($e->getCode() == 23000 && str_contains($e->getMessage(), 'invoice_number')) {
                 \Log::warning('Duplicate invoice number detected: ' . $e->getMessage());
                 return back()->withInput()->with('error', 'Nomor invoice sudah terpakai. Silakan periksa tanggal invoice atau hubungi admin.');
@@ -275,6 +469,11 @@ class InvoiceCustomerController extends Controller
             return back()->withInput()->with('error', 'Gagal menyimpan invoice: ' . $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
+
+            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
+                Storage::disk('public')->delete($newTaxAttachmentPath);
+            }
+
             \Log::error('STORE ERROR: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->withInput()->with('error', 'Gagal menyimpan invoice: ' . $e->getMessage());
         }
@@ -285,9 +484,23 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     public function edit($id)
     {
-        $invoice = InvoiceCustomer::with(['poCustomer.customer', 'details.product', 'parentInvoice'])->findOrFail($id);
+        $invoice = InvoiceCustomer::with([
+            'poCustomer.customer',
+            'details.product',
+            'details.poCustomerDetail',
+            'parentInvoice'
+        ])->findOrFail($id);
 
-        if (!$this->isAdmin() && $invoice->payment_status == 'paid') {
+        $hasLegacyDetails = $invoice->details
+            ->contains(fn ($detail) => empty($detail->po_customer_detail_id));
+
+        $hasLinkedDetails = $invoice->details
+            ->contains(fn ($detail) => !empty($detail->po_customer_detail_id));
+
+        $isLegacyInvoice = $hasLegacyDetails && !$hasLinkedDetails;
+        $isMixedLineageInvoice = $hasLegacyDetails && $hasLinkedDetails;
+
+        if ($invoice->payment_status == 'paid') {
             return redirect()->route('invoice-customers.index')
                 ->with('error', 'Invoice already paid and cannot be edited.');
         }
@@ -301,7 +514,13 @@ class InvoiceCustomerController extends Controller
             ->orderBy('invoice_number')
             ->get();
 
-        return view('invoice_customers.edit', compact('invoice', 'products', 'parentInvoices'));
+        return view('invoice_customers.edit', compact(
+            'invoice',
+            'products',
+            'parentInvoices',
+            'isLegacyInvoice',
+            'isMixedLineageInvoice'
+        ));
     }
 
     // =====================================================
@@ -309,19 +528,44 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     public function update(Request $request, $id)
     {
-        $invoice = InvoiceCustomer::findOrFail($id);
+        $invoice = InvoiceCustomer::with('details')->findOrFail($id);
 
-        if (!$this->isAdmin() && $invoice->payment_status == 'paid') {
+        $hasLegacyDetails = $invoice->details
+            ->contains(fn ($detail) => empty($detail->po_customer_detail_id));
+
+        $hasLinkedDetails = $invoice->details
+            ->contains(fn ($detail) => !empty($detail->po_customer_detail_id));
+
+        $isLegacyInvoice = $hasLegacyDetails && !$hasLinkedDetails;
+        $isMixedLineageInvoice = $hasLegacyDetails && $hasLinkedDetails;
+
+        if ($isMixedLineageInvoice) {
+            return back()->with(
+                'error',
+                'Invoice memiliki mixed lineage dan tidak dapat diedit.'
+            );
+        }
+
+        if ($invoice->payment_status == 'paid') {
             return back()->with('error', 'Invoice already paid and cannot be edited.');
         }
 
         $validated = $request->validate([
             'type' => 'required|in:proforma,sales',
             'invoice_date' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.unit_price_numeric' => 'required|numeric|min:0',
+            'items' => $isLegacyInvoice
+                ? 'required|array|min:1'
+                : 'nullable|array',
+            'items.*.po_customer_detail_id' => 'nullable',
+            'items.*.product_id' => $isLegacyInvoice
+                ? 'required|exists:products,id'
+                : 'nullable',
+            'items.*.quantity' => $isLegacyInvoice
+                ? 'required|numeric|min:1'
+                : 'nullable',
+            'items.*.unit_price_numeric' => $isLegacyInvoice
+                ? 'required|numeric|min:0'
+                : 'nullable',
             'dp_percent' => 'nullable|numeric|min:0|max:100',
             'discount_percent' => 'nullable|numeric|min:0|max:100',
             'discount_amount' => 'nullable|numeric',
@@ -336,14 +580,74 @@ class InvoiceCustomerController extends Controller
             'delete_attachment' => 'nullable|string',
             'notes' => 'nullable|string',
             'payment_status' => 'required|in:sent,paid',
-            'parent_invoice_id' => 'nullable|exists:invoice_customers,id',
         ]);
 
         try {
-            // Hitung subtotal
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $subtotal += (float) $item['quantity'] * (float) $item['unit_price_numeric'];
+            if ($isLegacyInvoice) {
+                $existingDetails = $invoice->details
+                    ->sortBy('id')
+                    ->values();
+
+                $requestItems = collect($request->items)->values();
+
+                if ($existingDetails->count() !== $requestItems->count()) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Detail item legacy invoice tidak dapat ditambah atau dihapus.',
+                    ]);
+                }
+
+                foreach ($existingDetails as $index => $existingDetail) {
+                    $requestItem = $requestItems[$index] ?? null;
+
+                    if (
+                        !$requestItem ||
+                        (int) $requestItem['product_id']
+                            !== (int) $existingDetail->product_id ||
+                        (float) $requestItem['quantity']
+                            !== (float) $existingDetail->quantity ||
+                        round(
+                            (float) $requestItem['unit_price_numeric'],
+                            4
+                        ) !== round(
+                            (float) $existingDetail->unit_price,
+                            4
+                        )
+                    ) {
+                        throw ValidationException::withMessages([
+                            'items' =>
+                                'Product, Qty, dan Price pada legacy invoice tidak dapat diubah.',
+                        ]);
+                    }
+                }
+            }
+
+            // RM-004O-B2:
+            // Item financial authority is NOT the browser.
+            //
+            // Legacy invoice:
+            //   preserve the exact historical invoice detail snapshot.
+            //
+            // Linked RM-004O invoice:
+            //   use the full canonical PO Customer detail set.
+            if ($isLegacyInvoice) {
+                $subtotal = (float) $invoice->details->sum('subtotal');
+            } else {
+                $canonicalPoDetails = PoCustomerDetail::query()
+                    ->where('po_customer_id', $invoice->po_customer_id)
+                    ->orderBy('id')
+                    ->get();
+
+                if ($canonicalPoDetails->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'items' => 'PO Customer tidak memiliki detail item.',
+                    ]);
+                }
+
+                $subtotal = (float) $canonicalPoDetails->sum(
+                    fn ($detail) =>
+                        (float) $detail->quantity
+                        * (float) $detail->unit_price
+                );
             }
 
             $dpPercent = (float) ($request->dp_percent ?? 0);
@@ -358,57 +662,101 @@ class InvoiceCustomerController extends Controller
             $pph23Amount = $afterDiscount * $pph23Percent / 100;
             $total = $afterDiscount + $taxAmount - $pph23Amount;
             
-            // Ã¢Å“â€¦ REMAINING AMOUNT = sisa tagihan setelah invoice ini
-            $remainingAfterInvoice = ($dpPercent > 0) ? ($subtotal - $dpAmount) : 0;
-
             // ===== VALIDASI SISA PO =====
             $poCustomer = PoCustomer::findOrFail($invoice->po_customer_id);
-            $totalInvoicedLain = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
-                ->where('status', '!=', 'cancelled')
-                ->where('id', '!=', $id)
-                ->sum('total');
-            $remainingPo = max(0, $poCustomer->total - $totalInvoicedLain);
-            if ($total > $remainingPo) {
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer, $invoice->id);
+            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
+            if (round($baseAmount) > round($remainingPreTax)) {
                 return back()->withInput()->with('error',
-                    'Total invoice baru Rp ' . number_format($total, 0, ',', '.') .
-                    ' melebihi sisa tagihan PO yang tersisa (Rp ' . number_format($remainingPo, 0, ',', '.') .
-                    ') setelah dikurangi invoice lain.'
+                    'Payment Amount baru Rp ' . number_format($baseAmount, 0, ',', '.') .
+                    ' melebihi sisa PO Amount (Rp ' . number_format($remainingPreTax, 0, ',', '.') . ').'
                 );
             }
 
-            // ===== VALIDASI PARENT INVOICE =====
-            if ($request->filled('parent_invoice_id')) {
-                $parent = InvoiceCustomer::findOrFail($request->parent_invoice_id);
-                if ($parent->id == $id) {
-                    return back()->withInput()->with('error', 'Tidak bisa menjadikan diri sendiri sebagai induk.');
-                }
-                $totalChildLain = $parent->childInvoices()
-                    ->where('status', '!=', 'cancelled')
-                    ->where('id', '!=', $id)
-                    ->sum('total');
-                if (($totalChildLain + $total) > $parent->total) {
-                    return back()->withInput()->with('error',
-                        'Total invoice anak (' . number_format($total, 0, ',', '.') .
-                        ') ditambah total anak sebelumnya (' . number_format($totalChildLain, 0, ',', '.') .
-                        ') melebihi total induk (' . number_format($parent->total, 0, ',', '.') . ')'
-                    );
-                }
-            }
-
             // Attachment
-            $taxAttachmentPath = $invoice->tax_invoice_attachment;
-            if ($request->input('delete_attachment') == '1' || $request->hasFile('tax_invoice_attachment')) {
-                if ($invoice->tax_invoice_attachment && Storage::disk('public')->exists($invoice->tax_invoice_attachment)) {
-                    Storage::disk('public')->delete($invoice->tax_invoice_attachment);
-                }
+            $oldTaxAttachmentPath = $invoice->tax_invoice_attachment;
+            $newTaxAttachmentPath = null;
+            $taxAttachmentPath = $oldTaxAttachmentPath;
+
+            if ($request->input('delete_attachment') == '1') {
                 $taxAttachmentPath = null;
             }
+
             if ($request->hasFile('tax_invoice_attachment')) {
-                $taxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $newTaxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $taxAttachmentPath = $newTaxAttachmentPath;
             }
 
             // Ã¢Å“â€¦ UPDATE termasuk remaining_amount
             DB::beginTransaction();
+
+            $poCustomer = PoCustomer::whereKey($poCustomer->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer, $invoice->id);
+            if (round($baseAmount) > round($remainingPreTax)) {
+                throw ValidationException::withMessages([
+                    'items' => 'Payment Amount melebihi sisa PO Amount.',
+                ]);
+            }
+            $lockedCanonicalPoDetails = collect();
+
+            if (!$isLegacyInvoice) {
+                $lockedCanonicalPoDetails = PoCustomerDetail::query()
+                    ->where('po_customer_id', $poCustomer->id)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($lockedCanonicalPoDetails->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'items' => 'PO Customer tidak memiliki detail item.',
+                    ]);
+                }
+
+                // Recalculate from locked canonical rows.
+                $subtotal = (float) $lockedCanonicalPoDetails->sum(
+                    fn ($detail) =>
+                        (float) $detail->quantity
+                        * (float) $detail->unit_price
+                );
+
+                $dpAmount = $subtotal * $dpPercent / 100;
+                $baseAmount = ($dpAmount > 0)
+                    ? $dpAmount
+                    : $subtotal;
+
+                $discountAmount =
+                    $baseAmount * $discountPercent / 100;
+
+                $afterDiscount =
+                    $baseAmount - $discountAmount;
+
+                $taxAmount =
+                    $afterDiscount * $taxPercent / 100;
+
+                $pph23Amount =
+                    $afterDiscount * $pph23Percent / 100;
+
+                $total =
+                    $afterDiscount
+                    + $taxAmount
+                    - $pph23Amount;
+
+                // Re-check cumulative payment capacity using the
+                // locked canonical financial snapshot.
+                if (round($baseAmount) > round($remainingPreTax)) {
+                    throw ValidationException::withMessages([
+                        'dp_percent' =>
+                            'Payment Amount melebihi sisa PO Amount.',
+                    ]);
+                }
+            }
+
+            $remainingAfterInvoice = max(
+                0,
+                $remainingPreTax - $baseAmount
+            );
 
             $invoice->update([
                 'type' => $request->type,
@@ -428,11 +776,10 @@ class InvoiceCustomerController extends Controller
                 'total' => $total,
                 'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
-                'payment_status' => $request->payment_status,
+                'payment_status' => $validated['payment_status'],
                 'payment_terms' => $request->payment_terms,
                 'delivery_time' => $request->delivery_time,
                 'notes' => $request->notes,
-                'parent_invoice_id' => $request->parent_invoice_id ?? null,
             ]);
 
             // Ã¢Å“â€¦ DEBUG: Log update
@@ -441,29 +788,65 @@ class InvoiceCustomerController extends Controller
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed'
             ]);
 
-            // Hapus detail lama, simpan baru
-            $invoice->details()->delete();
-            foreach ($request->items as $item) {
-                InvoiceCustomerDetail::create([
-                    'invoice_customer_id' => $invoice->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => (float) $item['quantity'],
-                    'unit_price' => (float) $item['unit_price_numeric'],
-                    'subtotal' => (float) $item['quantity'] * (float) $item['unit_price_numeric'],
-                ]);
+            // RM-004O-B1/B2:
+            //
+            // Legacy:
+            //   never delete/recreate historical detail rows.
+            //
+            // Linked RM-004O:
+            //   rebuild exclusively from locked canonical PO Customer
+            //   details. Browser item values are ignored.
+            if (!$isLegacyInvoice) {
+                $invoice->details()->delete();
+
+                foreach ($lockedCanonicalPoDetails as $poDetail) {
+                    InvoiceCustomerDetail::create([
+                        'invoice_customer_id' =>
+                            $invoice->id,
+                        'po_customer_detail_id' =>
+                            $poDetail->id,
+                        'product_id' =>
+                            $poDetail->product_id,
+                        'quantity' =>
+                            (float) $poDetail->quantity,
+                        'unit_price' =>
+                            (float) $poDetail->unit_price,
+                        'subtotal' =>
+                            (float) $poDetail->quantity
+                            * (float) $poDetail->unit_price,
+                    ]);
+                }
             }
 
             $poCustomer->updateInvoiceStatus();
             DB::commit();
+
+            if (
+                $oldTaxAttachmentPath &&
+                $oldTaxAttachmentPath !== $taxAttachmentPath &&
+                Storage::disk('public')->exists($oldTaxAttachmentPath)
+            ) {
+                Storage::disk('public')->delete($oldTaxAttachmentPath);
+            }
 
             return redirect()->route('invoice-customers.index')
                 ->with('success', 'Invoice successfully updated.');
 
         } catch (ValidationException $e) {
             DB::rollBack();
+
+            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
+                Storage::disk('public')->delete($newTaxAttachmentPath);
+            }
+
             return back()->withInput()->withErrors($e->validator);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
+                Storage::disk('public')->delete($newTaxAttachmentPath);
+            }
+
             \Log::error('UPDATE ERROR: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->withInput()->with('error', 'Gagal update invoice: ' . $e->getMessage());
         }
@@ -476,7 +859,7 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::findOrFail($id);
 
-        if (!$this->isAdmin() && $invoice->payment_status == 'paid') {
+        if ($invoice->payment_status == 'paid') {
             return back()->with('error', 'Invoice already paid and cannot be deleted.');
         }
 
@@ -524,7 +907,7 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::findOrFail($id);
 
-        if (!$this->isAdmin() && $invoice->payment_status == 'paid') {
+        if ($invoice->payment_status == 'paid') {
             return back()->with('error', 'Invoice already paid and cannot be cancelled.');
         }
 
@@ -569,7 +952,8 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::with(['poCustomer.customer', 'details.product', 'parentInvoice'])->findOrFail($id);
         $company = Company::where('is_active', true)->first();
-        $pdf = Pdf::loadView('invoice_customers.print', compact('invoice', 'company'));
+        $printAssets = $this->invoicePrintAssets($company, $invoice);
+        $pdf = Pdf::loadView('invoice_customers.print', compact('invoice', 'company', 'printAssets'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('Invoice_' . str_replace('/', '_', $invoice->invoice_number) . '.pdf');
     }
@@ -578,7 +962,8 @@ class InvoiceCustomerController extends Controller
     {
         $invoice = InvoiceCustomer::with(['poCustomer.customer', 'details.product', 'parentInvoice'])->findOrFail($id);
         $company = Company::where('is_active', true)->first();
-        $pdf = Pdf::loadView('invoice_customers.print_invoice', compact('invoice', 'company'));
+        $printAssets = $this->invoicePrintAssets($company, $invoice);
+        $pdf = Pdf::loadView('invoice_customers.print_invoice', compact('invoice', 'company', 'printAssets'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('Invoice_' . str_replace('/', '_', $invoice->invoice_number) . '.pdf');
     }
@@ -586,6 +971,51 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     // PRIVATE HELPERS
     // =====================================================
+
+    private function invoicePrintAssets(?Company $company, InvoiceCustomer $invoice): array
+    {
+        $signatureField = (float) $invoice->total > 5000000 ? 'ttd_inv2' : 'ttd_inv';
+
+        return [
+            'logo' => $this->publicImageDataUri([
+                $company?->logo,
+                'uploads/companies/logo/LogoBGS.png',
+                'uploads/ttd/logo baru BGS-FInal.png',
+            ]),
+            'signature' => $this->publicImageDataUri([
+                $company?->{$signatureField},
+                'uploads/ttd/' . $signatureField . '.jpg',
+            ]),
+        ];
+    }
+
+    private function publicImageDataUri(array $candidates): ?string
+    {
+        $publicRoot = realpath(public_path());
+        if ($publicRoot === false) {
+            return null;
+        }
+
+        foreach (array_filter($candidates) as $relativePath) {
+            $resolved = realpath(public_path(ltrim(str_replace('\\', '/', $relativePath), '/')));
+            if (
+                $resolved === false ||
+                !str_starts_with($resolved, $publicRoot . DIRECTORY_SEPARATOR) ||
+                !is_file($resolved)
+            ) {
+                continue;
+            }
+
+            $mime = mime_content_type($resolved);
+            if (!is_string($mime) || !str_starts_with($mime, 'image/')) {
+                continue;
+            }
+
+            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($resolved));
+        }
+
+        return null;
+    }
 
     private function parseRupiahToNumber($value)
     {
@@ -603,6 +1033,65 @@ class InvoiceCustomerController extends Controller
             7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
         ];
         return $romans[$month] ?? 'I';
+    }
+
+    private function rootInvoiceForPo(int $poCustomerId): ?InvoiceCustomer
+    {
+        return InvoiceCustomer::where('po_customer_id', $poCustomerId)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function remainingPreTaxAmount(PoCustomer $poCustomer, ?int $excludeInvoiceId = null): float
+    {
+        $poPreTax = max(0, (float) $poCustomer->subtotal);
+        if ($poPreTax <= 0) {
+            $poPreTax = max(
+                0,
+                (float) $poCustomer->total - (float) $poCustomer->tax_amount
+            );
+        }
+
+        $query = InvoiceCustomer::where('po_customer_id', $poCustomer->id)
+            ->where('status', '!=', 'cancelled');
+
+        if ($excludeInvoiceId !== null) {
+            $query->where('id', '!=', $excludeInvoiceId);
+        }
+
+        $invoicedPreTax = (float) $query->selectRaw(
+            'COALESCE(SUM(CASE WHEN dp_amount > 0 THEN dp_amount ELSE subtotal END), 0) as amount'
+        )->value('amount');
+
+        return max(0, $poPreTax - $invoicedPreTax);
+    }
+
+    private function poPphPercent(PoCustomer $poCustomer): float
+    {
+        $poPreTax = max(
+            0,
+            (float) $poCustomer->subtotal - (float) $poCustomer->discount_amount
+        );
+        if ($poPreTax <= 0) {
+            $poPreTax = max(
+                0,
+                (float) $poCustomer->total - (float) $poCustomer->tax_amount
+            );
+        }
+        if ($poPreTax <= 0) {
+            return 0;
+        }
+
+        // Legacy PO tidak memiliki kolom PPh, tetapi totalnya sudah net of PPh.
+        $derivedPphAmount = max(
+            0,
+            $poPreTax + (float) $poCustomer->tax_amount - (float) $poCustomer->total
+        );
+
+        // Nilai total PO tersimpan dalam rupiah bulat sehingga hasil pembagian
+        // dapat menghasilkan artefak floating point (contoh 2.500000668...).
+        return round(($derivedPphAmount / $poPreTax) * 100, 4);
     }
 
     /**

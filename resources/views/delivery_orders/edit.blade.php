@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Delivery Order & Document Receipt')
+@section('title', 'Edit Delivery Order')
 
 @section('content')
 
@@ -12,7 +12,7 @@
 
 <div class="card">
     <div class="card-header bg-warning text-dark">
-        <h4>Edit Delivery Order & Document Receipt</h4>
+        <h4>Edit Delivery Order</h4>
     </div>
 
     <div class="card-body">
@@ -42,12 +42,13 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-control">
-                        <option value="pending" {{ $do->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="partial" {{ $do->status == 'partial' ? 'selected' : '' }}>Partial Shipment</option>
-                        <option value="shipped" {{ $do->status == 'shipped' ? 'selected' : '' }}>Shipped</option>
-                        <option value="delivered" {{ $do->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
-                    </select>
+                    <input type="text"
+                           class="form-control"
+                           value="{{ ucfirst($do->status) }}"
+                           readonly>
+                    <small class="text-muted">
+                        New Delivery Orders start as Pending. Delivery confirmation is managed separately.
+                    </small>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Delivery By</label>
@@ -123,67 +124,18 @@
                                 {{ $detail->product->name ?? '-' }}
                                 <br>
                                 <small>{{ $detail->product->product_code ?? '-' }}</small>
-                                <input type="hidden" name="items[{{ $i }}][product_id]" value="{{ $detail->product_id }}">
+                                <input type="hidden" name="items[{{ $i }}][po_customer_detail_id]" value="{{ $detail->po_customer_detail_id }}">
                             </td>
                             <td>{{ $detail->product->brand ?? '-' }}</td>
                             <td>
-                                <input type="number" name="items[{{ $i }}][quantity]" class="form-control qty-input" value="{{ $detail->quantity }}" min="0" required>
+                                @php
+                                    $availableQuantity = $deliverableQuantities[$detail->po_customer_detail_id] ?? 0;
+                                @endphp
+                                <input type="number" name="items[{{ $i }}][quantity]" class="form-control qty-input" value="{{ $detail->quantity }}" min="0" max="{{ $availableQuantity }}" required>
+                                <small class="text-muted">Available: {{ $availableQuantity }}</small>
                             </td>
                         </tr>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Tanda Terima Dokumen -->
-            <hr>
-            <h5 class="mb-3">Document Receipt</h5>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-dark">
-                        <tr>
-                            <th width="5%" class="text-center">No</th>
-                            <th>Description</th>
-                            <th width="25%">Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Invoice -->
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td>
-                                <strong>Invoice</strong><br>
-                                <input type="text" name="invoice_number" class="form-control form-control-sm mt-2" value="{{ $do->invoice_number }}" placeholder="No. Invoice">
-                            </td>
-                            <td class="align-middle">1 Rangkap (Asli)</td>
-                        </tr>
-                        <!-- Faktur Pajak -->
-                        <tr>
-                            <td class="text-center">2</td>
-                            <td>
-                                <strong>Faktur Pajak</strong><br>
-                                <input type="text" name="tax_invoice_number" class="form-control form-control-sm mt-2" value="{{ $do->tax_invoice_number }}" placeholder="No. Faktur Pajak">
-                            </td>
-                            <td class="align-middle">2 Rangkap (Asli + Copy)</td>
-                        </tr>
-                        <!-- PO -->
-                        <tr>
-                            <td class="text-center">3</td>
-                            <td>
-                                <strong>PO Customer</strong><br>
-                                <span class="text-primary">{{ $do->poCustomer->po_number ?? '-' }}</span>
-                            </td>
-                            <td class="align-middle">1 Rangkap</td>
-                        </tr>
-                        <!-- DO -->
-                        <tr>
-                            <td class="text-center">4</td>
-                            <td>
-                                <strong>Delivery Order</strong><br>
-                                <span class="text-success">{{ $do->do_number }}</span>
-                            </td>
-                            <td class="align-middle">3 Rangkap (Asli + Copy)</td>
-                        </tr>
                     </tbody>
                 </table>
             </div>

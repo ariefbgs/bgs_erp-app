@@ -178,6 +178,7 @@ class PoCustomerController extends Controller
                 'pph_percent' => $pphPercent,
                 'pph_amount' => $pphAmount,
                 'total' => $total,
+                'remaining_amount' => $total,
                 'notes' => $request->notes,
                 'attachment' => $attachmentPath,
             ]);
@@ -742,6 +743,10 @@ class PoCustomerController extends Controller
                         $pphAmount,
                     'total' =>
                         $total,
+                    'remaining_amount' => max(
+                        0,
+                        $total - (float) $lockedPo->total_invoiced
+                    ),
                     'notes' =>
                         $request->notes,
                     'attachment' =>
@@ -1054,6 +1059,7 @@ class PoCustomerController extends Controller
             'delivery_time'    => $quotation->delivery_time,
             'subtotal' => $quotation->subtotal,
             'total' => $quotation->total,
+            'remaining_amount' => $quotation->total,
             'items' => $quotation->details->map(function($item) {
                 return [
                     'product_id'    => $item->product_id,

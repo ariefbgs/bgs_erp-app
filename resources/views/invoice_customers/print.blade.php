@@ -340,8 +340,6 @@
 <body>
     <div class="print-container">
         @php
-            $company = App\Models\Company::where('is_active', true)->first();
-
             $subtotal     = (float)($invoice->subtotal ?? 0);
             $discount     = (float)($invoice->discount_amount ?? 0);
             $tax          = (float)($invoice->tax_amount ?? 0);      // PPN
@@ -357,30 +355,14 @@
             // Sisa setelah DP
             $remainingAmount = $grandTotal - $dp_amount;
 
-            // Pemilihan tanda tangan berdasarkan GRAND TOTAL (bukan subtotal)
-            // Hitung jumlah yang harus dibayar saat ini (DP + PPN)
-            $amountToPayNow = $dp_amount + $tax;
-            $signatureField = ($amountToPayNow > 5000000) ? 'ttd_inv2' : 'ttd_inv';
-            $signaturePath = null;
-            if ($company && !empty($company->$signatureField) && file_exists(public_path($company->$signatureField))) {
-                $signaturePath = public_path($company->$signatureField);
-            }
         @endphp
 
         {{-- HEADER --}}
         <table class="header-table">
             <tr>
                 <td width="10%">
-                    @php
-                        $logoPath = null;
-                        if($company && $company->logo && file_exists(public_path($company->logo))){
-                            $logoPath = public_path($company->logo);
-                        } elseif(file_exists(public_path('uploads/companies/LogoBGS.png'))){
-                            $logoPath = public_path('uploads/companies/LogoBGS.png');
-                        }
-                    @endphp
-                    @if($logoPath)
-                        <img src="{{ $logoPath }}" class="company-logo">
+                    @if($printAssets['logo'] ?? null)
+                        <img src="{{ $printAssets['logo'] }}" class="company-logo">
                     @endif
                 </td>
                 <td style="width:60%;">
@@ -388,10 +370,11 @@
                         {{ $company->name ?? 'PT. BAGAS GEMILANG SATWIKA' }}
                     </div>
                     <div class="company-info">
-                        {!! nl2br(e($company->address ?? '-')) !!}<br>
-                        Grand Galaxy City, {{ $company->city ?? '-' }} {{ $company->postal_code ?? '-' }}<br>
-                        Telp : {{ $company->phone ?? '-' }}<br>
-                        Email : {{ $company->email ?? '-' }}
+                        @if($company?->address){!! nl2br(e($company->address)) !!}<br>@endif
+                        @if($company?->city || $company?->postal_code){{ trim(($company->city ?? '') . ' ' . ($company->postal_code ?? '')) }}<br>@endif
+                        @if($company?->phone)Telp: {{ $company->phone }}@if($company->phone1 ?? null) / {{ $company->phone1 }}@endif<br>@endif
+                        @if($company?->fax)Fax: {{ $company->fax }}<br>@endif
+                        @if($company?->email)Email: {{ $company->email }}@endif
                     </div>
                 </td>
                 <td width="30%">
@@ -506,12 +489,6 @@
                 <td><strong>GRAND TOTAL</strong></td>
                 <td class="text-right">Rp {{ number_format($invoice->total, 0, ',', '.') }}</td>
             </tr>
-            @if($invoice->remaining_amount != 0)
-                <tr>
-                    <td><strong>Remaining Amount</strong></td>
-                    <td class="text-right">Rp {{ number_format($invoice->remaining_amount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
         </table>
 
         <!-- ========================================================= -->
@@ -554,13 +531,8 @@
             <div class="signature-box">
                 <div class="signature-title">Best Regards,</div>
                 
-                @if($signaturePath)
-                    @php
-                        // Konversi ke base64 agar pasti muncul di PDF/Print
-                        $imageData = base64_encode(file_get_contents($signaturePath));
-                        $src = 'data:image/' . pathinfo($signaturePath, PATHINFO_EXTENSION) . ';base64,' . $imageData;
-                    @endphp
-                    <img src="{{ $src }}" class="signature-image">
+                @if($printAssets['signature'] ?? null)
+                    <img src="{{ $printAssets['signature'] }}" class="signature-image">
                 @else
                     <div style="height: 60px;"></div>
                 @endif

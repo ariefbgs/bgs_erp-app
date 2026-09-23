@@ -149,17 +149,17 @@
 <body>
 <div class="print-container">
     @php
-        // Ambil data dari $receipt yang dikirim controller
-        $deliveryOrder = $receipt->deliveryOrder;
-        $poCustomer = $deliveryOrder->poCustomer ?? null;
+        $poCustomer = $receipt->poCustomer;
         $customer = $poCustomer->customer ?? null;
-        
-        // Nomor invoice & faktur pajak dari receipt (case-sensitive)
-        $invoiceNumber = $receipt->invoice_number ?? '-';
-        $taxInvoiceNumber = $receipt->tax_invoice_number ?? '-';
-        
-        // Nama penerima (received by) dari delivery order
-        $receiverName = $deliveryOrder->receiver_name ?? ($customer->name ?? '-');
+
+        $deliveryOrders = $receipt->deliveryOrders;
+        $invoices = $receipt->invoices;
+
+        $primaryDeliveryOrder = $deliveryOrders->first();
+
+        $receiverName =
+            $primaryDeliveryOrder->receiver_name
+            ?? ($customer->name ?? '-');
     @endphp
 
     <!-- HEADER -->
@@ -168,10 +168,21 @@
             <td width="10%">
                 @php
                     $logoPath = null;
-                    if($company && $company->logo && file_exists(public_path($company->logo))){
-                        $logoPath = public_path($company->logo);
-                    } elseif(file_exists(public_path('uploads/companies/LogoBGS.png'))){
-                        $logoPath = public_path('uploads/companies/LogoBGS.png');
+
+                    if ($company && !empty($company->logo)) {
+                        $configuredLogo = ltrim($company->logo, '/');
+
+                        if (file_exists(public_path($configuredLogo))) {
+                            $logoPath = public_path($configuredLogo);
+                        }
+                    }
+
+                    if (!$logoPath) {
+                        $canonicalLogo = public_path('uploads/companies/logo/LogoBGS.png');
+
+                        if (file_exists($canonicalLogo)) {
+                            $logoPath = $canonicalLogo;
+                        }
                     }
                 @endphp
                 @if($logoPath)
@@ -196,59 +207,123 @@
     <!-- RECEIPT INFO -->
     <table class="do-info">
         <tr>
-            <td><strong>Receipt #</strong><br>{{ $receipt->receipt_number }}</td>
-            <td><strong>Receipt Date</strong><br>{{ \Carbon\Carbon::parse($receipt->receipt_date)->format('d F Y') }}</td>
-            <td><strong>Reference DO</strong><br>{{ $deliveryOrder->do_number ?? '-' }}</td>
+            <td>
+                <strong>Receipt #</strong><br>
+                {{ $receipt->receipt_number }}
+            </td>
+            <td>
+                <strong>Receipt Date</strong><br>
+                {{ \Carbon\Carbon::parse($receipt->receipt_date)->format('d F Y') }}
+            </td>
+            <td>
+                <strong>Status</strong><br>
+                {{ ucfirst($receipt->status ?? '-') }}
+            </td>
         </tr>
     </table>
 
-    <!-- DELIVERY TO (Customer) -->
+    <!-- CUSTOMER INFORMATION -->
     <div class="section-card">
-        <div class="section-header">Delivery to: </div>
+        <div class="section-header">Customer Information</div>
         <div class="section-body">
             <strong>{{ $customer->name ?? '-' }}</strong><br>
-            {!! nl2br(e($customer->document_address ?? $customer->address ?? '-')) !!}<br>
-            Telp : {{ $customer->phone ?? '-' }}<br>
-            PIC : {{ $customer->pic_invoice_name ?? '-' }}
+
+            PIC Customer :
+            {{ $customer->pic_do_name ?? '-' }}<br>
+
+            PIC Phone :
+            {{ $customer->pic_quotation_phone ?? '-' }}<br>
+
+            Address :
+            {!! nl2br(e($customer->address ?? '-')) !!}<br>
+
+            Email :
+            {{ $customer->email ?? '-' }}
         </div>
     </div>
 
-    <!-- DAFTAR DOKUMEN -->
+    <!-- DOCUMENT RECEIPT CONTEXT -->
+    <div class="section-card">
+        <div class="section-header">Document Receipt</div>
+        <div class="section-body">
+            <strong>PO Customer No :</strong>
+            {{ $poCustomer->po_number ?? '-' }}
+        </div>
+    </div>
+
+    <!-- SELECTED DELIVERY ORDERS -->
     <table class="items-table">
         <thead>
         <tr>
-            <th width="20%">Description</th>
-            <th width="20%">Nomor</th>
-            <th width="30%">Qty (Rangkap)</th>
+            <th colspan="3">DELIVERY ORDERS</th>
+        </tr>
+        <tr>
+            <th width="8%">No</th>
+            <th width="57%">DO No</th>
+            <th width="35%">Delivery Date</th>
         </tr>
         </thead>
         <tbody>
+        @forelse($deliveryOrders as $deliveryOrder)
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td>
+                    <strong>
+                        {{ $deliveryOrder->do_number ?? '-' }}
+                    </strong>
+                </td>
+                <td>
+                    {{ $deliveryOrder->delivery_date ?? '-' }}
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="3">
+                    No Delivery Order selected.
+                </td>
+            </tr>
+        @endforelse
+        </tbody>
+    </table>
+
+    <!-- SELECTED SALES INVOICES -->
+    <table class="items-table">
+        <thead>
         <tr>
-            <td>Invoice</td>
-            <td><strong>{{ $invoiceNumber }}</strong></td>
-            <td>1 rangkap (Asli)</td>
+            <th colspan="4">SALES INVOICES</th>
         </tr>
         <tr>
-            <td>Faktur Pajak</td>
-            <td><strong>{{ $taxInvoiceNumber }}</strong></td>
-            <td>
-                @if(!empty($taxInvoiceNumber) && $taxInvoiceNumber != '-')
-                    2 rangkap (Asli + Copy)
-                @else
-                    &nbsp;
-                @endif
-            </td>
+            <th width="8%">No</th>
+            <th width="32%">Invoice No</th>
+            <th width="25%">Invoice Date</th>
+            <th width="35%">Faktur Pajak No</th>
         </tr>
-        <tr>
-            <td>PO Customer</td>
-            <td><strong>{{ $poCustomer->po_number ?? '-' }}</strong></td>
-            <td>1 rangkap</td>
-        </tr>
-        <tr>
-            <td>Delivery Order</td>
-            <td><strong>{{ $deliveryOrder->do_number ?? '-' }}</strong></td>
-            <td>3 rangkap (Asli + Copy)</td>
-        </tr>
+        </thead>
+        <tbody>
+        @forelse($invoices as $invoice)
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td>
+                    <strong>
+                        {{ $invoice->invoice_number ?? '-' }}
+                    </strong>
+                </td>
+                <td>
+                    {{ $invoice->invoice_date
+                        ? \Carbon\Carbon::parse($invoice->invoice_date)->format('d F Y')
+                        : '-' }}
+                </td>
+                <td>
+                    {{ $invoice->tax_invoice_number ?: '-' }}
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="4">
+                    No Sales Invoice selected.
+                </td>
+            </tr>
+        @endforelse
         </tbody>
     </table>
 
@@ -259,10 +334,21 @@
                 <div class="signature-label">Best Regards,</div>
                 @php
                     $signaturePath = null;
-                    if($company && $company->ttd_do && file_exists(public_path($company->ttd_do))){
-                        $signaturePath = public_path($company->ttd_do);
-                    } elseif(file_exists(public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg'))){
-                        $signaturePath = public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg');
+
+                    if ($company && !empty($company->ttd_do)) {
+                        $configuredSignature = ltrim($company->ttd_do, '/');
+
+                        if (file_exists(public_path($configuredSignature))) {
+                            $signaturePath = public_path($configuredSignature);
+                        }
+                    }
+
+                    if (!$signaturePath) {
+                        $canonicalSignature = public_path('uploads/ttd/ttd_do.jpg');
+
+                        if (file_exists($canonicalSignature)) {
+                            $signaturePath = $canonicalSignature;
+                        }
                     }
                 @endphp
                 @if($signaturePath)

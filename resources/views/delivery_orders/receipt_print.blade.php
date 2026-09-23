@@ -273,12 +273,12 @@
             border-top: 1px solid #9ca3af;
             padding-top: 5px;
         }
-        .signature-placeholder {
-            height: 95px;
-            text-align: center;
-            line-height: 95px;
-            color: #666;
-            font-size: 12px;
+        .signature-image {
+            max-width: 180px;
+            max-height: 95px;
+            object-fit: contain;
+            display: block;
+            margin: 5px auto;
         }
 
         .print-btn-container {
@@ -313,10 +313,22 @@
                 <td width="10%">
                     @php
                         $logoPath = null;
-                        if($company && $company->logo && file_exists(public_path($company->logo))){
-                            $logoPath = public_path($company->logo);
-                        } elseif(file_exists(public_path('uploads/companies/LogoBGS.png'))){
-                            $logoPath = public_path('uploads/companies/LogoBGS.png');
+
+                        /*
+                         * RM-005 canonical print logo resolution:
+                         * 1. Company-configured logo
+                         * 2. Canonical BGS fallback logo
+                         */
+                        $canonicalLogo = public_path('uploads/companies/logo/LogoBGS.png');
+
+                        if (file_exists($canonicalLogo)) {
+                            $logoPath = $canonicalLogo;
+                        } elseif ($company && !empty($company->logo)) {
+                            $configuredLogo = ltrim($company->logo, '/');
+
+                            if (file_exists(public_path($configuredLogo))) {
+                                $logoPath = public_path($configuredLogo);
+                            }
                         }
                     @endphp
                     @if($logoPath)
@@ -334,7 +346,7 @@
                         Email : {{ $company->email ?? '-' }}
                     </div>
                 </td>
-                <td width="50%">
+                <td width="30%">
                     <div class="do-title">DOCUMENT RECEIPT</div>
                 </td>
             </tr>
@@ -399,14 +411,25 @@
 
                     @php
                         $signaturePath = null;
-                        if($company && $company->ttd_do && file_exists(public_path($company->ttd_do))){
-                            $signaturePath = public_path($company->ttd_do);
-                        } elseif(file_exists(public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg'))){
-                            $signaturePath = public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg');
+
+                        if ($company && !empty($company->ttd_do)) {
+                            $configuredSignature = ltrim($company->ttd_do, '/');
+
+                            if (file_exists(public_path($configuredSignature))) {
+                                $signaturePath = public_path($configuredSignature);
+                            }
+                        }
+
+                        if (!$signaturePath) {
+                            $canonicalSignature = public_path('uploads/ttd/ttd_do.jpg');
+
+                            if (file_exists($canonicalSignature)) {
+                                $signaturePath = $canonicalSignature;
+                            }
                         }
                     @endphp
                     @if($signaturePath)
-                        <img src="{{ $signaturePath }}" class="signature-placeholder ">
+                        <img src="{{ $signaturePath }}" class="signature-image">
                     @endif
                 <div class="signature-name">
                     {{ $company->pic_do ?? '-' }}

@@ -319,10 +319,26 @@
                 <td width="12%">
                     @php
                         $logoPath = null;
-                        if($company && $company->logo && file_exists(public_path($company->logo))){
-                            $logoPath = public_path($company->logo);
-                        } elseif(file_exists(public_path('uploads/companies/LogoBGS.png'))){
-                            $logoPath = public_path('uploads/companies/LogoBGS.png');
+
+                        /*
+                         * RM-005 canonical print logo resolution:
+                         * 1. Company-configured logo
+                         * 2. Canonical BGS fallback logo
+                         */
+                        if ($company && !empty($company->logo)) {
+                            $configuredLogo = ltrim($company->logo, '/');
+
+                            if (file_exists(public_path($configuredLogo))) {
+                                $logoPath = public_path($configuredLogo);
+                            }
+                        }
+
+                        if (!$logoPath) {
+                            $canonicalLogo = public_path('uploads/companies/logo/LogoBGS.png');
+
+                            if (file_exists($canonicalLogo)) {
+                                $logoPath = $canonicalLogo;
+                            }
                         }
                     @endphp
                     @if($logoPath)
@@ -513,10 +529,21 @@
                 <div style="margin-bottom: 5px; font-weight: 500;">Best Regards,</div>
                 @php
                     $signaturePath = null;
-                    if($company && $company->ttd_sales_support && file_exists(public_path($company->ttd_sales_support))){
-                        $signaturePath = public_path($company->ttd_sales_support);
-                    } elseif(file_exists(public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg'))){
-                        $signaturePath = public_path('uploads/companies/signatures/1779281433_ttd_do_ttd_afni.jpg');
+
+                    if ($company && !empty($company->ttd_sales_support)) {
+                        $configuredSignature = ltrim($company->ttd_sales_support, '/');
+
+                        if (file_exists(public_path($configuredSignature))) {
+                            $signaturePath = public_path($configuredSignature);
+                        }
+                    }
+
+                    if (!$signaturePath) {
+                        $canonicalSignature = public_path('uploads/ttd/ttd_afni.jpg');
+
+                        if (file_exists($canonicalSignature)) {
+                            $signaturePath = $canonicalSignature;
+                        }
                     }
                 @endphp
                 @if($signaturePath)

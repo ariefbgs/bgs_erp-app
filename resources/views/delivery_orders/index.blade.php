@@ -108,9 +108,7 @@
                         <label class="filter-label">Status</label>
                         <select name="status" class="form-select">
                             <option value="">All Status</option>
-                            <option value="pending" {{ request('status') == 'draft' ? 'selected' : '' }}>Pending</option>
-                            <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partial Shipment</option>
-                            <option value="shipped" {{ request('status') == 'sent' ? 'selected' : '' }}>Shipped</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
                         </select>
                     </div>
@@ -151,12 +149,10 @@
                             <td>
                                 @if($do->status == 'pending')
                                     <span class="badge bg-warning">Pending</span>
-                                @elseif($do->status == 'partial')
-                                    <span class="badge bg-primary">Partial Shipment</span>
-                                @elseif($do->status == 'shipped')
-                                    <span class="badge bg-primary">Shipped</span>
                                 @elseif($do->status == 'delivered')
                                     <span class="badge bg-success">Delivered</span>
+                                @else
+                                    <span class="badge bg-secondary">Legacy: {{ ucfirst($do->status) }}</span>
                                 @endif
                             </td>
                             <td class="text-nowrap">
@@ -164,8 +160,8 @@
                                 <a href="{{ route('delivery-orders.show', $do->id) }}" class="btn btn-info btn-sm btn-action" title="Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <!-- Tombol Edit (hanya jika status pending) -->
-                                @if(in_array($do->status, ['pending', 'partial']))
+                                <!-- Edit hanya untuk Pending -->
+                                @if($do->status === 'pending')
                                     <a href="{{ route('delivery-orders.edit', $do->id) }}" class="btn btn-warning btn-sm btn-action" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -173,6 +169,44 @@
                                     <button class="btn btn-secondary btn-sm btn-action" disabled title="Not editable">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                @endif
+
+                                @php
+                                    $doUser = Auth::user();
+                                    $canMarkDelivered =
+                                        $doUser?->hasPermission('delivery_order_mark_delivered') ?? false;
+                                    $canReopen =
+                                        $doUser?->hasPermission('delivery_order_reopen') ?? false;
+                                @endphp
+
+                                @if($do->status === 'pending' && $canMarkDelivered)
+                                    <form method="POST"
+                                          action="{{ route('delivery-orders.mark-delivered', $do->id) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Mark this Delivery Order as Delivered?');">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                class="btn btn-success btn-sm btn-action"
+                                                title="Mark Delivered">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($do->status === 'delivered' && $canReopen)
+                                    <form method="POST"
+                                          action="{{ route('delivery-orders.reopen', $do->id) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Reopen this Delivery Order to Pending?');">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                class="btn btn-outline-warning btn-sm btn-action"
+                                                title="Reopen to Pending">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    </form>
                                 @endif
                                 <!-- Tombol Hapus (hanya jika status pending) -->
                                 @if($do->status == 'pending')
