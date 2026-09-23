@@ -57,7 +57,7 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            '$remainingAfterInvoice = max(0, $remainingPreTax - $afterDiscount);',
+            '$remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);',
             $source
         );
         $this->assertStringNotContainsString(
@@ -86,9 +86,9 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
             dirname(__DIR__, 2) . '/resources/views/invoice_customers/create.blade.php'
         );
 
-        $this->assertStringContainsString('round($afterDiscount) > round($remainingPreTax)', $controller);
+        $this->assertStringContainsString('round($baseAmount) > round($remainingPreTax)', $controller);
         $this->assertStringContainsString('invoiceBaseRupiah > poRemainingBaseRupiah', $createView);
-        $this->assertStringContainsString('Math.max(0, poRemainingBase - dpp)', $createView);
+        $this->assertStringContainsString('Math.max(0, poRemainingBase - baseAmount)', $createView);
     }
 
     public function test_sales_invoice_show_uses_po_customer_visual_structure(): void
@@ -127,8 +127,11 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
         );
 
         $this->assertStringContainsString('remainingPreTaxAmount', $controller);
-        $this->assertStringContainsString('total - tax_amount + pph23_amount', $controller);
-        $this->assertStringContainsString('Subtotal sebelum pajak melebihi sisa subtotal PO Customer.', $controller);
+        $this->assertStringContainsString(
+            '$poCustomer->subtotal',
+            $controller
+        );
+        $this->assertStringContainsString('Payment Amount melebihi sisa PO Amount.', $controller);
     }
 
     public function test_customer_invoice_prints_do_not_disclose_remaining_amount(): void
