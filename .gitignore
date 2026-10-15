@@ -30,3 +30,11 @@ yarn-error.log
 /erp_app.sql
 /docs/smartlo1_erp_app (3).sql
 /public.zip
+
+# Runtime uploads, local backups and deployment evidence
+/public/uploads/
+/public/storage-before-*/
+/modern-output/
+/deployment-output/
+*.BGS-BACKUP*
+/erp_app_staging_backup_*.sql
