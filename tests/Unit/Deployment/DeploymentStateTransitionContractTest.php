@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Deployment;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DeploymentStateTransitionContractTest extends TestCase
@@ -31,9 +32,7 @@ final class DeploymentStateTransitionContractTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider legalTransitions
-     */
+    #[DataProvider('legalTransitions')]
     public function test_legal_transitions_are_allowed(
         string $from,
         string $to
@@ -52,9 +51,7 @@ final class DeploymentStateTransitionContractTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider illegalTransitions
-     */
+    #[DataProvider('illegalTransitions')]
     public function test_illegal_transitions_are_rejected(
         string $from,
         string $to

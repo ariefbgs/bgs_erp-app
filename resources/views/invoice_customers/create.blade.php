@@ -606,6 +606,19 @@ $(function () {
         return Math.min(100, Math.max(0, parseFloat(fallbackPercent) || 0));
     }
 
+    function remainingPaymentPercentage() {
+        const selectedPo = $('#po_customer_id option:selected');
+        const original = Number(selectedPo.data('original-base')) || 0;
+        const remaining = Number(selectedPo.data('remaining-base')) || 0;
+        return percentageWithinBalance(original, remaining);
+    }
+
+    function percentageWithinBalance(original, remaining) {
+        if (!(original > 0) || !(remaining > 0)) return 0;
+        // Round down to the input precision so the default cannot exceed capacity.
+        return Math.min(100, Math.floor((remaining / original) * 1000000) / 10000);
+    }
+
     $('#payment_terms').on('change', function () {
         const terms = $(this).val();
         const selectedPo = $('#po_customer_id option:selected');
@@ -622,7 +635,7 @@ $(function () {
         );
 
         $('#dp_percent').val(
-            Number(Number(derivedPercent).toFixed(4))
+            Number(Math.min(derivedPercent, remainingPaymentPercentage()).toFixed(4))
         );
 
         calculateAll();
@@ -650,6 +663,11 @@ $(function () {
             url: '{{ route("invoice-customers.get-po-customer-details", "__ID__") }}'.replace('__ID__', poId),
             type: 'GET',
             success: function (res) {
+                const currentRemaining = Number(res.remaining_subtotal_before_tax);
+                if (Number.isFinite(currentRemaining) && currentRemaining >= 0) {
+                    $('#po_customer_id option:selected').data('remaining-base', currentRemaining);
+                    $('#poRemainingBaseValue').text('Rp ' + formatRupiah(currentRemaining));
+                }
                 let rows = '';
                 rowIndex = 0;
 
@@ -769,10 +787,9 @@ $(function () {
                 if (res.has_previous_invoice) {
                     $('#parentInvoiceValue').text(res.root_invoice_number + ' (otomatis)');
                     $('#parentInvoiceInfo').show();
-                    // Subsequent invoice defaults to 100% of selected item/qty value.
-                    // Amount balance remains authoritative and is enforced server-side.
-                    // User may still reduce Payment Percentage for partial-by-amount.
-                    $('#dp_percent').val(100);
+                    // Percentage remains based on the original PO; default to its unpaid share.
+                    // ITEM_QTY retains its separate 100% selected-line calculation.
+                    $('#dp_percent').val(remainingPaymentPercentage());
 
                     const poDiscountPercent = Number(
                         Number(res.discount_percent || 0).toFixed(4)

@@ -50,6 +50,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Serialization
+    |--------------------------------------------------------------------------
+    |
+    | JSON avoids unsafe PHP object deserialization. Existing sessions become
+    | invalid once when this application is upgraded and users must sign in.
+    |
+    */
+
+    'serialization' => 'json',
+
+    /*
+    |--------------------------------------------------------------------------
     | Session File Location
     |--------------------------------------------------------------------------
     |
