@@ -105,7 +105,7 @@ class CompanyController extends Controller
         return $data;
     }
 
-    private function handleFileUploads(Request $request, Company $company = null)
+    private function handleFileUploads(Request $request, ?Company $company = null)
     {
         $basePath = 'uploads/companies';
         $folderMap = [
