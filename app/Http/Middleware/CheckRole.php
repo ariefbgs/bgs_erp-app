@@ -14,7 +14,7 @@ class CheckRole
         }
 
         $userRole = auth()->user()->role;
-        if (in_array($userRole, $roles)) {
+        if (in_array($userRole, $roles) || (in_array('admin', $roles, true) && auth()->user()->canUseAdminFeatures())) {
             return $next($request);
         }
 

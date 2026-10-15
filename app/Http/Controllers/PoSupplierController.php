@@ -152,7 +152,7 @@ class PoSupplierController extends Controller
     }
 
     // ============================================================
-    // STORE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan try-catch dan notifikasi error
+    // STORE dengan try-catch dan notifikasi error
     // ============================================================
     public function store(Request $request)
     {
@@ -457,7 +457,7 @@ class PoSupplierController extends Controller
     }
 
     // ============================================================
-    // EDIT ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan pengecekan apakah PO Supplier sudah digunakan
+    // EDIT dengan pengecekan apakah PO Supplier sudah digunakan
     // ============================================================
     public function edit($id)
     {
@@ -1146,7 +1146,7 @@ class PoSupplierController extends Controller
         }
     }
     // ============================================================
-    // DESTROY ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan pengecekan relasi dan try-catch
+    // DESTROY dengan pengecekan relasi dan try-catch
     // ============================================================
     public function destroy($id)
     {

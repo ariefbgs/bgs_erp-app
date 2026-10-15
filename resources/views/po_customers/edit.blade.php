@@ -1,111 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-po-customers-edit bgs-mode-edit')
 @section('title', 'Edit PO Customer')
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Oranye Terang khas Edit State */
-    .card-header-custom {
-        background: linear-gradient(135deg, #f97316, #c2410c);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Styling Label & Bagian Sub-title */
-    .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-sub-title i {
-        color: #f97316;
-    }
-
-    /* Info Box Area */
-    .info-group-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        height: 100%;
-    }
-
-    /* Form Utilities */
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-    }
-
-    /* Row Item Produk Kontainer */
-    .product-row {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 18px;
-        transition: all 0.2s;
-    }
-    .product-row:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-
-    /* Aliran input kanan text */
-    .price-input, .subtotal-display, .qty-input, .price-display, .summary-input-num {
-        text-align: right;
-    }
-    .brand-display, .code2-display, .name2-display, .readonly-bg {
-        background-color: #f1f5f9 !important;
-        color: #475569;
-        font-weight: 500;
-    }
-
-    /* Ringkasan Finansial Tabel */
-    .table-summary th {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        color: #475569;
-        vertical-align: middle;
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4><i class="bi bi-pencil-square me-2"></i>Edit PO Customer</h4>
             <a href="{{ route('po-customers.index') }}" class="btn btn-light btn-sm fw-bold px-3">
                 <i class="bi bi-arrow-left me-1"></i> Back to List
@@ -115,7 +16,7 @@
         <div class="card-body p-4">
             {{-- ALERT VALIDASI ERROR / SUCCESS --}}
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important; border-radius: 6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e6478a190de4">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div>
                         <strong class="d-block mb-1">Please fix the following validation errors:</strong>
@@ -125,19 +26,19 @@
                             @endforeach
                         </ul>
                     </div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4" style="background-color: #f0fdf4; color: #166534; border-left: 4px solid #16a34a !important; border-radius: 6px;">
+                <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4 bgs-u-2e9c7cf0569c">
                     <div class="me-2"><i class="bi bi-check-circle-fill fs-5"></i></div>
                     <div>{{ session('success') }}</div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
             @endif
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif  
@@ -161,7 +62,7 @@
                                 </div>
 
                                 {{-- INFORMASI PIC CUSTOMER DYNAMIC BADGE --}}
-                                <div id="pic-info" class="alert border-0 shadow-sm d-flex align-items-center mt-3 mb-0" style="background-color: #eff6ff; color: #1e40af;">
+                                <div id="pic-info" class="alert border-0 shadow-sm d-flex align-items-center mt-3 mb-0 bgs-u-c51fb3680ccb">
                                     <i class="bi bi-person-lines-fill me-2 fs-5"></i>
                                     <div>
                                         <span class="fw-bold">Active Contact Personnel:</span> <span id="pic-name" class="fw-semibold">{{ $poCustomer->customer->pic_quotation_name ?? '-' }}</span> 
@@ -499,7 +400,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr style="background-color: #f8fafc;">
+                                <tr class="bgs-u-766e8fc67d30">
                                     <th class="ps-3 fw-semibold text-secondary">Subtotal After Discount (DPP)</th>
                                     <td colspan="2" class="text-end pe-3 fw-bold text-secondary">
                                         <span id="subtotal-after-discount-text">Rp 0</span>
@@ -538,7 +439,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr style="background-color: #f8fafc; border-top: 2px solid #cbd5e1;">
+                                <tr class="bgs-u-fa539b16c8d8">
                                     <th class="ps-3 fs-6 text-dark"><strong>Grand Total Invoice</strong></th>
                                     <td colspan="2" class="text-end pe-3 fs-5 text-success fw-bold">
                                         <strong><span id="grand-total-text">Rp 0</span></strong>
@@ -552,7 +453,7 @@
 
                 {{-- ACTION BUTTONS --}}
                 <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-warning px-4 py-2 fw-bold text-white" style="background: linear-gradient(135deg, #f97316, #c2410c); border:none;">
+                    <button type="submit" class="btn btn-warning px-4 py-2 fw-bold text-white bgs-u-f20c6f5346f3">
                         <i class="bi bi-save-fill me-1"></i> Update Data PO Customer
                     </button>
                     <a href="{{ route('po-customers.index') }}" class="btn btn-outline-secondary px-4 py-2">Discard Changes</a>
@@ -565,8 +466,8 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+
 
 <script>
 let rowCount = {{ count($poCustomer->details) }};

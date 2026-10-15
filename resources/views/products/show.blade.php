@@ -1,59 +1,10 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-products-show bgs-mode-screen')
 @section('title', 'Product Detail')
 @section('content')
-<style>
-    .product-image {
-        width: 100%;
-        max-height: 320px;
-        object-fit: contain;
-        border-radius: 12px;
-        border: 1px solid #dee2e6;
-        background: #fff;
-        padding: 10px;
-    }
 
-    .product-card {
-        border: 1px solid #e9ecef;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .product-card .card-header {
-        padding: 14px 20px;
-    }
-
-    .table-detail th {
-        width: 35%;
-        background: #f8f9fa;
-        vertical-align: middle;
-        font-weight: 600;
-    }
-
-    .table-detail td {
-        vertical-align: middle;
-    }
-
-    .price-text {
-        font-size: 18px;
-        font-weight: bold;
-        color: #198754;
-    }
-
-    .stock-badge {
-        font-size: 14px;
-        padding: 6px 12px;
-    }
-
-    .section-title {
-        font-size: 16px;
-        font-weight: 700;
-        margin-bottom: 15px;
-        color: #495057;
-    }
-</style>
 <div class="card product-card">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4 class="mb-0">
             Product Detail
         </h4>
@@ -89,8 +40,7 @@
                         // Coba dengan public_path
                         $fullPath = public_path($cleanPath);
                         if (file_exists($fullPath)) {
-                            // Sesuai debug, root web adalah folder proyek, jadi tambahkan 'public/'
-                            $imageUrl = asset('public/' . $cleanPath);
+                            $imageUrl = asset($cleanPath);
                         } else {
                             // Fallback tanpa prefix
                             $imageUrl = asset($cleanPath);
@@ -101,14 +51,14 @@
                 @if($imageUrl)
                     <img src="{{ $imageUrl }}"
                         alt="{{ $product->name }}"
-                        class="product-image w-100"
-                        style="max-height: 320px; object-fit: contain; border-radius: 8px;"
+                        class="product-image w-100 bgs-u-03e442319e20"
+
                         loading="lazy">
                 @else
-                    <div class="border rounded d-flex align-items-center justify-content-center"
-                        style="height:320px; background:#f8f9fa;">
+                    <div class="border rounded d-flex align-items-center justify-content-center bgs-u-495d3738b0d9"
+                       >
                         <div class="text-center text-muted">
-                            <i class="bi bi-image" style="font-size:60px;"></i>
+                            <i class="bi bi-image bgs-u-4ce5d042480c"></i>
                             <div class="mt-2">No Image</div>
                         </div>
                     </div>
@@ -119,7 +69,7 @@
                 <div class="section-title">
                     Product Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>Product Code</th>
                         <td>

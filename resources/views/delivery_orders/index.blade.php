@@ -1,79 +1,21 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-delivery-orders-index bgs-mode-index')
 @section('title', 'Delivery Order Management')
 @section('content')
-<style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
 
-    .text-right {
-        text-align: right;
-    }
 
-    .total-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .search-filter-bar {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 18px;
-        margin-bottom: 20px;
-    }
-
-    .table thead th {
-        white-space: nowrap;
-        font-size: 13px;
-    }
-
-    .badge {
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-
-    .action-btn .btn {
-        margin: 2px;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-
-    .customer-name {
-        font-weight: 600;
-    }
-
-    .empty-state {
-        padding: 40px 20px;
-        color: #6c757d;
-    }
-
-    .filter-label {
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-</style>
-
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+<div class="card main-card">
+    <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
         <h4>
             <i class="bi bi-file-earmark-text"></i>
             Delivery Order Management
         </h4>
-        <a href="{{ route('delivery-orders.create') }}" class="btn btn-light btn-sm">
+        <a href="{{ route('delivery-orders.create') }}" class="btn btn-light-custom btn-sm">
             <i class="bi bi-plus-circle"></i>
             Add New Delivery Order
         </a>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
         {{-- SUCCESS MESSAGE --}}
         @if(session('success'))
             <div id="success-alert" class="alert alert-success alert-dismissible fade show">
@@ -95,7 +37,7 @@
 
         {{-- SEARCH & FILTER --}}
         <div class="search-filter-bar">
-            <form method="GET" action="{{ route('delivery-orders.index') }}">
+            <form method="GET" action="{{ route('delivery-orders.index') }}" >
                 <div class="row g-3">
                     <div class="col-md-5">
                         <label class="filter-label">Search</label>
@@ -125,37 +67,25 @@
             </form>
         </div>
         {{-- TABLE --}}
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-dark">
+        <div class="table-responsive quotation-table-wrap">
+            <table class="table table-modern table-hover align-middle quotation-table bgs-index-table">
+                <thead>
                     <tr>
                         <th width="5%" class="text-center">No</th>
+                        <th width="10%" class="text-center col-action">Actions</th>
                         <th width="20%" class="text-center">Customer</th>
                         <th width="15%" class="text-center">PO Customer #</th>
                         <th width="15%" class="text-center">DO #</th>
                         <th width="12%" class="text-center">Delivery Date</th>
                         <th width="10%" class="text-center">Status</th>
-                        <th width="10%" class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($dos as $index => $do)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
-                            <td>{{ $do->poCustomer->customer->name ?? '-' }}</td>
-                            <td>{{ $do->poCustomer->po_number ?? '-' }}</td>
-                            <td>{{ $do->do_number ?? '-' }}</td>
-                            <td>{{ date('d/m/Y', strtotime($do->delivery_date)) }}</td>
-                            <td>
-                                @if($do->status == 'pending')
-                                    <span class="badge bg-warning">Pending</span>
-                                @elseif($do->status == 'delivered')
-                                    <span class="badge bg-success">Delivered</span>
-                                @else
-                                    <span class="badge bg-secondary">Legacy: {{ ucfirst($do->status) }}</span>
-                                @endif
-                            </td>
-                            <td class="text-nowrap">
+                            <td class="text-center col-action">
+                                <div class="d-flex justify-content-center action-btn-group">
                                 <!-- Tombol Detail -->
                                 <a href="{{ route('delivery-orders.show', $do->id) }}" class="btn btn-info btn-sm btn-action" title="Detail">
                                     <i class="bi bi-eye"></i>
@@ -220,6 +150,20 @@
                                     <button class="btn btn-secondary btn-sm btn-action" disabled title="Not deletable">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                @endif
+                                </div>
+                            </td>
+                            <td class="col-customer customer-name">{{ $do->poCustomer->customer->name ?? '-' }}</td>
+                            <td>{{ $do->poCustomer->po_number ?? '-' }}</td>
+                            <td>{{ $do->do_number ?? '-' }}</td>
+                            <td>{{ date('d/m/Y', strtotime($do->delivery_date)) }}</td>
+                            <td>
+                                @if($do->status == 'pending')
+                                    <span class="badge badge-custom bg-warning">Pending</span>
+                                @elseif($do->status == 'delivered')
+                                    <span class="badge badge-custom bg-success">Delivered</span>
+                                @else
+                                    <span class="badge badge-custom bg-secondary">Legacy: {{ ucfirst($do->status) }}</span>
                                 @endif
                             </td>
                         </tr>

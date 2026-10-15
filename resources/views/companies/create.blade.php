@@ -1,13 +1,14 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-companies-create bgs-mode-create')
 
 @section('title', 'Add Company')
 
 @section('content')
-<div class="card">
-    <div class="card-header bg-success text-white">
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Add New Company</h4>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
         <form action="{{ route('companies.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
@@ -112,8 +113,8 @@
                 </div>
             </div>
             
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a href="{{ route('companies.index') }}" class="btn btn-secondary">Cancel</a>
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top"><button type="submit" class="btn btn-primary">Save</button>
+            <a href="{{ route('companies.index') }}" class="btn btn-secondary">Cancel</a></div>
         </form>
     </div>
 </div>

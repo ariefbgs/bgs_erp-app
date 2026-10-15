@@ -1,64 +1,17 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-document-receipts-edit bgs-mode-edit')
 
 @section('title', 'Edit Document Receipt')
 
 @section('content')
 
-<link
-    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-    rel="stylesheet"
-/>
 
-<style>
-.select2-container {
-    width: 100% !important;
-}
 
-.select2-container .select2-selection {
-    min-height: 40px !important;
-    border: 1px solid #ced4da !important;
-    border-radius: .375rem !important;
-}
 
-.select2-container--default
-.select2-selection--single
-.select2-selection__rendered {
-    line-height: 38px !important;
-}
 
-.select2-container--default
-.select2-selection--single
-.select2-selection__arrow {
-    height: 38px !important;
-}
+<div class="card main-card">
 
-.document-row {
-    border-bottom: 1px solid #e9ecef;
-    padding: 10px 0;
-}
-
-.document-row:last-child {
-    border-bottom: 0;
-}
-
-.document-meta {
-    font-size: .82rem;
-    color: #64748b;
-}
-
-.readonly-value {
-    background: #f8fafc;
-}
-
-.section-title {
-    font-weight: 700;
-    color: #334155;
-}
-</style>
-
-<div class="card shadow-sm border-0">
-
-    <div class="card-header bg-primary text-white">
+    <div class="card-header-custom bgs-page-header">
         <h4 class="mb-0">
             <i class="bi bi-file-earmark-plus-fill me-2"></i>
             Create Document Receipt
@@ -146,11 +99,11 @@
 
             </div>
 
-            <div id="documentWorkspace" style="display:none;">
+            <div id="documentWorkspace" class="bgs-u-d0466aa33fa8">
 
                 <div class="card border-0 shadow-sm mb-4">
 
-                    <div class="card-header bg-info text-white py-2">
+                    <div class="card-header bg-light py-2">
                         <strong>PO Customer Information</strong>
                     </div>
 
@@ -337,7 +290,7 @@
                     </div>
                 </div>
 
-                <div class="text-end border-top pt-3">
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
 
                     <a
                         href="{{ route('document-receipts.index') }}"
@@ -583,8 +536,7 @@ $(function () {
         return $.ajax({
 
             url:
-                '{{ route("document-receipts.get-create-options-by-po", "") }}'
-                + '/' + poId,
+                '{{ route("document-receipts.get-create-options-by-po", ["po_customer_id" => "__PO_ID__"]) }}'.replace('__PO_ID__', encodeURIComponent(poId)),
 
             type: 'GET',
             dataType: 'json',

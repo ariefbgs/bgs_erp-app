@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Intervention\Image\ImageManager;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DocumentReceiptController extends Controller
@@ -91,7 +90,7 @@ class DocumentReceiptController extends Controller
 
             'receipt_date' => 'required|date',
             'attachment' =>
-                'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+                'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
             'notes' => 'nullable|string',
         ]);
 
@@ -227,41 +226,9 @@ class DocumentReceiptController extends Controller
         $attachmentPath = null;
 
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-
-            $originalName = pathinfo(
-                $file->getClientOriginalName(),
-                PATHINFO_FILENAME
+            $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                $request->file('attachment'), 'document-receipts'
             );
-
-            $safeName =
-                time() .
-                '_' .
-                preg_replace(
-                    '/[^A-Za-z0-9_-]/',
-                    '_',
-                    $originalName
-                ) .
-                '.' .
-                $file->getClientOriginalExtension();
-
-            $folder = 'document-receipts';
-
-            if (!Storage::disk('public')->exists($folder)) {
-                Storage::disk('public')->makeDirectory($folder);
-            }
-
-            /*
-             * Preserve existing upload behavior for now.
-             * Image processing modernization is outside RM-012C.
-             */
-            Storage::disk('public')->putFileAs(
-                $folder,
-                $file,
-                $safeName
-            );
-
-            $attachmentPath = $folder . '/' . $safeName;
         }
 
         DB::transaction(function () use (
@@ -363,7 +330,7 @@ class DocumentReceiptController extends Controller
             'invoice_customer_ids' => 'required|array|min:1',
             'invoice_customer_ids.*' => 'required|distinct|exists:invoice_customers,id',
             'receipt_date' => 'required|date',
-            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
             'notes' => 'nullable|string',
             'status' => 'required|in:draft,sent,delivered',
         ]);
@@ -479,25 +446,8 @@ class DocumentReceiptController extends Controller
             $request
         ) {
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-
-                $safeName =
-                    time().'_'.
-                    preg_replace(
-                        '/[^A-Za-z0-9_-]/',
-                        '_',
-                        pathinfo(
-                            $file->getClientOriginalName(),
-                            PATHINFO_FILENAME
-                        )
-                    ).
-                    '.'.
-                    $file->getClientOriginalExtension();
-
-                $attachmentPath = $file->storeAs(
-                    'document-receipts',
-                    $safeName,
-                    'public'
+                $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                    $request->file('attachment'), 'document-receipts'
                 );
             }
 

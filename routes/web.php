@@ -37,43 +37,13 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
 
     // ==========================================
-    // STORAGE LINK (PERBAIKAN)
-    // ==========================================
-    Route::get('/reset-storage', function () {
-        $shortcutPath = public_path('storage');
-        
-        // Jika path adalah symlink, hapus dengan unlink
-        if (is_link($shortcutPath)) {
-            unlink($shortcutPath);
-        } 
-        // Jika path adalah direktori (bukan symlink), hapus isinya terlebih dahulu
-        elseif (is_dir($shortcutPath)) {
-            File::deleteDirectory($shortcutPath);
-        }
-        
-        // Buat symlink baru
-        Artisan::call('storage:link');
-        return 'Symlink storage berhasil direset!';
-    });
-
-    // Route untuk membuat storage link (jika belum ada)
-    Route::get('/link-storage', function () {
-        $shortcutPath = public_path('storage');
-        if (is_link($shortcutPath) || is_dir($shortcutPath)) {
-            return 'Folder public/storage sudah ada. Silakan gunakan /reset-storage untuk mereset.';
-        }
-        Artisan::call('storage:link');
-        return 'Storage link telah berhasil dibuat!';
-    });
-
-    // ==========================================
     // DASHBOARD
     // ==========================================
     Route::get('/dashboard', function() {
         if (Gate::allows('access-dashboard')) {
             return app(DashboardController::class)->index();
         }
-        return redirect()->route('landing-page');
+        abort(403, 'Anda tidak memiliki akses Dashboard.');
     })->name('dashboard');
 
     Route::get('/welcome', function () {
@@ -257,3 +227,22 @@ Route::middleware('auth')
             ->middleware('permission:deployment_view')
             ->name('history');
     });
+
+// BGS customer/supplier payment confirmation (admin only in controller).
+Route::middleware('auth')->group(function () {
+    Route::get('/invoice-payments/{kind}', [\App\Http\Controllers\InvoicePaymentController::class, 'index'])->where('kind', 'customer|supplier')->name('invoice-payments.index');
+    Route::post('/invoice-payments/{kind}', [\App\Http\Controllers\InvoicePaymentController::class, 'store'])->where('kind', 'customer|supplier')->name('invoice-payments.store');
+});
+
+// BGS supplier invoice input R1
+Route::middleware('auth')->group(function () {
+    Route::get('/supplier-invoice-input', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'index'])->name('supplier-invoice-input.index');
+    Route::get('/supplier-invoice-input/create', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'create'])->name('supplier-invoice-input.create');
+    Route::post('/supplier-invoice-input', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'store'])->name('supplier-invoice-input.store');
+    Route::get('/supplier-invoice-input/{id}', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'show'])->whereNumber('id')->name('supplier-invoice-input.show');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/user-access', [\App\Http\Controllers\UserAccessController::class, 'index'])->name('user-access.index');
+    Route::put('/user-access/{user}', [\App\Http\Controllers\UserAccessController::class, 'update'])->name('user-access.update');
+});

@@ -1,139 +1,19 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-invoice-customers-create bgs-mode-create')
 @section('title', 'Create Sales Invoice')
 @section('content')
 
-<style>
-    .price-input,
-    .qty-input {
-        text-align: right;
-    }
-    .table-responsive {
-        overflow-x: auto;
-    }
-    .section-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 18px;
-    }
-    .section-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #1e293b;
-        margin-bottom: 12px;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-title i {
-        color: #0284c7;
-        margin-right: 6px;
-    }
-    .summary-box {
-        background: #1e293b;
-        border-radius: 10px;
-        padding: 18px 16px;
-        color: #cbd5e1;
-    }
-    .summary-box .row-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 4px 0;
-        border-bottom: 1px solid #334155;
-    }
-    .summary-box .row-item:last-child {
-        border-bottom: none;
-    }
-    .summary-box .grand-total {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #38bdf8;
-        border-top: 2px solid #475569;
-        padding-top: 8px;
-        margin-top: 4px;
-    }
-    .summary-box .label {
-        font-weight: 500;
-    }
-    .summary-box .value {
-        font-weight: 600;
-        color: #e2e8f0;
-    }
-    .summary-box .grand-total .value {
-        color: #38bdf8;
-    }
-    .form-control-sm-custom {
-        font-size: 0.9rem;
-        padding: 0.35rem 0.65rem;
-    }
-    .btn-icon i {
-        margin-right: 6px;
-    }
-    .card-header-custom {
-        background: linear-gradient(135deg, #0284c7, #075985);
-        color: white;
-        padding: 1rem 1.5rem;
-        border: none;
-        border-radius: 12px 12px 0 0;
-    }
-    .card-header-custom h4 {
-        margin: 0;
-        font-weight: 700;
-    }
-    .card-header-custom h4 i {
-        margin-right: 8px;
-    }
-    .form-label {
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: #334155;
-        margin-bottom: 4px;
-    }
-    .input-group-text-custom {
-        background: white;
-        border-right: none;
-    }
-    .select2-container .select2-selection--single {
-        min-height: 40px !important;
-        border-color: #cbd5e1 !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 40px !important;
-        padding-left: 12px !important;
-    }
-    .text-end-custom {
-        text-align: right;
-    }
-    .info-box {
-        background: #f1f5f9;
-        border-left: 4px solid #0284c7;
-        padding: 10px 14px;
-        border-radius: 6px;
-        margin-bottom: 12px;
-    }
-    .info-box strong {
-        color: #0f172a;
-    }
-    .info-box .highlight {
-        color: #0284c7;
-        font-weight: 700;
-    }
-    @media print {
-        .no-print { display: none !important; }
-    }
-</style>
+
 
 <div class="card shadow-sm">
-    <div class="card-header-custom">
+    <div class="card-header-custom bgs-page-header">
         <h4><i class="bi bi-file-earmark-plus-fill"></i> Create Sales Invoice</h4>
     </div>
     <div class="card-body p-4">
 
         {{-- ALERT --}}
         @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" style="border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm bgs-u-336700042f4a">
                 <div class="d-flex">
                     <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                     <div>
@@ -150,7 +30,7 @@
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" style="border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm bgs-u-336700042f4a">
                 <div class="d-flex">
                     <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
                     <span>{{ session('error') }}</span>
@@ -173,7 +53,7 @@
                         <select name="po_customer_id" id="po_customer_id" class="form-select" required>
                             <option value="">-- Select PO Customer --</option>
                             @foreach($poCustomers as $po)
-                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" data-remaining-base="{{ $po->remaining_subtotal_before_tax ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
+                                <option value="{{ $po->id }}" data-remaining="{{ $po->remaining_total ?? 0 }}" data-remaining-base="{{ $po->remaining_subtotal_before_tax ?? 0 }}" data-original-base="{{ $po->subtotal ?? 0 }}" {{ old('po_customer_id') == $po->id ? 'selected' : '' }}>
                                     {{ $po->po_number }} - {{ $po->customer->name }}
                                     (sisa: Rp {{ number_format($po->remaining_total ?? 0, 0, ',', '.') }})
                                 </option>
@@ -195,15 +75,15 @@
 
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
-                        <div class="info-box" id="parentInvoiceInfo" style="display:none;">
+                        <div class="info-box bgs-u-d0466aa33fa8" id="parentInvoiceInfo">
                             <strong>Parent invoice:</strong>
                             <span id="parentInvoiceValue" class="highlight">Ditentukan otomatis oleh sistem</span>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="info-box" id="poRemainingInfo" style="display: none;">
+                        <div class="info-box bgs-u-6e22c58a7a6a" id="poRemainingInfo">
                             <strong>Sisa PO Amount sebelum pajak:</strong> <span id="poRemainingBaseValue" class="highlight">Rp 0</span>
-                            <span id="poRemainingWarning" class="text-danger ms-2" style="display: none;">(melebihi sisa!)</span>
+                            <span id="poRemainingWarning" class="text-danger ms-2 bgs-u-6e22c58a7a6a">(melebihi sisa!)</span>
                         </div>
                     </div>
                 </div>
@@ -212,7 +92,7 @@
             {{-- ========================================================= --}}
             {{-- BAGIAN 2: INVOICE DETAILS (muncul setelah PO dipilih)     --}}
             {{-- ========================================================= --}}
-            <div id="invoiceDetails" style="display: none;">
+            <div id="invoiceDetails" class="bgs-u-6e22c58a7a6a">
 
                 {{-- 2a. Payment & Delivery Info --}}
                 <div class="section-card">
@@ -272,8 +152,8 @@
 
                     <div class="col-12">
                         <small id="termsInheritanceInfo"
-                               class="text-muted"
-                               style="display:none;">
+                               class="text-muted bgs-u-d0466aa33fa8"
+                              >
                             <i class="bi bi-arrow-return-right me-1"></i>
                             Payment Terms & Delivery Time inherited from
                             <strong id="termsInheritanceSource"></strong>.
@@ -316,32 +196,72 @@
                     <label class="form-check-label fw-semibold" for="has_pph23">With PPH23</label>
                 </div>
 
-                {{-- 2d. Product Details Table --}}
+                {{-- 2d. Invoice Allocation Strategy --}}
                 <div class="section-card">
+                    <div class="section-title">
+                        <i class="bi bi-diagram-3-fill"></i> Invoice Allocation
+                    </div>
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Allocation Method <span class="text-danger">*</span>
+                            </label>
+
+                            <select name="allocation_mode"
+                                    id="allocation_mode"
+                                    class="form-select"
+                                    required>
+                                <option value="PERCENTAGE"
+                                    {{ old('allocation_mode', 'PERCENTAGE') === 'PERCENTAGE' ? 'selected' : '' }}>
+                                    By Payment Percentage
+                                </option>
+                                <option value="ITEM_QTY"
+                                    {{ old('allocation_mode') === 'ITEM_QTY' ? 'selected' : '' }}>
+                                    By Item / Quantity
+                                </option>
+                            </select>
+
+                            <div class="form-text">
+                                A PO Customer uses one active normal allocation method.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="percentageStrategyInfo">
+                            <div class="info-box mb-0">
+                                Payment Percentage is calculated from the original PO commercial amount.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2e. Product Details Table --}}
+                <div class="section-card" id="productDetailsCard">
                     <div class="section-title"><i class="bi bi-box-fill"></i> Product Details</div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
+                                    <th class="text-center bgs-u-24789f0cb7a8">Select</th>
                                     <th>Product</th>
-                                    <th class="text-center" style="width: 90px;">Qty PO</th>
-                                    <th class="text-center" style="width: 105px;">Qty Invoice</th>
-                                    <th class="text-end" style="width: 135px;">Unit Price</th>
-                                    <th class="text-end text-nowrap" style="min-width: 165px;">Subtotal</th>
+                                    <th class="text-center bgs-u-2612b3574623">Qty PO</th>
+                                    <th class="text-center bgs-u-2945a75e3ed0">Qty Invoice</th>
+                                    <th class="text-end bgs-u-a40e53d8ec68">Unit Price</th>
+                                    <th class="text-end text-nowrap bgs-u-76b49776b3e0">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody id="itemsBody">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Select PO Customer first</td>
+                                    <td colspan="6" class="text-center text-muted">Select PO Customer first</td>
                                 </tr>
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="4" class="text-end">Subtotal</th>
+                                    <th colspan="5" class="text-end">Subtotal</th>
                                     <th class="text-end" id="subtotal_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="3" class="text-end">Discount (%)</th>
+                                    <th colspan="4" class="text-end">Discount (%)</th>
                                     <td>
                                         <input type="number" name="discount_percent" id="discount_percent"
                                                class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('discount_percent', 0) }}">
@@ -349,27 +269,27 @@
                                     <th class="text-end" id="discount_amount_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="3" class="text-end">Payment Percentage (%)</th>
+                                    <th colspan="4" class="text-end">Payment Percentage (%)</th>
                                     <td>
                                         <input type="number" name="dp_percent" id="dp_percent"
-                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('dp_percent', 0) }}">
+                                               class="form-control text-end" step="0.0001" min="0.0001" max="100" value="{{ old('dp_percent', 100) }}">
                                     </td>
                                     <th class="text-end" id="dp_amount_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-end">DPP Lain (11/12 × DP)</th>
+                                    <th colspan="5" class="text-end">DPP Lain (11/12 &times; DP)</th>
                                     <th class="text-end" id="dpplain_display">Rp 0</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="3" class="text-end">PPN (%)</th>
+                                    <th colspan="4" class="text-end">PPN (%)</th>
                                     <td>
                                         <input type="number" name="tax_percent" id="tax_percent"
                                                class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('tax_percent', 11) }}">
                                     </td>
                                     <th class="text-end" id="tax_amount_display">Rp 0</th>
                                 </tr>
-                                <tr id="pph23_row" style="display: none;">
-                                    <th colspan="3" class="text-end">PPH23 (%)</th>
+                                <tr id="pph23_row" class="bgs-u-6e22c58a7a6a">
+                                    <th colspan="4" class="text-end">PPH23 (%)</th>
                                     <td>
                                         <input type="number"
                                                id="pph23_percent"
@@ -387,11 +307,11 @@
                                     <th class="text-end" id="pph23_amount_display">Rp 0</th>
                                 </tr>
                                 <tr class="table-primary">
-                                    <th colspan="4" class="text-end">Grand Total</th>
+                                    <th colspan="5" class="text-end">Grand Total</th>
                                     <th class="text-end"><strong id="grand_total_display">Rp 0</strong></th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-end">Remaining PO Amount Before Tax</th>
+                                    <th colspan="5" class="text-end">Remaining PO Amount Before Tax</th>
                                     <th class="text-end" id="remaining_display">Rp 0</th>
                                 </tr>
                             </tfoot>
@@ -461,7 +381,7 @@
 {{-- ========================================================= --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {{-- CDN SELECT2 --}}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
@@ -515,19 +435,46 @@ $(function () {
 
     function calculateAll() {
         let subtotal = 0;
-        $('[id^="subtotal_"]').each(function () {
-            subtotal += parseFloat($(this).attr('data-value')) || 0;
+        $('.invoice-item-row').each(function () {
+            const rowId = $(this).data('row');
+            const $selector = $(this).find('.invoice-line-select');
+
+            if ($selector.length && !$selector.is(':checked')) {
+                return;
+            }
+
+            subtotal += parseFloat(
+                $('#subtotal_' + rowId).attr('data-value')
+            ) || 0;
         });
 
+        const allocationMode = $('#allocation_mode').val() || 'PERCENTAGE';
+
         let dpPercent = parseFloat($('#dp_percent').val()) || 0;
+
+        if (allocationMode === 'ITEM_QTY') {
+            dpPercent = 100;
+            $('#dp_percent').val(100);
+        }
+
         let discountPercent = parseFloat($('#discount_percent').val()) || 0;
         let taxPercent = parseFloat($('#tax_percent').val()) || 0;
         let pph23Percent = $('#has_pph23').is(':checked')
             ? (parseFloat($('#pph23_percent').val()) || 0)
             : 0;
 
-        let dpAmount = subtotal * dpPercent / 100;
-        let baseAmount = (dpAmount > 0) ? dpAmount : subtotal;
+        /*
+         * Display calculation only. Store recalculates authoritatively.
+         */
+        const poOriginalBase = parseFloat(
+            $('#po_customer_id option:selected').data('original-base')
+        ) || 0;
+
+        let dpAmount = allocationMode === 'PERCENTAGE'
+            ? poOriginalBase * dpPercent / 100
+            : subtotal;
+
+        let baseAmount = dpAmount;
         let discountAmount = baseAmount * discountPercent / 100;
         let dpp = baseAmount - discountAmount;
         let taxAmount = dpp * taxPercent / 100;
@@ -539,7 +486,11 @@ $(function () {
         let dppLain = dpAmount * 11 / 12;
         $('#dpplain_display').html('Rp ' + formatRupiah(dppLain));
 
-        $('#subtotal_display').html('Rp ' + formatRupiah(subtotal));
+        const displaySubtotal = allocationMode === 'PERCENTAGE'
+            ? poOriginalBase
+            : subtotal;
+
+        $('#subtotal_display').html('Rp ' + formatRupiah(displaySubtotal));
         $('#dp_amount_display').html('Rp ' + formatRupiah(dpAmount));
         $('#discount_amount_display').html('Rp ' + formatRupiah(discountAmount));
         $('#tax_amount_display').html('Rp ' + formatRupiah(taxAmount));
@@ -585,6 +536,52 @@ $(function () {
         calculateAll();
     });
 
+    function applyAllocationModeUi() {
+        const isItemQty = ($('#allocation_mode').val() || 'PERCENTAGE') === 'ITEM_QTY';
+
+        $('#productDetailsCard').show();
+
+        $('.invoice-line-select').each(function () {
+            const checkbox = $(this);
+            const rowId = checkbox.data('row');
+            const qty = $('#qty_' + rowId);
+            const remainingQty = parseFloat(qty.attr('max')) || 0;
+
+            if (isItemQty) {
+                checkbox.prop('disabled', remainingQty <= 0);
+
+                if (remainingQty > 0) {
+                    checkbox.prop('checked', true);
+                }
+
+                qty.prop(
+                    'disabled',
+                    remainingQty <= 0 || !checkbox.prop('checked')
+                );
+            } else {
+                checkbox.prop('checked', false);
+                checkbox.prop('disabled', true);
+                qty.prop('disabled', true);
+            }
+        });
+
+        $('#dp_percent').prop('readonly', isItemQty);
+
+        if (isItemQty) {
+            $('#dp_percent').val(100);
+        }
+
+        $('#percentageStrategyInfo').toggle(!isItemQty);
+    }
+
+    $('#allocation_mode').on('change.uiParity', function () {
+        applyAllocationModeUi();
+        calculateAll();
+    });
+
+    $(document).ajaxComplete(function () {
+        applyAllocationModeUi();
+    });
     function percentageFromPaymentTerms(terms, fallbackPercent = 100) {
         terms = (terms || '').trim();
 
@@ -619,13 +616,9 @@ $(function () {
             poSubtotal += parseFloat($(this).attr('data-value')) || 0;
         });
 
-        const remainingPercent = poSubtotal > 0
-            ? Math.min(100, (poRemainingBase / poSubtotal) * 100)
-            : 100;
-
         const derivedPercent = percentageFromPaymentTerms(
             terms,
-            remainingPercent
+            100
         );
 
         $('#dp_percent').val(
@@ -654,7 +647,7 @@ $(function () {
         $('#poRemainingWarning').hide();
 
         $.ajax({
-            url: '{{ route("invoice-customers.get-po-customer-details", "") }}/' + poId,
+            url: '{{ route("invoice-customers.get-po-customer-details", "__ID__") }}'.replace('__ID__', poId),
             type: 'GET',
             success: function (res) {
                 let rows = '';
@@ -662,7 +655,14 @@ $(function () {
 
                 $.each(res.items, function (i, item) {
                     rows += `
-                    <tr id="row_${rowIndex}" class="invoice-item-row">
+                    <tr id="row_${rowIndex}" class="invoice-item-row"
+                        data-row="${rowIndex}">
+                        <td class="text-center align-middle">
+                            <input type="checkbox"
+                                class="form-check-input invoice-line-select"
+                                data-row="${rowIndex}"
+                                ${Number(item.remaining_quantity) > 0 ? 'checked' : 'disabled'}>
+                        </td>
                         <td>
                             ${item.product_name}
                             <br>
@@ -671,11 +671,12 @@ $(function () {
                             </small>
 
                             <input type="hidden"
-                                name="items[${rowIndex}][po_customer_detail_id]"
+                                class="invoice-line-submit"
+                                name="details[${rowIndex}][po_customer_detail_id]"
                                 value="${item.po_customer_detail_id}">
 
                             <input type="hidden"
-                                name="items[${rowIndex}][product_id]"
+                                data-field="product_id"
                                 value="${item.product_id}">
                         </td>
 
@@ -685,32 +686,34 @@ $(function () {
 
                         <td>
                             <input type="number"
-                                name="items[${rowIndex}][quantity]"
+                                name="details[${rowIndex}][quantity]"
                                 id="qty_${rowIndex}"
-                                class="form-control qty-input text-end"
-                                style="min-width: 90px;"
+                                class="form-control qty-input invoice-line-submit text-end bgs-u-6c4370585036"
+
                                 data-row="${rowIndex}"
-                                value="${item.po_quantity}"
-                                readonly>
+                                value="${item.remaining_quantity}"
+                                min="0.0001"
+                                max="${item.remaining_quantity}"
+                                step="any">
                         </td>
 
                         <td>
                             <input type="text"
                                 id="price_${rowIndex}"
-                                class="form-control price-input text-end"
-                                style="min-width: 125px;"
+                                class="form-control price-input text-end bgs-u-7764811b4dfb"
+
                                 data-row="${rowIndex}"
                                 value="${formatRupiah(item.unit_price)}"
                                 readonly>
 
                             <input type="hidden"
-                                name="items[${rowIndex}][unit_price_numeric]"
+                                data-field="unit_price_numeric"
                                 id="price_hidden_${rowIndex}"
                                 value="${item.unit_price}">
                         </td>
 
-                        <td class="text-end text-nowrap"
-                            style="min-width: 165px;"
+                        <td class="text-end text-nowrap bgs-u-76b49776b3e0"
+
                             id="subtotal_${rowIndex}"
                             data-value="0">
                             Rp 0
@@ -718,7 +721,7 @@ $(function () {
 
                         <input type="hidden"
                             id="subtotal_hidden_${rowIndex}"
-                            name="items[${rowIndex}][subtotal]"
+                            data-field="subtotal"
                             value="0">
                     </tr>`;
                     rowIndex++;
@@ -727,7 +730,7 @@ $(function () {
                 if (!rows) {
                     rows = `
                         <tr>
-                            <td colspan="5"
+                            <td colspan="6"
                                 class="text-center text-muted">
                                 PO Customer tidak memiliki detail item.
                             </td>
@@ -735,6 +738,8 @@ $(function () {
                 }
 
                 $('#itemsBody').html(rows);
+
+                applyAllocationMode();
 
                 var $paymentTerms = $('select[name="payment_terms"]');
                 var $deliveryTime = $('select[name="delivery_time"]');
@@ -764,12 +769,10 @@ $(function () {
                 if (res.has_previous_invoice) {
                     $('#parentInvoiceValue').text(res.root_invoice_number + ' (otomatis)');
                     $('#parentInvoiceInfo').show();
-                    // Invoice berikutnya default ke canonical remaining percentage.
-                    // User tetap boleh mengubah Payment Percentage secara manual.
-                    const recommendedPercent = Number(
-                        Number(res.recommended_percent || 0).toFixed(4)
-                    );
-                    $('#dp_percent').val(recommendedPercent);
+                    // Subsequent invoice defaults to 100% of selected item/qty value.
+                    // Amount balance remains authoritative and is enforced server-side.
+                    // User may still reduce Payment Percentage for partial-by-amount.
+                    $('#dp_percent').val(100);
 
                     const poDiscountPercent = Number(
                         Number(res.discount_percent || 0).toFixed(4)
@@ -826,7 +829,48 @@ $(function () {
         });
     });
 
+    function applyAllocationMode() {
+        const mode = $('#allocation_mode').val() || 'PERCENTAGE';
+        const isItemQty = mode === 'ITEM_QTY';
+
+        $('#productDetailsCard').toggle(isItemQty);
+        $('#percentageStrategyInfo').toggle(!isItemQty);
+
+        $('#dp_percent')
+            .prop('readonly', isItemQty)
+            .val(isItemQty ? 100 : ($('#dp_percent').val() || 100));
+
+        $('.invoice-line-select').each(function () {
+            const rowId = $(this).data('row');
+
+            const selected =
+                isItemQty &&
+                $(this).is(':checked') &&
+                !$(this).is(':disabled');
+
+            $('#row_' + rowId)
+                .find('.invoice-line-submit')
+                .prop('disabled', !selected);
+        });
+
+        calculateAll();
+    }
+
+    $('#allocation_mode').on('change', applyAllocationMode);
+
     // =========================================================
+    // ITEM SELECTION
+    $(document).on('change', '.invoice-line-select', function () {
+        const rowId = $(this).data('row');
+        const selected = $(this).is(':checked') && !$(this).is(':disabled');
+
+        $('#row_' + rowId)
+            .find('.invoice-line-submit')
+            .prop('disabled', !selected);
+
+        calculateAll();
+    });
+
     // INPUT QUANTITY & PRICE
     // =========================================================
     $(document).on('keyup change', '.qty-input, .price-input', function () {
@@ -863,6 +907,8 @@ $(function () {
         $('select[name="delivery_time"]').val(oldDeliveryTime).trigger('change.select2');
     }
 
+    applyAllocationMode();
+
     // =========================================================
     // RM-004O SUBMIT SAFETY
     // Product / Qty / Price are PO Customer controlled.
@@ -876,26 +922,49 @@ $(function () {
 
         $('#pph23_percent_submit').val(submittedPph23Percent);
 
-        if ($('.invoice-item-row').length === 0) {
+        const allocationMode = $('#allocation_mode').val();
+
+        if (allocationMode === 'PERCENTAGE') {
+            const percentage = parseFloat($('#dp_percent').val()) || 0;
+
+            if (percentage <= 0 || percentage > 100) {
+                event.preventDefault();
+                alert('Payment Percentage must be greater than 0 and not exceed 100%.');
+                return false;
+            }
+
+            return true;
+        }
+
+        // ITEM_QTY is always 100% server-side; mirror that in the browser.
+        $('#dp_percent').val(100);
+
+        const $selectedLines =
+            $('.invoice-line-select:checked:not(:disabled)');
+
+        if ($selectedLines.length === 0) {
             event.preventDefault();
-            alert('At least one invoice item is required.');
+            alert('Select at least one invoice item.');
             return false;
         }
 
         let invalidQty = false;
 
-        $('.qty-input').each(function () {
-            let qty = parseFloat($(this).val()) || 0;
-            let maxQty = parseFloat($(this).attr('max')) || 0;
+        $selectedLines.each(function () {
+            const rowId = $(this).data('row');
+            const $qtyInput = $('#row_' + rowId).find('.qty-input');
 
-            if (qty < 1 || (maxQty > 0 && qty > maxQty)) {
+            const qty = parseFloat($qtyInput.val()) || 0;
+            const maxQty = parseFloat($qtyInput.attr('max')) || 0;
+
+            if (qty <= 0 || (maxQty > 0 && qty > maxQty)) {
                 invalidQty = true;
             }
         });
 
         if (invalidQty) {
             event.preventDefault();
-            alert('Qty Invoice cannot exceed Remaining Qty.');
+            alert('Qty Invoice must be greater than 0 and cannot exceed Remaining Qty.');
             return false;
         }
     });

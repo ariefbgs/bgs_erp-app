@@ -1,48 +1,13 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-delivery-orders-create bgs-mode-create')
 @section('title', 'Delivery Order Management')
 @section('content')
-<style> 
-    .qty-input { text-align: right; }
-    .select2-container .select2-selection--single {
-        min-height: 40px !important;
-        height: auto !important;
-        border: 1px solid #ced4da !important;
-        border-radius: 0.375rem !important;
-        display: flex;
-        align-items: center;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 1.5 !important;
-        padding: 8px 12px !important;
-        color: #212529 !important;
-        width: 100%;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 100% !important;
-        top: 0 !important;
-        right: 8px !important;
-    }
-    .select2-container--default .select2-results__option {
-        padding: 8px 12px !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-    }
-    .select2-container--default .select2-search--dropdown .select2-search__field {
-        padding: 8px 12px !important;
-        border-radius: 0.375rem !important;
-        border: 1px solid #ced4da !important;
-        min-height: 38px !important;
-    }
-    .select2-container--open .select2-dropdown {
-        border-color: #86b7fe !important;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
-    }
-</style>
-<div class="card">
-    <div class="card-header bg-primary text-white">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Add New Delivery Order</h4>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
         <form id="doForm" action="{{ route('delivery-orders.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
@@ -66,9 +31,9 @@
             </div>
 
             <!-- Informasi PO Customer (akan diisi via AJAX) -->
-            <div id="poInfoContainer" style="display: none;">
+            <div id="poInfoContainer" class="bgs-u-6e22c58a7a6a">
                 <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
+                    <div class="card-header bg-light">
                         <strong>PO Customer Information</strong>
                     </div>
                     <div class="card-body">
@@ -99,29 +64,28 @@
             <div id="products-container"></div>
 
             <!-- Remarks -->
-            <div id="catatanContainer" style="display: none;">
+            <div id="catatanContainer" class="bgs-u-6e22c58a7a6a">
                 <div class="mb-3">
-                    <label>Remarks</label>
+                    <label class="form-label">Remarks</label>
                     <textarea name="notes" class="form-control" rows="2"></textarea>
                 </div>
             </div>
-            <div id="deliveryByContainer" class="col-md-6 mb-3" style="display: none;">
+            <div id="deliveryByContainer" class="col-md-6 mb-3 bgs-u-6e22c58a7a6a">
                 <label class="form-label">Delivery By <span class="text-danger">*</span></label>
                 <select name="delivery_by" id="delivery_by" class="form-control" required>
-                    <option value="Wisnu" {{ old('delivery_by', 'JNE') == 'Wisnu' ? 'selected' : '' }}>Wisnu</option>
-                    <option value="JNE" {{ old('delivery_by', 'JNE') == 'JNE' ? 'selected' : '' }}>JNE</option>
-                    <option value="Courier Online" {{ old('delivery_by', 'JNE') == 'Courier Online' ? 'selected' : '' }}>Courier Online</option>
-                </select>
+<option value="Kurir Online (JNE/GOJEK/LALAMOVE)" {{ old('delivery_by', 'Kurir Online (JNE/GOJEK/LALAMOVE)') == 'Kurir Online (JNE/GOJEK/LALAMOVE)' ? 'selected' : '' }}>Kurir Online (JNE/GOJEK/LALAMOVE)</option>
+<option value="Kurir Sendiri" {{ old('delivery_by') == 'Kurir Sendiri' ? 'selected' : '' }}>Kurir Sendiri</option>
+</select>
             </div>
-            <div id="attachmentContainer" class="col-md-6 mb-3" style="display: none;">
+            <div id="attachmentContainer" class="col-md-6 mb-3 bgs-u-6e22c58a7a6a">
                 <label class="form-label">Attachment (PDF/Image)</label>
                 <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
                 <small class="text-muted">Maximum 5MB. Images will be compressed.</small>
             </div>
 
-            <div class="text-right mt-3">
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <button type="submit" class="btn btn-primary">Save</button>
-                <a href="{{ route('delivery-orders.index') }}" class="btn btn-danger">Cancel</a>
+                <a href="{{ route('delivery-orders.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
@@ -132,7 +96,7 @@
 {{-- ========================================================= --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {{-- Select2 CDN --}}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
@@ -216,9 +180,9 @@ $(document).ready(function() {
                 $('#selected-po-number').text(res.po_customer.po_number || '-');
 
                 // Buat tabel produk
-                var html = '<h5>Product Details (limited by active Goods Receipt)</h5>';
-                html += '<div class="table-responsive"><table class="table table-bordered">';
-                html += '<thead class="table-dark"><tr><th>Product</th><th>Brand</th><th>Qty PO</th><th>Qty Send</th></tr></thead><tbody>';
+                var html = '<h5 class="section-sub-title">Product Details (limited by active Goods Receipt)</h5>';
+                html += '<div class="table-responsive"><table class="table align-middle">';
+                html += '<thead class="table-light"><tr><th>Product</th><th>Brand</th><th>Qty PO</th><th>Qty Send</th></tr></thead><tbody>';
                 if (res.items && res.items.length > 0) {
                     $.each(res.items, function(i, item) {
                         html += '<tr>';

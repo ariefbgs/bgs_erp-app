@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\InvoiceAllocationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -72,7 +73,10 @@ class InvoiceCustomerController extends Controller
     // =====================================================
     // AJAX GET PO DETAIL
     // =====================================================
-    public function getPoCustomerDetails($id)
+    public function getPoCustomerDetails(
+        $id,
+        InvoiceAllocationService $allocationService
+    )
     {
         $poCustomer = PoCustomer::with([
             'details.product',
@@ -80,39 +84,105 @@ class InvoiceCustomerController extends Controller
         ])->findOrFail($id);
 
         $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
-        $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
 
-        /*
-        |--------------------------------------------------------------------------
-        | RM-004O
-        | Sales Invoice always represents the FULL PO Customer detail set.
-        |--------------------------------------------------------------------------
-        |
-        | Quantity, product and unit price are copied from PO Customer.
-        | Multi-invoice allocation is controlled ONLY by Payment Percentage.
-        |
-        */
+        $snapshot = $allocationService->snapshot($poCustomer);
+
+        $lineBalances = collect($snapshot['lines'] ?? [])
+            ->keyBy('po_customer_detail_id');
 
         $items = $poCustomer->details
             ->sortBy('id')
             ->values()
-            ->map(function ($detail) {
+            ->map(function ($detail) use ($lineBalances) {
+                $balance = $lineBalances->get($detail->id, []);
+
+                $orderedQuantity = (float) (
+                    $balance['ordered_quantity']
+                    ?? $detail->quantity
+                );
+
+                $invoicedQuantity = (float) (
+                    $balance['invoiced_quantity']
+                    ?? 0
+                );
+
+                $remainingQuantity = (float) (
+                    $balance['remaining_quantity']
+                    ?? max(
+                        0,
+                        $orderedQuantity - $invoicedQuantity
+                    )
+                );
+
                 return [
                     'po_customer_detail_id' => $detail->id,
-                    'product_id' => $detail->product_id,
-                    'product_name' => $detail->product->name ?? '-',
-                    'product_code' => $detail->product->product_code ?? '-',
-                    'brand' => $detail->product->brand ?? '-',
-                    'unit' => $detail->product->unit ?? '-',
-                    'po_quantity' => (float) $detail->quantity,
-                    'quantity' => (float) $detail->quantity,
-                    'unit_price' => (float) $detail->unit_price,
+
+                    /*
+                     * Display metadata only.
+                     * Store does not trust browser product/price authority.
+                     */
+                    'product_id' =>
+                        $detail->product_id,
+
+                    'product_name' =>
+                        $detail->product->name ?? '-',
+
+                    'product_code' =>
+                        $detail->product->product_code ?? '-',
+
+                    'brand' =>
+                        $detail->product->brand ?? '-',
+
+                    'unit' =>
+                        $detail->product->unit ?? '-',
+
+                    /*
+                     * Authoritative allocation quantities.
+                     */
+                    'po_quantity' =>
+                        $orderedQuantity,
+
+                    'ordered_quantity' =>
+                        $orderedQuantity,
+
+                    'invoiced_quantity' =>
+                        $invoicedQuantity,
+
+                    'remaining_quantity' =>
+                        $remainingQuantity,
+
+                    'line_state' =>
+                        $balance['state'] ?? (
+                            $remainingQuantity <= 0
+                                ? 'FULLY_INVOICED'
+                                : (
+                                    $invoicedQuantity > 0
+                                        ? 'PARTIAL'
+                                        : 'UNINVOICED'
+                                )
+                        ),
+
+                    /*
+                     * Commercial display values.
+                     * Backend Store derives canonical values again.
+                     */
+                    'quantity' =>
+                        $remainingQuantity,
+
+                    'unit_price' =>
+                        (float) $detail->unit_price,
+
                     'subtotal' =>
-                        (float) $detail->quantity
+                        $remainingQuantity
                         * (float) $detail->unit_price,
                 ];
             })
             ->all();
+
+        $remainingPreTax = (float) (
+            $snapshot['amount']['remaining']
+            ?? $this->remainingPreTaxAmount($poCustomer)
+        );
 
         return response()->json([
             'po_customer' => $poCustomer,
@@ -135,7 +205,8 @@ class InvoiceCustomerController extends Controller
                     ? 'Invoice ' . $rootInvoice->invoice_number
                     : 'PO Customer ' . $poCustomer->po_number,
 
-            'remaining_subtotal_before_tax' => $remainingPreTax,
+            'remaining_subtotal_before_tax' =>
+                $remainingPreTax,
 
             'has_previous_invoice' =>
                 $rootInvoice !== null,
@@ -144,19 +215,34 @@ class InvoiceCustomerController extends Controller
                 $rootInvoice?->invoice_number,
 
             /*
-             * Invoice #2+ defaults to canonical remaining percentage.
-             * Invoice #1 is derived by UI from Payment Terms.
+             * Existing UI percentage behavior retained.
+             * Amount allocation remains independent from qty/item.
              */
             'recommended_percent' =>
-                (float) $poCustomer->subtotal > 0
-                    ? min(
-                        100,
-                        ($remainingPreTax
-                            / (float) $poCustomer->subtotal)
-                        * 100
+                $rootInvoice
+                    ? (
+                        $this->remainingPreTaxAmount($poCustomer) > 0
+                            ? min(
+                                100,
+                                max(
+                                    0,
+                                    (
+                                        $remainingPreTax
+                                        / max(
+                                            1,
+                                            (float) $poCustomer->subtotal
+                                        )
+                                    ) * 100
+                                )
+                            )
+                            : 0
                     )
-                    : 0,
+                    : null,
 
+            /*
+             * Preserve existing Create UI response contract.
+             * These remain commercial/financial display defaults.
+             */
             'discount_percent' =>
                 (float) ($poCustomer->discount_percent ?? 0),
 
@@ -167,7 +253,6 @@ class InvoiceCustomerController extends Controller
                 $this->poPphPercent($poCustomer),
         ]);
     }
-
     // =====================================================
     // STORE
     // =====================================================
@@ -177,31 +262,37 @@ class InvoiceCustomerController extends Controller
 
         $validated = $request->validate([
             'po_customer_id' => 'required|exists:po_customers,id',
-            'invoice_date'   => 'required|date',
-            'type'           => 'required|in:proforma,sales',
-            /*
-             * RM-004O:
-             * Product, quantity and unit price are NOT accepted as financial
-             * authority from the browser. They are rebuilt from PO Customer.
-             */
-            'dp_percent'     => 'required|numeric|min:0.01|max:100',
+            'invoice_date' => 'required|date',
+            'type' => 'required|in:proforma,sales',
+            'allocation_mode' => 'required|in:PERCENTAGE,ITEM_QTY',
+
+            'dp_percent' => 'nullable|numeric|min:0|max:100',
+
+            'details' => 'required_if:allocation_mode,ITEM_QTY|array|min:1',
+            'details.*.po_customer_detail_id' => 'required_if:allocation_mode,ITEM_QTY|integer',
+            'details.*.quantity' => 'required_if:allocation_mode,ITEM_QTY|numeric|gt:0',
+
+
             'discount_percent' => 'nullable|numeric|min:0|max:100',
             'discount_amount' => 'nullable|numeric',
-            'payment_amount' => 'nullable|numeric',
-            'tax_percent'    => 'nullable|numeric|min:0|max:100',
-            'pph23_percent'  => 'nullable|numeric|min:0|max:100',
-            'payment_terms'  => 'nullable|string|max:255',
-            'delivery_time'  => 'nullable|string|max:255',
-            'due_date'       => 'nullable|date',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'pph23_percent' => 'nullable|numeric|min:0|max:100',
+            'payment_terms' => 'nullable|string|max:255',
+            'delivery_time' => 'nullable|string|max:255',
+            'due_date' => 'nullable|date',
             'tax_invoice_number' => 'nullable|string|max:100',
-            'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
-            'notes'          => 'nullable|string',
-            // New invoices always start with payment status sent.
+            'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
+            'notes' => 'nullable|string',
         ]);
+
+        $allocationMode = $validated['allocation_mode'];
+
+        $taxAttachmentPath = null;
+        $newTaxAttachmentPath = null;
 
         try {
             $poCustomer = PoCustomer::with('details')
-                ->findOrFail($request->po_customer_id);
+                ->findOrFail($validated['po_customer_id']);
 
             if ($poCustomer->details->isEmpty()) {
                 throw ValidationException::withMessages([
@@ -210,272 +301,340 @@ class InvoiceCustomerController extends Controller
                 ]);
             }
 
-            $remainingPreTax =
-                $this->remainingPreTaxAmount($poCustomer);
-
-            // Generate nomor invoice
-            $invoiceDate = $request->invoice_date;
+            /*
+             * Existing invoice-number contract.
+             */
+            $invoiceDate = $validated['invoice_date'];
             $year = date('Y', strtotime($invoiceDate));
             $month = date('n', strtotime($invoiceDate));
 
-            $lastInvoice = InvoiceCustomer::whereYear('invoice_date', $year)
+            $lastInvoice = InvoiceCustomer::whereYear(
+                'invoice_date',
+                $year
+            )
                 ->orderBy('id', 'desc')
                 ->first();
 
             if ($lastInvoice) {
-                $lastNumber = (int) explode('/', $lastInvoice->invoice_number)[0];
-                $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+                $lastNumber = (int) explode(
+                    '/',
+                    $lastInvoice->invoice_number
+                )[0];
+
+                $newNumber = str_pad(
+                    $lastNumber + 1,
+                    3,
+                    '0',
+                    STR_PAD_LEFT
+                );
             } else {
                 $newNumber = '001';
             }
 
-            $romanMonthStr = $this->romanMonth($month);
-            $invoiceNumber = $newNumber . '/INV/BGS/' . $romanMonthStr . '/' . $year;
-
-            /*
-             * RM-004O:
-             * Invoice subtotal is always the FULL PO Customer subtotal.
-             * Browser item values are intentionally ignored.
-             */
-            $subtotal = (float) $poCustomer->details->sum(
-                function ($detail) {
-                    return
-                        (float) $detail->quantity
-                        * (float) $detail->unit_price;
-                }
-            );
-
-            $dpPercent = (float) ($request->dp_percent ?? 0);
-            $dpAmount = $subtotal * $dpPercent / 100;
-            $baseAmount = ($dpAmount > 0) ? $dpAmount : $subtotal;
-            $discountPercent = (float) ($request->discount_percent ?? 0);
-            $discountAmount = $baseAmount * $discountPercent / 100;
-            $afterDiscount = $baseAmount - $discountAmount;
-            $taxPercent = (float) ($request->tax_percent ?? 0);
-            $taxAmount = $afterDiscount * $taxPercent / 100;
-            $pph23Percent = (float) ($request->pph23_percent ?? 0);
-            $pph23Amount = $afterDiscount * $pph23Percent / 100;
-            $total = $afterDiscount + $taxAmount - $pph23Amount;
-            
-            // Sisa canonical selalu mengikuti nilai PO Customer dikurangi seluruh
-            // invoice aktif, baik invoice DP maupun payment-after-delivery.
-            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
-
-            if (round($baseAmount) > round($remainingPreTax)) {
-                return back()->withInput()->with('error',
-                    'Payment Amount Rp ' . number_format($baseAmount, 0, ',', '.') .
-                    ' melebihi sisa PO Amount: Rp ' . number_format($remainingPreTax, 0, ',', '.')
-                );
-            }
-
-            // Attachment
-            $taxAttachmentPath = null;
-            $newTaxAttachmentPath = null;
+            $invoiceNumber =
+                $newNumber .
+                '/INV/BGS/' .
+                $this->romanMonth($month) .
+                '/' .
+                $year;
 
             if ($request->hasFile('tax_invoice_attachment')) {
-                $newTaxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $newTaxAttachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store($request->file('tax_invoice_attachment'), 'tax_invoice');
+
                 $taxAttachmentPath = $newTaxAttachmentPath;
             }
 
-            // Ã¢Å“â€¦ PASTIKAN remaining_amount DIKIRIM KE DATABASE
-            $data = [
-                'invoice_number' => $invoiceNumber,
-                'tax_invoice_number' => $request->tax_invoice_number,
-                'tax_invoice_attachment' => $taxAttachmentPath,
-                'type' => $request->type,
-                'po_customer_id' => $request->po_customer_id,
-                'invoice_date' => $request->invoice_date,
-                'due_date' => $request->due_date,
-                'subtotal' => $subtotal,
-                'dp_percent' => $dpPercent,
-                'dp_amount' => $dpAmount,
-                'discount_percent' => $discountPercent,
-                'discount_amount' => $discountAmount,
-                'tax_percent' => $taxPercent,
-                'tax_amount' => $taxAmount,
-                'pph23_percent' => $pph23Percent,
-                'pph23_amount' => $pph23Amount,
-                'total' => $total,
-                'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
-                'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
-                'payment_status' => 'sent',
-                'payment_terms' => $request->payment_terms,
-                'delivery_time' => $request->delivery_time,
-                'notes' => $request->notes,
-                'parent_invoice_id' => null,
-            ];
-
-            // Ã¢Å“â€¦ DEBUG: Log data sebelum simpan
-            \Log::info('Data yang akan disimpan:', $data);
-
             DB::beginTransaction();
 
+            /*
+             * Lock PO header first, then canonical allocation rows.
+             */
             $poCustomer = PoCustomer::whereKey($poCustomer->id)
                 ->lockForUpdate()
                 ->firstOrFail();
-            $rootInvoice = $this->rootInvoiceForPo($poCustomer->id);
-            $remainingPreTax = $this->remainingPreTaxAmount($poCustomer);
 
-            if (round($baseAmount) > round($remainingPreTax)) {
+            $allocationService =
+                app(InvoiceAllocationService::class);
+
+            $allocationService->lockForAllocation($poCustomer);
+
+            $poCustomer = PoCustomer::with('details')
+                ->findOrFail($poCustomer->id);
+
+            $rootInvoice =
+                $this->rootInvoiceForPo($poCustomer->id);
+
+            $requestedLines = [];
+
+            if ($allocationMode === 'ITEM_QTY') {
+                /*
+                 * ITEM_QTY:
+                 * browser supplies PCD identity + requested quantity only.
+                 * Product, unit price and subtotal remain server-authoritative.
+                 */
+                $requestedLines =
+                    $allocationService->resolveRequestedLines(
+                        $poCustomer,
+                        $validated['details']
+                    );
+
+                $subtotal = (float) collect($requestedLines)
+                    ->sum('subtotal');
+
+                /*
+                 * ITEM_QTY:
+                 * selected canonical item/quantity is always invoiced at
+                 * 100% of its canonical commercial value.
+                 * Browser dp_percent is not authoritative.
+                 */
+                $dpPercent = 100.0;
+                $dpAmount = round($subtotal, 2);
+                $baseAmount = $dpAmount;
+            } elseif ($allocationMode === 'PERCENTAGE') {
+                /*
+                 * PERCENTAGE:
+                 * percentage is based on ORIGINAL PO commercial amount.
+                 * It consumes financial balance only and creates no
+                 * fabricated item/quantity allocation.
+                 */
+                $subtotal = 0.0;
+                $dpPercent =
+                    (float) ($validated['dp_percent'] ?? 0);
+
+                $dpAmount =
+                    $allocationService->percentageAllocationAmount(
+                        $poCustomer,
+                        $dpPercent
+                    );
+
+                $baseAmount = $dpAmount;
+            } else {
                 throw ValidationException::withMessages([
-                    'items' => 'Payment Amount melebihi sisa PO Amount.',
+                    'allocation_mode' =>
+                        'Unsupported invoice allocation mode.',
                 ]);
             }
 
             /*
-             * RM-004O canonical line authority.
-             *
-             * Lock every PO Customer Detail so the invoice snapshot cannot
-             * be influenced by manipulated browser item payload.
+             * Authoritative amount guard after locks.
              */
-            $poDetails = PoCustomerDetail::query()
-                ->where('po_customer_id', $poCustomer->id)
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
-
-            if ($poDetails->isEmpty()) {
-                throw ValidationException::withMessages([
-                    'po_customer_id' =>
-                        'PO Customer tidak memiliki detail item.',
-                ]);
-            }
-
-            /*
-             * Recalculate FULL PO subtotal while details are locked.
-             */
-            $subtotal = (float) $poDetails->sum(
-                function ($detail) {
-                    return
-                        (float) $detail->quantity
-                        * (float) $detail->unit_price;
-                }
+            $allocationService->assertAmountAvailable(
+                $poCustomer,
+                $baseAmount
             );
 
-            $dpAmount =
-                $subtotal * $dpPercent / 100;
+            $discountPercent =
+                (float) ($validated['discount_percent'] ?? 0);
 
-            $baseAmount =
-                ($dpAmount > 0)
-                    ? $dpAmount
-                    : $subtotal;
-
-            $discountAmount =
-                $baseAmount
-                * $discountPercent
-                / 100;
+            $discountAmount = round(
+                $baseAmount * $discountPercent / 100,
+                2
+            );
 
             $afterDiscount =
-                $baseAmount
-                - $discountAmount;
+                $baseAmount - $discountAmount;
 
-            $taxAmount =
-                $afterDiscount
-                * $taxPercent
-                / 100;
+            $taxPercent =
+                (float) ($validated['tax_percent'] ?? 0);
 
-            $pph23Amount =
-                $afterDiscount
-                * $pph23Percent
-                / 100;
+            $taxAmount = round(
+                $afterDiscount * $taxPercent / 100,
+                2
+            );
 
-            $total =
-                $afterDiscount
-                + $taxAmount
-                - $pph23Amount;
+            $pph23Percent =
+                (float) ($validated['pph23_percent'] ?? 0);
+
+            $pph23Amount = round(
+                $afterDiscount * $pph23Percent / 100,
+                2
+            );
+
+            $total = round(
+                $afterDiscount +
+                $taxAmount -
+                $pph23Amount,
+                2
+            );
 
             /*
-             * Rebuild financial data after locked canonical calculation.
+             * Amount balance is independent from quantity/item balance.
              */
-            $data['subtotal'] = $subtotal;
-            $data['dp_amount'] = $dpAmount;
-            $data['discount_amount'] = $discountAmount;
-            $data['tax_amount'] = $taxAmount;
-            $data['pph23_amount'] = $pph23Amount;
-            $data['total'] = $total;
+            $amountBalanceBefore =
+                $allocationService->amountBalance($poCustomer);
 
-            if (round($baseAmount) > round($remainingPreTax)) {
-                throw ValidationException::withMessages([
-                    'dp_percent' =>
-                        'Payment Percentage menghasilkan Payment Amount ' .
-                        'yang melebihi sisa PO Customer.',
-                ]);
-            }
+            $remainingAfterInvoice = max(
+                0,
+                round(
+                    (float) $amountBalanceBefore['remaining_amount']
+                    - $baseAmount,
+                    2
+                )
+            );
 
-            $remainingAfterInvoice = max(0, $remainingPreTax - $baseAmount);
-            $data['parent_invoice_id'] = $rootInvoice?->id;
+            $data = [
+                'invoice_number' => $invoiceNumber,
+                'tax_invoice_number' =>
+                    $validated['tax_invoice_number'] ?? null,
+                'tax_invoice_attachment' =>
+                    $taxAttachmentPath,
+
+                'type' => $validated['type'],
+                'allocation_mode' => $allocationMode,
+                'po_customer_id' => $poCustomer->id,
+                'invoice_date' => $validated['invoice_date'],
+                'due_date' => $validated['due_date'] ?? null,
+
+                'subtotal' => $subtotal,
+                'dp_percent' => $dpPercent,
+                'dp_amount' => $dpAmount,
+
+                'discount_percent' => $discountPercent,
+                'discount_amount' => $discountAmount,
+
+                'tax_percent' => $taxPercent,
+                'tax_amount' => $taxAmount,
+
+                'pph23_percent' => $pph23Percent,
+                'pph23_amount' => $pph23Amount,
+
+                'total' => $total,
+                'remaining_amount' => $remainingAfterInvoice,
+
+                /*
+                 * Invoice status remains temporarily amount-oriented.
+                 * Composite PO completion is a separate remediation.
+                 */
+                'status' =>
+                    $remainingAfterInvoice > 0
+                        ? 'partial'
+                        : 'completed',
+
+                'payment_status' => 'sent',
+                'payment_terms' =>
+                    $validated['payment_terms'] ?? null,
+                'delivery_time' =>
+                    $validated['delivery_time'] ?? null,
+                'notes' =>
+                    $validated['notes'] ?? null,
+                'parent_invoice_id' =>
+                    $rootInvoice?->id,
+            ];
 
             $invoice = InvoiceCustomer::create($data);
 
-            $invoice->update([
-                'remaining_amount' => $remainingAfterInvoice,
-                'status' => $remainingAfterInvoice > 0 ? 'partial' : 'completed',
-            ]);
-
             /*
-             * RM-004O:
-             * Every invoice stores the COMPLETE PO Customer detail set.
-             * Quantity and unit price are copied exactly from PO Customer.
+             * ITEM_QTY persists canonical selected lines.
+             * AMOUNT_ONLY intentionally persists zero detail rows.
              */
-            foreach ($poDetails as $poDetail) {
+            foreach ($requestedLines as $line) {
                 InvoiceCustomerDetail::create([
-                    'invoice_customer_id' =>
-                        $invoice->id,
-
+                    'invoice_customer_id' => $invoice->id,
                     'po_customer_detail_id' =>
-                        $poDetail->id,
-
-                    'product_id' =>
-                        $poDetail->product_id,
-
-                    'quantity' =>
-                        (float) $poDetail->quantity,
-
-                    'unit_price' =>
-                        (float) $poDetail->unit_price,
-
-                    'subtotal' =>
-                        (float) $poDetail->quantity
-                        * (float) $poDetail->unit_price,
+                        $line['po_customer_detail_id'],
+                    'product_id' => $line['product_id'],
+                    'quantity' => $line['quantity'],
+                    'unit_price' => $line['unit_price'],
+                    'subtotal' => $line['subtotal'],
                 ]);
             }
 
             $poCustomer->updateInvoiceStatus();
+
             DB::commit();
 
-            return redirect()->route('invoice-customers.index')
-                ->with('success', 'Invoice successfully created.');
+            return redirect()
+                ->route('invoice-customers.index')
+                ->with(
+                    'success',
+                    'Invoice successfully created.'
+                );
 
         } catch (ValidationException $e) {
             DB::rollBack();
 
-            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
-                Storage::disk('public')->delete($newTaxAttachmentPath);
+            if (
+                !empty($newTaxAttachmentPath) &&
+                Storage::disk('public')
+                    ->exists($newTaxAttachmentPath)
+            ) {
+                Storage::disk('public')
+                    ->delete($newTaxAttachmentPath);
             }
 
-            return back()->withInput()->withErrors($e->validator);
+            return back()
+                ->withInput()
+                ->withErrors($e->validator);
+
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
 
-            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
-                Storage::disk('public')->delete($newTaxAttachmentPath);
+            if (
+                !empty($newTaxAttachmentPath) &&
+                Storage::disk('public')
+                    ->exists($newTaxAttachmentPath)
+            ) {
+                Storage::disk('public')
+                    ->delete($newTaxAttachmentPath);
             }
 
-            if ($e->getCode() == 23000 && str_contains($e->getMessage(), 'invoice_number')) {
-                \Log::warning('Duplicate invoice number detected: ' . $e->getMessage());
-                return back()->withInput()->with('error', 'Nomor invoice sudah terpakai. Silakan periksa tanggal invoice atau hubungi admin.');
+            if (
+                $e->getCode() == 23000 &&
+                str_contains(
+                    $e->getMessage(),
+                    'invoice_number'
+                )
+            ) {
+                \Log::warning(
+                    'Duplicate invoice number detected: ' .
+                    $e->getMessage()
+                );
+
+                return back()
+                    ->withInput()
+                    ->with(
+                        'error',
+                        'Nomor invoice sudah terpakai. Silakan periksa tanggal invoice atau hubungi admin.'
+                    );
             }
-            \Log::error('STORE ERROR: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return back()->withInput()->with('error', 'Gagal menyimpan invoice: ' . $e->getMessage());
+
+            \Log::error(
+                'STORE ERROR: ' . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Gagal menyimpan invoice: ' .
+                    $e->getMessage()
+                );
+
         } catch (\Exception $e) {
             DB::rollBack();
 
-            if (!empty($newTaxAttachmentPath) && Storage::disk('public')->exists($newTaxAttachmentPath)) {
-                Storage::disk('public')->delete($newTaxAttachmentPath);
+            if (
+                !empty($newTaxAttachmentPath) &&
+                Storage::disk('public')
+                    ->exists($newTaxAttachmentPath)
+            ) {
+                Storage::disk('public')
+                    ->delete($newTaxAttachmentPath);
             }
 
-            \Log::error('STORE ERROR: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return back()->withInput()->with('error', 'Gagal menyimpan invoice: ' . $e->getMessage());
+            \Log::error(
+                'STORE ERROR: ' . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Gagal menyimpan invoice: ' .
+                    $e->getMessage()
+                );
         }
     }
 
@@ -505,6 +664,13 @@ class InvoiceCustomerController extends Controller
                 ->with('error', 'Invoice already paid and cannot be edited.');
         }
 
+        $normalAllocationEdit = in_array($invoice->allocation_mode, ['PERCENTAGE', 'ITEM_QTY'], true);
+        $allocationSnapshot = null;
+        if ($normalAllocationEdit) {
+            $invoice->poCustomer->load('details.product');
+            $allocationSnapshot = app(InvoiceAllocationService::class)->snapshot($invoice->poCustomer, $invoice->id);
+        }
+
         $products = Product::orderBy('name')->get();
         // Ambil daftar invoice yang bisa dijadikan parent (partial, bukan dirinya sendiri)
         $parentInvoices = InvoiceCustomer::where('status', 'partial')
@@ -519,13 +685,126 @@ class InvoiceCustomerController extends Controller
             'products',
             'parentInvoices',
             'isLegacyInvoice',
-            'isMixedLineageInvoice'
+            'isMixedLineageInvoice',
+            'normalAllocationEdit',
+            'allocationSnapshot'
         ));
     }
 
     // =====================================================
-    // UPDATE Ã¢â‚¬â€œ invoice_number TIDAK bisa diubah
+    // UPDATE invoice_number TIDAK bisa diubah
     // =====================================================
+    /** Update normal allocations using the same authority as Create. */
+    private function updateNormalAllocation(Request $request, InvoiceCustomer $invoice)
+    {
+        $data = $request->validate([
+            'type' => 'required|in:proforma,sales',
+            'invoice_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'allocation_mode' => 'required|in:PERCENTAGE,ITEM_QTY',
+            'dp_percent' => 'nullable|numeric|gt:0|max:100',
+            'details' => 'nullable|array',
+            'details.*.po_customer_detail_id' => 'required|integer',
+            'details.*.quantity' => 'required|integer|min:0',
+            'discount_percent' => 'nullable|numeric|min:0|max:100',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'pph23_percent' => 'nullable|numeric|min:0|max:100',
+            'payment_terms' => 'nullable|string|max:255',
+            'delivery_time' => 'nullable|string|max:255',
+            'tax_invoice_number' => 'nullable|string|max:100',
+            'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
+            'delete_attachment' => 'nullable|in:0,1',
+            'notes' => 'nullable|string',
+            'payment_status' => 'required|in:sent',
+        ]);
+        $newAttachment = null;
+        $oldAttachment = null;
+        try {
+            DB::transaction(function () use ($request, $invoice, $data, &$newAttachment, &$oldAttachment) {
+                $service = app(InvoiceAllocationService::class);
+                $po = $service->lockForAllocation(PoCustomer::findOrFail($invoice->po_customer_id));
+                $po->load('details');
+                $lockedInvoice = InvoiceCustomer::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+                if ((int) $lockedInvoice->po_customer_id !== (int) $po->id ||
+                    $lockedInvoice->payment_status === 'paid' ||
+                    strtolower((string) $lockedInvoice->status) === 'cancelled' ||
+                    strtolower((string) $lockedInvoice->invoice_status) === 'cancelled') {
+                    throw new \RuntimeException('Invoice paid/cancelled atau berubah dan tidak dapat diedit.');
+                }
+                $mode = $data['allocation_mode'];
+                $service->assertStrategyAvailable($po, $mode, $lockedInvoice->id);
+                $balance = $service->amountBalance($po, $lockedInvoice->id);
+                $remaining = (float) $balance['remaining_amount'];
+                $poAmount = (float) $balance['po_amount'];
+                if ($remaining <= 0 || $poAmount <= 0) {
+                    throw new \RuntimeException('Tidak ada kapasitas PO untuk invoice ini.');
+                }
+                $lines = [];
+                if ($mode === 'PERCENTAGE') {
+                    $dpPercent = (float) ($data['dp_percent'] ?? 0);
+                    $base = $service->percentageAllocationAmount($po, $dpPercent, $lockedInvoice->id);
+                    $subtotal = 0.0;
+                } else {
+                    $requested = array_values(array_filter($data['details'] ?? [], fn ($line) => (int) $line['quantity'] > 0));
+                    $lines = $service->resolveRequestedLines($po, $requested, $lockedInvoice->id);
+                    $subtotal = round((float) collect($lines)->sum('subtotal'), 2);
+                    $base = $subtotal;
+                    $dpPercent = 100.0;
+                }
+                $service->assertAmountAvailable($po, $base, $lockedInvoice->id);
+                $discountPercent = (float) ($data['discount_percent'] ?? 0);
+                $taxPercent = (float) ($data['tax_percent'] ?? 0);
+                $pphPercent = (float) ($data['pph23_percent'] ?? 0);
+                $discount = round($base * $discountPercent / 100, 2);
+                $dpp = $base - $discount;
+                $tax = round($dpp * $taxPercent / 100, 2);
+                $pph = round($dpp * $pphPercent / 100, 2);
+                $oldAttachment = $lockedInvoice->tax_invoice_attachment;
+                $attachment = $oldAttachment;
+                if ($request->input('delete_attachment') === '1') $attachment = null;
+                if ($request->hasFile('tax_invoice_attachment')) {
+                    $newAttachment = app(\App\Services\AttachmentImageUploadService::class)->store($request->file('tax_invoice_attachment'), 'tax_invoice');
+                    $attachment = $newAttachment;
+                }
+                $remainingAfter = max(0, round($remaining - $base, 2));
+                $lockedInvoice->update([
+                    'type' => $data['type'], 'invoice_date' => $data['invoice_date'],
+                    'due_date' => $data['due_date'] ?? null,
+                    'payment_terms' => $data['payment_terms'] ?? null,
+                    'delivery_time' => $data['delivery_time'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                    'tax_invoice_number' => $data['tax_invoice_number'] ?? null,
+                    'tax_invoice_attachment' => $attachment,
+                    'allocation_mode' => $mode,
+                    'subtotal' => $subtotal, 'dp_percent' => $dpPercent, 'dp_amount' => $base,
+                    'discount_percent' => $discountPercent, 'discount_amount' => $discount,
+                    'tax_percent' => $taxPercent, 'tax_amount' => $tax,
+                    'pph23_percent' => $pphPercent, 'pph23_amount' => $pph,
+                    'total' => round($dpp + $tax - $pph, 2),
+                    'remaining_amount' => $remainingAfter,
+                    'status' => $remainingAfter > 0 ? 'partial' : 'completed',
+                ]);
+                $lockedInvoice->details()->delete();
+                foreach ($lines as $line) {
+                    InvoiceCustomerDetail::create(array_merge($line, ['invoice_customer_id' => $lockedInvoice->id]));
+                }
+                $po->updateInvoiceStatus();
+            });
+        } catch (\Throwable $e) {
+            if ($newAttachment && Storage::disk('public')->exists($newAttachment)) {
+                Storage::disk('public')->delete($newAttachment);
+            }
+            report($e);
+            return back()->withInput()->with('error', $e instanceof \RuntimeException
+                ? $e->getMessage() : 'Invoice gagal diperbarui. Periksa log aplikasi.');
+        }
+        if ($oldAttachment && ($request->input('delete_attachment') === '1' || $newAttachment)) {
+            try { Storage::disk('public')->delete($oldAttachment); }
+            catch (\Throwable $e) { report($e); }
+        }
+        return redirect()->route('invoice-customers.index')->with('success', 'Invoice successfully updated.');
+    }
+
     public function update(Request $request, $id)
     {
         $invoice = InvoiceCustomer::with('details')->findOrFail($id);
@@ -548,6 +827,13 @@ class InvoiceCustomerController extends Controller
 
         if ($invoice->payment_status == 'paid') {
             return back()->with('error', 'Invoice already paid and cannot be edited.');
+        }
+
+        if (in_array($invoice->allocation_mode, ['PERCENTAGE', 'ITEM_QTY'], true)) {
+            return $this->updateNormalAllocation($request, $invoice);
+        }
+        if (!$isLegacyInvoice || $invoice->allocation_mode !== null) {
+            return back()->withInput()->with('error', 'Invoice tanpa strategi normal atau histori legacy yang jelas memerlukan pemeriksaan manual.');
         }
 
         $validated = $request->validate([
@@ -576,10 +862,10 @@ class InvoiceCustomerController extends Controller
             'delivery_time'  => 'nullable|string|max:255',
             'due_date' => 'nullable|date',
             'tax_invoice_number' => 'nullable|string|max:100',
-            'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'tax_invoice_attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
             'delete_attachment' => 'nullable|string',
             'notes' => 'nullable|string',
-            'payment_status' => 'required|in:sent,paid',
+            'payment_status' => 'required|in:sent',
         ]);
 
         try {
@@ -683,11 +969,11 @@ class InvoiceCustomerController extends Controller
             }
 
             if ($request->hasFile('tax_invoice_attachment')) {
-                $newTaxAttachmentPath = $request->file('tax_invoice_attachment')->store('tax_invoice', 'public');
+                $newTaxAttachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store($request->file('tax_invoice_attachment'), 'tax_invoice');
                 $taxAttachmentPath = $newTaxAttachmentPath;
             }
 
-            // Ã¢Å“â€¦ UPDATE termasuk remaining_amount
+            //  UPDATE termasuk remaining_amount
             DB::beginTransaction();
 
             $poCustomer = PoCustomer::whereKey($poCustomer->id)
@@ -774,15 +1060,14 @@ class InvoiceCustomerController extends Controller
                 'pph23_percent' => $pph23Percent,
                 'pph23_amount' => $pph23Amount,
                 'total' => $total,
-                'remaining_amount' => $remainingAfterInvoice, // Ã¢Å“â€¦ PASTIKAN INI ADA!
+                'remaining_amount' => $remainingAfterInvoice, //  PASTIKAN INI ADA!
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed',
-                'payment_status' => $validated['payment_status'],
                 'payment_terms' => $request->payment_terms,
                 'delivery_time' => $request->delivery_time,
                 'notes' => $request->notes,
             ]);
 
-            // Ã¢Å“â€¦ DEBUG: Log update
+            //  DEBUG: Log update
             \Log::info('Update data:', [
                 'remaining_amount' => $remainingAfterInvoice,
                 'status' => ($remainingAfterInvoice > 0) ? 'partial' : 'completed'
@@ -1099,6 +1384,6 @@ class InvoiceCustomerController extends Controller
      */
     private function isAdmin()
     {
-        return auth()->check() && auth()->user()->email === 'arief@gmail.com';
+        return auth()->check() && auth()->user()->canUseAdminFeatures();
     }
 }

@@ -15,7 +15,7 @@ class BgsBusinessStateRegressionTest extends TestCase
          * HARD SAFETY GATE.
          *
          * These tests are allowed to mutate only the dedicated
-         * erp_app_testing database.
+         * erp_app_staging_testing_1026 database.
          */
         $database = DB::connection()->getDatabaseName();
 
@@ -25,9 +25,9 @@ class BgsBusinessStateRegressionTest extends TestCase
             );
         }
 
-        if ($database !== 'erp_app_testing') {
+        if ($database !== 'erp_app_staging_testing_1026') {
             throw new \RuntimeException(
-                'SAFETY BLOCK: expected erp_app_testing, got ' . $database
+                'SAFETY BLOCK: expected erp_app_staging_testing_1026, got ' . $database
             );
         }
 
@@ -48,7 +48,7 @@ class BgsBusinessStateRegressionTest extends TestCase
         $this->assertSame('testing', app()->environment());
 
         $this->assertSame(
-            'erp_app_testing',
+            'erp_app_staging_testing_1026',
             DB::connection()->getDatabaseName()
         );
 
@@ -82,7 +82,7 @@ class BgsBusinessStateRegressionTest extends TestCase
 
         foreach ($requiredTables as $table) {
             $exists = DB::table('information_schema.tables')
-                ->where('table_schema', 'erp_app_testing')
+                ->where('table_schema', 'erp_app_staging_testing_1026')
                 ->where('table_name', $table)
                 ->exists();
 
@@ -96,7 +96,7 @@ class BgsBusinessStateRegressionTest extends TestCase
     public function test_invoice_customer_invoice_status_schema_exposes_legacy_typo(): void
     {
         $column = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', 'invoice_customers')
             ->where('column_name', 'invoice_status')
             ->first();
@@ -117,7 +117,7 @@ class BgsBusinessStateRegressionTest extends TestCase
     public function test_po_customer_invoice_status_uses_correct_completed_spelling(): void
     {
         $column = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', 'po_customers')
             ->where('column_name', 'invoice_status')
             ->first();
@@ -145,7 +145,7 @@ class BgsBusinessStateRegressionTest extends TestCase
          */
 
         $columns = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', 'companies')
             ->pluck('COLUMN_NAME')
             ->all();

@@ -41,6 +41,45 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    public function hasRestrictedFullAccess(): bool
+    {
+        return in_array((int) $this->getKey(), config('bgs_access.restricted_full_user_ids', []), true);
+    }
+
+    public function canAccessBackup(): bool
+    {
+        return !$this->hasRestrictedFullAccess() && $this->canUseAdminFeatures();
+    }
+
+    public function canManageUserAccess(): bool
+    {
+        return $this->hasRestrictedFullAccess() || $this->isAdmin();
+    }
+
+    public function canUseAdminFeatures(): bool
+    {
+        return $this->hasRestrictedFullAccess() || $this->isAdmin() || (bool) ($this->accessSetting?->full_features ?? false);
+    }
+
+    public function accessSetting()
+    {
+        return $this->hasOne(UserAccessSetting::class);
+    }
+
+    public function canAccessDashboard(): bool
+    {
+        if ($this->hasRestrictedFullAccess()) {
+            return false;
+        }
+
+        return (bool) ($this->accessSetting?->dashboard_access ?? $this->isAdmin());
+    }
+
+    public function loginDestination(): string
+    {
+        return $this->canAccessDashboard() ? route('dashboard') : route('landing-page');
+    }
+
     // Helper methods
     public function isAdmin()
     {
@@ -59,7 +98,7 @@ class User extends Authenticatable
 
     public function canDelete()
     {
-        return $this->isAdmin() || $this->isManager();
+        return $this->canUseAdminFeatures() || $this->isManager();
     }
 
     /**
@@ -69,6 +108,16 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
+        if ($this->hasRestrictedFullAccess()) {
+            return !str_starts_with($permission, 'deployment_')
+                && !str_starts_with($permission, 'backup_')
+                && !in_array($permission, ['access-dashboard', 'dashboard_access'], true);
+        }
+
+        if ($this->accessSetting?->full_features) {
+            return true;
+        }
+
         if (!$this->role) {
             return false;
         }

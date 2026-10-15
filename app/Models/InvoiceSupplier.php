@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class InvoiceSupplier extends Model
 {
     use HasFactory;
+
+    public function poSupplier()
+    {
+        return $this->belongsTo(PoSupplier::class);
+    }
 }

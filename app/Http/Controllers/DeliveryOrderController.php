@@ -12,7 +12,6 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
@@ -99,7 +98,7 @@ class DeliveryOrderController extends Controller
     {
         \Log::info('Delivery Order Store Request:', $request->all());
 
-        // Validasi â€“ do_number TIDAK wajib diisi karena otomatis digenerate
+        // Validasi do_number TIDAK wajib diisi karena otomatis digenerate
         $request->validate([ 
             'po_customer_id' => 'required|exists:po_customers,id',
             'delivery_date' => 'required|date',
@@ -109,41 +108,16 @@ class DeliveryOrderController extends Controller
             'shipping_address' => 'nullable|string',
             'receiver_name' => 'nullable|string',
             'notes' => 'nullable|string',
-            'delivery_by' => 'nullable|string|in:Wisnu,JNE,Courier Online',
-            'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'delivery_by' => 'nullable|string|in:Kurir Online (JNE/GOJEK/LALAMOVE),Kurir Sendiri',
+            'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
         ]);
 
         // Proses upload file
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $extension = $file->getClientOriginalExtension();
-            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $extension;
-            
-            $folder = 'delivery_orders';
-            if (!Storage::disk('public')->exists($folder)) {
-                Storage::disk('public')->makeDirectory($folder);
-            }
-
-            try {
-                if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                    $image = ImageManager::gd()->read($file->getRealPath());
-                    $image->resize(800, 800, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
-                    $image->toJpeg(80)->save(storage_path('app/public/' . $folder . '/' . $safeName));
-                } else {
-                    Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                }
-                $attachmentPath = $folder . '/' . $safeName;
-            } catch (\Exception $e) {
-                \Log::warning('Gagal memproses attachment: ' . $e->getMessage());
-                // Simpan asli jika gagal kompresi
-                Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                $attachmentPath = $folder . '/' . $safeName;
-            }
+            $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                $request->file('attachment'), 'delivery_orders'
+            );
         }
 
         DB::beginTransaction();
@@ -340,8 +314,8 @@ class DeliveryOrderController extends Controller
             'shipping_address' => 'nullable|string',
             'receiver_name' => 'nullable|string',
             'notes' => 'nullable|string',
-            'delivery_by' => 'nullable|string|in:Wisnu,JNE,Courier Online',
-            'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'delivery_by' => 'nullable|string|in:Kurir Online (JNE/GOJEK/LALAMOVE),Kurir Sendiri',
+            'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
         ]);
 
         DB::beginTransaction();
@@ -401,37 +375,9 @@ class DeliveryOrderController extends Controller
 
             $attachmentPath = $do->attachment;
             if ($request->hasFile('attachment')) {
-                if ($attachmentPath && Storage::disk('public')->exists($attachmentPath)) {
-                    Storage::disk('public')->delete($attachmentPath);
-                }
-
-                $file = $request->file('attachment');
-                $extension = $file->getClientOriginalExtension();
-                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $extension;
-
-                $folder = 'delivery_orders';
-                if (!Storage::disk('public')->exists($folder)) {
-                    Storage::disk('public')->makeDirectory($folder);
-                }
-
-                try {
-                    if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                        $image = ImageManager::gd()->read($file->getRealPath());
-                        $image->resize(800, 800, function ($constraint) {
-                            $constraint->aspectRatio();
-                            $constraint->upsize();
-                        });
-                        $image->toJpeg(80)->save(storage_path('app/public/' . $folder . '/' . $safeName));
-                    } else {
-                        Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                    }
-                    $attachmentPath = $folder . '/' . $safeName;
-                } catch (\Exception $e) {
-                    \Log::warning('Gagal memproses attachment: ' . $e->getMessage());
-                    Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                    $attachmentPath = $folder . '/' . $safeName;
-                }
+                $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                    $request->file('attachment'), 'delivery_orders'
+                );
             }
 
             $do->update([
@@ -458,6 +404,9 @@ class DeliveryOrderController extends Controller
             DB::commit();
             return redirect()->route('delivery-orders.index')
                 ->with('success', 'Delivery Order successfully updated.');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error saat update DO: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);

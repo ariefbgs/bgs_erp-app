@@ -113,7 +113,11 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
 
         $this->assertStringContainsString('rootInvoiceForPo', $controller);
         $this->assertStringContainsString(
-            '$data[\'parent_invoice_id\'] = $rootInvoice?->id',
+            "'parent_invoice_id' =>",
+            $controller
+        );
+        $this->assertStringContainsString(
+            '$rootInvoice?->id',
             $controller
         );
         $this->assertStringNotContainsString('name="parent_invoice_id"', $createView);

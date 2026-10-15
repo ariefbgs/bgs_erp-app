@@ -1,21 +1,32 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-delivery-orders-edit bgs-mode-edit')
 
 @section('title', 'Edit Delivery Order')
 
 @section('content')
 
-<style>
-    .qty-input {
-        text-align: right;
-    }
-</style>
 
-<div class="card">
-    <div class="card-header bg-warning text-dark">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Edit Delivery Order</h4>
     </div>
 
-    <div class="card-body">
+    <div class="card-body p-4">
+        @if(session('error'))
+            <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger" role="alert">
+                <strong>Delivery Order belum tersimpan:</strong>
+                <ul class="mb-0">
+                    @foreach($errors->all() as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+                <div>Jika sebelumnya memilih attachment, pilih kembali file setelah memperbaiki data.</div>
+            </div>
+        @endif
         <form action="{{ route('delivery-orders.update', $do->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
@@ -30,12 +41,12 @@
 
                 <div class="col-md-4">
                     <label class="form-label">Delivery No </label>
-                    <input type="text" name="do_number" class="form-control" value="{{ $do->do_number }}">
+                    <input type="text" name="do_number" class="form-control" value="{{ old('do_number', $do->do_number) }}">
                 </div>
 
                 <div class="col-md-4">
                     <label class="form-label">Delivery Date <span class="text-danger">*</span></label>
-                    <input type="date" name="delivery_date" class="form-control" value="{{ date('Y-m-d', strtotime($do->delivery_date)) }}" required>
+                    <input type="date" name="delivery_date" class="form-control" value="{{ old('delivery_date', date('Y-m-d', strtotime($do->delivery_date))) }}" required>
                 </div>
             </div>
 
@@ -53,17 +64,21 @@
                 <div class="col-md-6">
                     <label class="form-label">Delivery By</label>
                     <select name="delivery_by" class="form-control">
-                        <option value="">Pilih</option>
-                        <option value="Wisnu" {{ $do->delivery_by == 'Wisnu' ? 'selected' : '' }}>Wisnu</option>
-                        <option value="JNE" {{ $do->delivery_by == 'JNE' ? 'selected' : '' }}>JNE</option>
-                        <option value="Courier Online" {{ $do->delivery_by == 'Courier Online' ? 'selected' : '' }}>Courier Online</option>
-                    </select>
+@php
+    $deliveryChoice = old('delivery_by', $do->delivery_by);
+    if ($deliveryChoice === 'Wisnu') $deliveryChoice = 'Kurir Sendiri';
+    if (in_array($deliveryChoice, ['JNE', 'Courier Online'], true)) $deliveryChoice = 'Kurir Online (JNE/GOJEK/LALAMOVE)';
+@endphp
+<option value="">-- Pilih Delivery By --</option>
+<option value="Kurir Online (JNE/GOJEK/LALAMOVE)" {{ $deliveryChoice === 'Kurir Online (JNE/GOJEK/LALAMOVE)' ? 'selected' : '' }}>Kurir Online (JNE/GOJEK/LALAMOVE)</option>
+<option value="Kurir Sendiri" {{ $deliveryChoice === 'Kurir Sendiri' ? 'selected' : '' }}>Kurir Sendiri</option>
+</select>
                 </div>
             </div>
 
             <!-- Informasi PO Customer -->
             <div class="card mb-3">
-                <div class="card-header bg-info text-white">
+                <div class="card-header bg-light">
                     <strong>PO Customer Information</strong>
                 </div>
 
@@ -91,13 +106,13 @@
                                 <tr>
                                     <th>Shipping Address</th>
                                     <td>
-                                        <textarea name="shipping_address" class="form-control" rows="2">{{ $do->shipping_address }}</textarea>
+                                        <textarea name="shipping_address" class="form-control" rows="2">{{ old('shipping_address', $do->shipping_address) }}</textarea>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Receiver Name</th>
                                     <td>
-                                        <input type="text" name="receiver_name" class="form-control" value="{{ $do->receiver_name }}">
+                                        <input type="text" name="receiver_name" class="form-control" value="{{ old('receiver_name', $do->receiver_name) }}">
                                     </td>
                                 </tr>
                             </table>
@@ -107,10 +122,10 @@
             </div>
 
             <!-- Detail Produk -->
-            <h5>Product Details (Quantity can be updated)</h5>
+            <h5 class="section-sub-title">Product Details (Quantity can be updated)</h5>
             <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-dark">
+                <table class="table align-middle">
+                    <thead class="table-light">
                         <tr>
                             <th>Product</th>
                             <th>Brand</th>
@@ -131,7 +146,7 @@
                                 @php
                                     $availableQuantity = $deliverableQuantities[$detail->po_customer_detail_id] ?? 0;
                                 @endphp
-                                <input type="number" name="items[{{ $i }}][quantity]" class="form-control qty-input" value="{{ $detail->quantity }}" min="0" max="{{ $availableQuantity }}" required>
+                                <input type="number" name="items[{{ $i }}][quantity]" class="form-control qty-input" value="{{ old('items.' . $i . '.quantity', $detail->quantity) }}" min="0" max="{{ $availableQuantity }}" required>
                                 <small class="text-muted">Available: {{ $availableQuantity }}</small>
                             </td>
                         </tr>
@@ -148,20 +163,20 @@
                         <a href="{{ Storage::url($do->attachment) }}" target="_blank" class="btn btn-sm btn-info">View Current Attachment</a>
                     </div>
                 @endif
-                <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf">
                 <small class="text-muted">Leave empty if you do not want to change it. Maximum 5MB. Images will be compressed.</small>
             </div>
 
             <!-- Remarks -->
             <div class="mt-3">
-                <label>Remarks</label>
-                <textarea name="notes" class="form-control" rows="2">{{ $do->notes }}</textarea>
+                <label class="form-label">Remarks</label>
+                <textarea name="notes" class="form-control" rows="2">{{ old('notes', $do->notes) }}</textarea>
             </div>
 
             <!-- Button -->
-            <div class="text-end mt-4">
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <button type="submit" class="btn btn-primary">Update</button>
-                <a href="{{ route('delivery-orders.index') }}" class="btn btn-danger">Cancel</a>
+                <a href="{{ route('delivery-orders.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

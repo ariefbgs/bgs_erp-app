@@ -29,9 +29,9 @@ final class DeploymentPersistentEndToEndTest extends TestCase
             DB::connection()->getDatabaseName();
 
         $this->assertSame(
-            'erp_app_testing',
+            'erp_app_staging_testing_1026',
             $database,
-            'Persistent deployment E2E must never run outside erp_app_testing.'
+            'Persistent deployment E2E must never run outside erp_app_staging_testing_1026.'
         );
 
         DB::table('deployment_migrations')->delete();

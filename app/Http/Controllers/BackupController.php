@@ -14,13 +14,14 @@ class BackupController extends Controller
      */
     private function authorizeBackupAccess()
     {
-        if (!auth()->check() || auth()->user()->email !== 'arief@gmail.com') {
+        if (!auth()->check() || !auth()->user()->canAccessBackup()) {
             abort(403, 'Anda tidak memiliki izin untuk mengakses fitur ini. Hanya untuk user arief@gmail.com.');
         }
     }
 
     public function index()
     {
+        $this->authorizeBackupAccess();
         $files = Storage::disk('local')->files('backups');
         $backupFiles = [];
 

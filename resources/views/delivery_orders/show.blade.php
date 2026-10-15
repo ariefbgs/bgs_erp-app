@@ -1,60 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-delivery-orders-show bgs-mode-screen')
 @section('title', 'Detail Delivery Order')
 @section('content')
-<style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-    .table-detail th {
-        width: 35%;
-        background: #f8f9fa;
-        white-space: nowrap;
-    }
-    .table-product thead th {
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    .text-right {
-        text-align: right;
-    }
-    .amount-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .badge {
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-    .summary-box {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 20px;
-    }
-    .notes-box {
-        background: #f8f9fa;
-        border-left: 4px solid #0d6efd;
-        padding: 15px;
-        border-radius: 6px;
-    }
-    .empty-text {
-        color: #6c757d;
-    }
-</style>
+
 <div class="card shadow-sm border-0">
     {{-- HEADER --}}
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4>
             <i class="bi bi-file-earmark-text"></i>
             Detail Delivery Order
@@ -85,7 +36,7 @@
                 <div class="section-title">
                     DO Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>DO #</th>
                         <td>
@@ -141,7 +92,7 @@
                 <div class="section-title">
                     Customer Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>Customer</th>
                         <td>
@@ -157,7 +108,7 @@
                     <tr>
                         <th>PIC Phone</th>
                         <td>
-                            {{ $do->poCustomer->customer->pic_quotation_phone ?? '-' }}
+                            {{ $do->poCustomer->customer->pic_do_phone ?? '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -181,8 +132,8 @@
             Product Detail
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-product">
-                <thead class="table-dark">
+            <table class="table table-hover table-product bgs-detail-table align-middle">
+                <thead class="table-light">
                     <tr>
                         <th width="5%" class="text-center">
                             No

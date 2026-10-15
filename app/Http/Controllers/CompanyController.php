@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\ImageUploadService;
 
 class CompanyController extends Controller
 {
@@ -43,7 +44,7 @@ class CompanyController extends Controller
         // Proses clear file
         foreach ($this->fileFields as $field) {
             $clearKey = 'clear_' . $field;
-            if ($request->has($clearKey) && $request->boolean($clearKey)) {
+            if ($request->has($clearKey) && $request->boolean($clearKey) && !$request->hasFile($field)) {
                 if ($company->$field && file_exists(public_path($company->$field))) {
                     unlink(public_path($company->$field));
                 }
@@ -52,7 +53,18 @@ class CompanyController extends Controller
         }
 
         $companyData = array_merge($data, $files);
+        $previous = [];
+        foreach ($this->fileFields as $field) {
+            if ($request->hasFile($field) && $company->$field) {
+                $previous[] = $company->$field;
+            }
+        }
         $company->update($companyData);
+        foreach ($previous as $oldPath) {
+            if (is_file(public_path($oldPath))) {
+                @unlink(public_path($oldPath));
+            }
+        }
         return redirect()->route('companies.index')->with('success', 'Perusahaan berhasil diupdate');
     }
 
@@ -80,11 +92,11 @@ class CompanyController extends Controller
             'pic_sales_support' => 'nullable|string',
             'pic_do'            => 'nullable|string',
             'pic_inv'           => 'nullable|string',
-            'logo'              => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'ttd_sales_support' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'ttd_do'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'ttd_inv'           => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'ttd_inv2'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'logo'              => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'ttd_sales_support' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'ttd_do'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'ttd_inv'           => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'ttd_inv2'          => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
 
         $request->validate($rules);
@@ -108,19 +120,12 @@ class CompanyController extends Controller
 
         foreach ($this->fileFields as $field) {
             if ($request->hasFile($field)) {
-                if ($company && $company->$field && file_exists(public_path($company->$field))) {
-                    unlink(public_path($company->$field));
-                }
-
                 $subFolder = $folderMap[$field];
-                $file = $request->file($field);
-                $filename = time() . "_{$field}_" . uniqid() . '.' . $file->getClientOriginalExtension();
-                $uploadDir = public_path("{$basePath}/{$subFolder}");
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-                $file->move($uploadDir, $filename);
-                $paths[$field] = "{$basePath}/{$subFolder}/{$filename}";
+                $paths[$field] = app(ImageUploadService::class)->store(
+                    $request->file($field), "{$basePath}/{$subFolder}",
+                    $field === 'logo' ? 1600 : 1200
+                );
+                // Keep the previous file until the database update succeeds.
             } elseif ($company) {
                 $paths[$field] = $company->$field;
             }

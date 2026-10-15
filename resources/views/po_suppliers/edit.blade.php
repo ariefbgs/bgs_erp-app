@@ -1,120 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-po-suppliers-edit bgs-mode-edit')
 
 @section('title', 'Edit PO Supplier')
 
 @section('content')
 
-<style>
-    body {
-        background-color: #f1f5f9;
-    }
 
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-
-    .card-header-custom {
-        background: linear-gradient(
-            135deg,
-            #f97316,
-            #c2410c
-        );
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-
-    .section-sub-title i {
-        color: #f97316;
-    }
-
-    .info-group-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        height: 100%;
-    }
-
-    .form-control,
-    .form-select {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #f97316;
-        box-shadow:
-            0 0 0 3px
-            rgba(249, 115, 22, 0.15);
-    }
-
-    .readonly-bg {
-        background-color: #f1f5f9 !important;
-        color: #475569;
-        font-weight: 500;
-    }
-
-    .product-row {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 18px;
-        transition: all 0.2s;
-    }
-
-    .product-row:hover {
-        border-color: #cbd5e1;
-        box-shadow:
-            0 4px 12px
-            rgba(0, 0, 0, 0.03);
-    }
-
-    .price-display,
-    .qty-input,
-    .subtotal-display,
-    .summary-input-num {
-        text-align: right;
-    }
-
-    .table-summary th {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        color: #475569;
-        vertical-align: middle;
-    }
-</style>
 
 
 <div class="container-fluid py-4">
@@ -128,7 +19,7 @@
             class="card-header-custom
                    d-flex
                    justify-content-between
-                   align-items-center"
+                   align-items-center bgs-page-header"
         >
             <h4>
                 <i class="bi bi-pencil-square me-2"></i>
@@ -153,13 +44,8 @@
             @if ($errors->any())
                 <div
                     class="alert alert-danger border-0 shadow-sm
-                           d-flex fade show mb-4"
-                    style="
-                        background-color:#fef2f2;
-                        color:#991b1b;
-                        border-left:4px solid #dc2626 !important;
-                        border-radius:6px;
-                    "
+                           d-flex fade show mb-4 bgs-u-bd1ab2e252eb"
+
                 >
                     <div class="me-2">
                         <i
@@ -191,13 +77,8 @@
             @if(session('success'))
                 <div
                     class="alert alert-success border-0 shadow-sm
-                           d-flex fade show mb-4"
-                    style="
-                        background-color:#f0fdf4;
-                        color:#166534;
-                        border-left:4px solid #16a34a !important;
-                        border-radius:6px;
-                    "
+                           d-flex fade show mb-4 bgs-u-9bfbc3ba2365"
+
                 >
                     <i
                         class="bi bi-check-circle-fill me-2 fs-5"
@@ -218,12 +99,8 @@
 
             @if(session('error'))
                 <div
-                    class="alert alert-danger border-0 shadow-sm mb-4"
-                    style="
-                        background-color:#fef2f2;
-                        color:#991b1b;
-                        border-left:4px solid #dc2626 !important;
-                    "
+                    class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-3f823e5bcb09"
+
                 >
                     <i
                         class="bi bi-exclamation-circle-fill me-2"
@@ -748,8 +625,8 @@
 
                                     <th
                                         width="45%"
-                                        class="ps-3"
-                                     style="text-align: right;">
+                                        class="ps-3 bgs-u-37dd0c2a6468"
+                                    >
                                         Subtotal Items Amount
                                     </th>
 
@@ -768,14 +645,14 @@
 
                                 <tr>
 
-                                    <th class="ps-3" style="text-align: right;">
+                                    <th class="ps-3 bgs-u-37dd0c2a6468">
                                         Discount Allowance
                                     </th>
 
                                     <td
                                         width="25%"
-                                        class="px-2"
-                                     style="text-align: right;">
+                                        class="px-2 bgs-u-37dd0c2a6468"
+                                    >
 
                                         <div
                                             class="input-group
@@ -823,17 +700,15 @@
                                 </tr>
 
 
-                                <tr
-                                    style="
-                                        background-color:#f8fafc;
-                                    "
+                                <tr class="bgs-u-90219d6f182e"
+
                                 >
 
                                     <th
                                         class="ps-3
                                                fw-semibold
-                                               text-secondary"
-                                     style="text-align: right;">
+                                               text-secondary bgs-u-37dd0c2a6468"
+                                    >
                                         Subtotal After Discount
                                     </th>
 
@@ -856,7 +731,7 @@
                                         VAT
                                     </th>
 
-                                    <td class="px-2" style="text-align: right;">
+                                    <td class="px-2 bgs-u-37dd0c2a6468">
 
                                         <div
                                             class="input-group
@@ -898,18 +773,15 @@
                                 </tr>
 
 
-                                <tr
-                                    style="
-                                        border-top:
-                                        2px solid #cbd5e1;
-                                    "
+                                <tr class="bgs-u-311948f04f7a"
+
                                 >
 
                                     <th
                                         class="ps-3
                                                fs-6
-                                               text-dark"
-                                     style="text-align: right;">
+                                               text-dark bgs-u-37dd0c2a6468"
+                                    >
                                         <strong>
                                             Grand Total
                                         </strong>
@@ -954,16 +826,8 @@
                     <button
                         type="submit"
                         class="btn btn-warning
-                               px-4 py-2 fw-bold text-white"
-                        style="
-                            background:
-                            linear-gradient(
-                                135deg,
-                                #f97316,
-                                #c2410c
-                            );
-                            border:none;
-                        "
+                               px-4 py-2 fw-bold text-white bgs-u-79858a3773d1"
+
                     >
                         <i
                             class="bi bi-save-fill me-1"
@@ -1047,7 +911,7 @@
                                 <th class="text-end">
                                     PO Supplier Price
                                 </th>
-                                <th style="min-width:220px;">
+                                <th class="bgs-u-9fda40b045c3">
                                     Decision
                                 </th>
                             </tr>
@@ -1887,7 +1751,7 @@ $(document).ready(function() {
                     ) +
                     '</td>' +
 
-                    '<td style="text-align: right;">' +
+                    '<td class="bgs-u-37dd0c2a6468">' +
                     '<select ' +
                     'class="form-select form-select-sm ' +
                     'price-decision-select" ' +

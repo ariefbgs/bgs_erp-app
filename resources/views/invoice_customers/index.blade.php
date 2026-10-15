@@ -1,78 +1,16 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-invoice-customers-index bgs-mode-index')
 
 @section('title', 'Sales Invoice Management')
 
 @section('content')
 
-<style>
-    .text-right {
-        text-align: right;
-    }
 
-    .total-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .search-filter-bar {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 1px solid #dee2e6;
-    }
-
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-
-    .action-buttons .btn {
-        margin: 2px;
-    }
-
-    /* Sales Invoice Index frozen Action column */
-    .sticky-action {
-        position: sticky;
-        left: 0;
-        min-width: 145px;
-        width: 145px;
-        white-space: nowrap;
-    }
-
-    thead .sticky-action {
-        z-index: 4;
-        background: #212529;
-    }
-
-    tbody .sticky-action {
-        z-index: 3;
-        background: #ffffff;
-    }
-
-    .table-striped > tbody > tr:nth-of-type(odd) > .sticky-action {
-        background: #f2f2f2;
-    }
-
-    .table-hover > tbody > tr:hover > .sticky-action {
-        background: #ececec;
-    }
-
-    .badge {
-        font-size: 12px;
-        padding: 6px 8px;
-    }
-
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-</style>
 
 <div class="card shadow-sm">
 
     {{-- HEADER --}}
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4>Data Sales Invoice</h4>
 
         <a href="{{ route('invoice-customers.create') }}"
@@ -110,7 +48,7 @@
         <div class="search-filter-bar">
 
             <form method="GET"
-                  action="{{ route('invoice-customers.index') }}">
+                  action="{{ route('invoice-customers.index') }}" class="bgs-filter-form">
 
                 <div class="row g-3">
 
@@ -240,10 +178,10 @@
 
         {{-- TABLE --}}
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-striped">
-                <thead class="table-dark">
+            <table class="table table-modern align-middle m-0 bgs-index-table">
+                <thead>
                     <tr>
-                        <th class="text-center sticky-action">
+                        <th class="text-center sticky-action bgs-col-action">
                             Actions
                         </th>
                         <th width="3%" class="text-center">No</th>
@@ -263,10 +201,13 @@
                             PO Customer #
                         </th>
                         <th width="10%" class="text-center">
-                            Total
+                            Invoice Amount
                         </th>
                         <th width="10%" class="text-center">
-                            Remaining
+                            Grand Total
+                        </th>
+                        <th width="10%" class="text-center">
+                            PO Remaining
                         </th>
                         {{-- PENAMBAHAN HEADER KOLOM TAX ATTACHMENT INDIKATOR --}}
                         <th width="5%" class="text-center">
@@ -287,17 +228,18 @@
                     @forelse($invoices as $index => $inv)
                         <tr>
                             {{-- ACTIONS --}}
-                            <td class="text-center action-buttons sticky-action">
+                            <td class="text-center sticky-action bgs-col-action">
+                                <div class="d-flex justify-content-center action-btn-group">
                                 {{-- VIEW --}}
                                 <a href="{{ route('invoice-customers.show', $inv->id) }}"
-                                   class="btn btn-info btn-sm"
+                                   class="btn btn-info btn-sm text-white"
                                    title="View">
                                    <i class="bi bi-eye"></i>
                                 </a>
                                 {{-- EDIT --}}
                                 @if($inv->status != 'cancelled')
                                     <a href="{{ route('invoice-customers.edit', $inv->id) }}"
-                                       class="btn btn-warning btn-sm"
+                                       class="btn btn-warning btn-sm text-dark"
                                        title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -338,6 +280,7 @@
                                         </button>
                                     </form>
                                 @endif
+                                </div>
                             </td>
                             {{-- NO --}}
                             <td class="text-center">
@@ -369,9 +312,12 @@
                             </td>
                             {{-- TOTAL --}}
                             <td class="total-column">
-                                Rp {{ number_format($inv->total, 0, ',', '.') }}
+                                Rp {{ number_format(($inv->dp_amount > 0 ? $inv->dp_amount : $inv->subtotal), 0, ',', '.') }}
                             </td>
                             {{-- REMAINING --}}
+                            <td class="total-column">
+                                Rp {{ number_format($inv->total, 0, ',', '.') }}
+                            </td>
                             <td class="total-column">
                                 Rp {{ number_format($inv->remaining_amount, 0, ',', '.') }}
                             </td>

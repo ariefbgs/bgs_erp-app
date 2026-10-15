@@ -1,9 +1,10 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-companies-show bgs-mode-screen')
 
 @section('title', 'Detail Perusahaan')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 bgs-page-header">
     <h3 class="fw-bold">Detail Perusahaan: {{ $company->name }}</h3>
     <div>
         <a href="{{ route('companies.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
@@ -15,9 +16,9 @@
     {{-- Kolom Kiri: Informasi Utama & Kontak --}}
     <div class="col-lg-6">
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white fw-bold">Informasi Utama</div>
+            <div class="card-header bg-primary text-white fw-bold bgs-section-header">Informasi Utama</div>
             <div class="card-body p-0">
-                <table class="table table-striped mb-0">
+                <table class="table mb-0 bgs-detail-table align-middle">
                     <tr><th width="35%">Kode Perusahaan</th><td>{{ $company->company_code }}</td></tr>
                     <tr><th>Nama</th><td>{{ $company->name }}</td></tr>
                     <tr><th>Status</th><td>
@@ -39,7 +40,7 @@
                 <p class="mb-2"><strong>Alamat:</strong><br>{{ $company->address ?? '-' }}</p>
                 <p class="mb-2"><strong>Kota / Pos:</strong> {{ $company->city ?? '-' }} / {{ $company->postal_code ?? '-' }}</p>
                 <hr>
-                <table class="table table-borderless table-sm mb-0">
+                <table class="table table-borderless table-sm mb-0 bgs-detail-table align-middle">
                     <tr><th width="30%">NPWP</th><td>{{ $company->npwp ?? '-' }}</td></tr>
                     <tr><th>Bank</th><td>{{ $company->bank_name ?? '-' }}</td></tr>
                     <tr><th>No. Rek</th><td>{{ $company->bank_account_number ?? '-' }}</td></tr>
@@ -58,25 +59,25 @@
                     <div class="col-12 mb-4">
                         <label class="d-block text-muted small">LOGO PERUSAHAAN</label>
                         @if($company->logo)
-                            <img src="{{ asset($company->logo) }}" class="img-thumbnail" style="width: 60px;">
+                            <img src="{{ asset($company->logo) }}" class="img-thumbnail bgs-u-e34b7515c2af">
                         @else <p>-</p> @endif
                     </div>
                     <div class="col-6 mb-4">
                         <label class="d-block text-muted small">TTD DO ({{ $company->pic_do ?? 'PIC' }})</label>
                         @if($company->ttd_do)
-                            <img src="{{ asset($company->ttd_do) }}" class="img-thumbnail" style="width: 60px;">
+                            <img src="{{ asset($company->ttd_do) }}" class="img-thumbnail bgs-u-e34b7515c2af">
                         @else <p>-</p> @endif
                     </div>
                     <div class="col-6 mb-4">
                         <label class="d-block text-muted small">TTD INV 1 ({{ $company->pic_inv ?? 'PIC' }})</label>
                         @if($company->ttd_inv)
-                            <img src="{{ asset($company->ttd_inv) }}" class="img-thumbnail" style="width: 60px;">
+                            <img src="{{ asset($company->ttd_inv) }}" class="img-thumbnail bgs-u-e34b7515c2af">
                         @else <p>-</p> @endif
                     </div>
                     <div class="col-12">
                         <label class="d-block text-muted small">TTD INV 2</label>
                         @if($company->ttd_inv2)
-                            <img src="{{ asset($company->ttd_inv2) }}" class="img-thumbnail" style="width: 60px;">
+                            <img src="{{ asset($company->ttd_inv2) }}" class="img-thumbnail bgs-u-e34b7515c2af">
                         @else <p>-</p> @endif
                     </div>
                 </div>

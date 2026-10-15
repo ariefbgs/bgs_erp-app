@@ -1,73 +1,21 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-goods-receipts-edit bgs-mode-edit')
 @section('title', 'Edit Good Receipt')
 @section('content')
-<style>
-    .page-title {
-        font-size: 1.4rem;
-        font-weight: 600;
-    }
-    .readonly-bg,
-    .brand-display,
-    .subtotal-display {
-        background: #f8f9fa !important;
-    }
-    .price-display,
-    .qty-input,
-    .subtotal-display,
-    .summary-input {
-        text-align: right;
-    }
-    .product-card {
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 15px;
-        background: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .summary-table th {
-        width: 60%;
-        background: #f8f9fa;
-    }
-    .summary-table td,
-    .summary-table th {
-        vertical-align: middle;
-    }
-    .grand-total-row {
-        background: #0d6efd;
-        color: white;
-        font-size: 1.05rem;
-    }
-    .section-title {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .btn-remove {
-        width: 100%;
-    }
-    .card-header-custom {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        color: white;
-        border-radius: 10px 10px 0 0;
-    }
-    .table-summary-wrapper {
-        margin-top: 20px;
-    }
-</style>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header card-header-custom py-3">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <div class="d-flex justify-content-between align-items-center">
-            <div class="page-title">
-                Edit Good Receipt  
-            </div>
+            <h4>
+                Edit Goods Receipt
+            </h4>
             <a href="{{ route('goods-receipts.index') }}" class="btn btn-light btn-sm">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
         </div>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show">
                 <strong>Terjadi kesalahan!</strong>
@@ -80,14 +28,14 @@
             </div>
         @endif
         @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4" style="background-color: #f0fdf4; color: #166534; border-left: 4px solid #16a34a !important; border-radius: 6px;">
+            <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4 bgs-u-2e9c7cf0569c">
                 <div class="me-2"><i class="bi bi-check-circle-fill fs-5"></i></div>
                 <div>{{ session('success') }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
             </div>
         @endif
         @if(session('error'))
-            <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                 <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
             </div>
         @endif  
@@ -122,16 +70,16 @@
             </div>
 
             <hr>
-            <h5>Product Received</h5>
+            <h5 class="section-sub-title">Product Received</h5>
 
             <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="itemsTable">
-                    <thead class="table-dark">
+                <table class="table align-middle" id="itemsTable">
+                    <thead class="table-light">
                         <tr>
                             <th width="30%">Product</th>
                             <th width="15%">PO Qty</th>
                             <th width="15%">Remaining</th>
-                            <th width="20%">Qty DReceived <span class="text-danger">*</span></th>
+                            <th width="20%">Received Quantity <span class="text-danger">*</span></th>
                             <th width="15%">Remarks</th>
                             <th width="5%">Action</th>
                         </tr>
@@ -212,7 +160,7 @@
             </div>
             @endif
 
-            <div class="text-end mt-3">
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <button type="submit" class="btn btn-primary">Update Receipt</button>
                 <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
@@ -256,7 +204,7 @@ $(document).ready(function() {
         if (confirm('Hapus item ini dari penerimaan? (Qty akan diset 0)')) {
             row.find('.received-qty').val(0).trigger('change');
             row.find('.remove-item').prop('disabled', true);
-            row.css('opacity', '0.5');
+            row.addClass('bgs-row-muted');
         }
     });
 

@@ -1,113 +1,15 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-po-suppliers-create bgs-mode-create')
 @section('title', 'Create PO Supplier')
 @section('content')
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
-<style>
-    body { background-color: #f1f5f9; }
 
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        background: #fff;
-        overflow: hidden;
-    }
 
-    .card-header-custom {
-        background: linear-gradient(135deg, #10b981, #047857);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
 
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-
-    .section-sub-title i {
-        color: #10b981;
-    }
-
-    .info-group-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-    }
-
-    .form-control,
-    .form-select {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
-    }
-
-    .po-supplier-items-table thead th {
-        background: #f8fafc;
-        color: #475569;
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        font-weight: 700;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-
-    .po-supplier-items-table tbody td {
-        vertical-align: middle;
-    }
-
-    .po-supplier-items-table tbody tr:hover {
-        background-color: #f8fafc;
-    }
-
-    .table-summary th {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        color: #475569;
-        vertical-align: middle;
-    }
-
-    .supplier-po-help {
-        background-color: #eff6ff;
-        color: #1e40af;
-        border-left: 4px solid #3b82f6;
-        border-radius: 6px;
-    }
-</style>
 
 <div class="card main-card">
-    <div class="card-header-custom d-flex justify-content-between align-items-center">
+    <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
         <h4><i class="bi bi-file-earmark-plus-fill me-2"></i>Create PO Supplier</h4>
     </div>
     @if ($errors->any())
@@ -122,12 +24,12 @@
         </div>
     @endif
     @if(session('success'))
-        <div class="alert alert-success border-0 shadow-sm mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important;">
+        <div class="alert alert-success border-0 shadow-sm mb-4 bgs-u-be237583235b">
             <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
         </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+        <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
             <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
         </div>
     @endif 
@@ -163,7 +65,7 @@
             
             </div>
 
-            <div id="poDetails" style="display: none;">
+            <div id="poDetails" class="bgs-u-6e22c58a7a6a">
                 <div class="section-sub-title">
                     <i class="bi bi-building-fill me-2"></i>
                     Supplier PO Information
@@ -207,8 +109,8 @@
               <th class="text-center" width="30%">Product</th>
               <th class="text-center" width="15%">Remaining Qty</th>
               <th class="text-center" width="15%">Qty PO Supplier</th>
-              <th class="text-center" width="20%" style="text-align: right;">Purchase Price (Rp)</th>
-              <th class="text-center" width="15%" style="text-align: right;">Subtotal (Rp)</th>
+              <th class="text-center bgs-u-37dd0c2a6468" width="20%">Purchase Price (Rp)</th>
+              <th class="text-center bgs-u-37dd0c2a6468" width="15%">Subtotal (Rp)</th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
@@ -221,15 +123,15 @@
                             </tr>
                             <tr>
                                 <th colspan="4" class="text-end">Discount (%)</th>
-                                <td class="text-start" style="text-align: right;">
-                                    <input type="number" name="discount_percent" id="discount_percent" class="form-control" step="0.01" min="0" max="100" value="0" style="width: 100px;">
+                                <td class="text-start bgs-u-37dd0c2a6468">
+                                    <input type="number" name="discount_percent" id="discount_percent" class="form-control bgs-u-ed55e5720fee" step="0.01" min="0" max="100" value="0">
                                 </td>
                                 <th class="text-end" id="discount_amount_display">Rp 0</th>
                             </tr>
                             <tr>
                                 <th colspan="4" class="text-end">VAT (%)</th>
-                                <td class="text-start" style="text-align: right;">
-                                    <input type="number" name="tax_percent" id="tax_percent" class="form-control" step="0.01" min="0" max="100" value="11" style="width: 100px;">
+                                <td class="text-start bgs-u-37dd0c2a6468">
+                                    <input type="number" name="tax_percent" id="tax_percent" class="form-control bgs-u-ed55e5720fee" step="0.01" min="0" max="100" value="11">
                                 </td>
                                 <th class="text-end" id="tax_amount_display">Rp 0</th>
                             </tr>
@@ -255,7 +157,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white" style="background: linear-gradient(135deg, #10b981, #047857); border:none;"><i class="bi bi-save-fill me-1"></i> Save PO Supplier</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white bgs-u-5c3a9bfaf58c"><i class="bi bi-save-fill me-1"></i> Save PO Supplier</button>
                     <a href="{{ route('po-suppliers.index') }}" class="btn btn-light px-4 py-2 fw-bold">Cancel</a>
                 </div>
             </div>
@@ -314,7 +216,7 @@
                                     PO Supplier Price
                                 </th>
 
-                                <th style="min-width:220px;">
+                                <th class="bgs-u-9fda40b045c3">
                                     Decision
                                 </th>
                             </tr>
@@ -557,7 +459,7 @@ $(document).ready(function() {
                         'max="' + item.remaining_quantity + '" ' +
                         'disabled></td>';
 
-                    rows += '<td style="text-align: right;"><input type="text" ' +
+                    rows += '<td class="bgs-u-37dd0c2a6468"><input type="text" ' +
                         'name="items[' + rowIndex + '][purchase_price]" ' +
                         'id="price_' + rowIndex + '" ' +
                         'class="form-control price-input" ' +

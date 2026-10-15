@@ -1,108 +1,13 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-invoice-customers-edit bgs-mode-edit')
 @section('title', 'Edit Sales Invoice')
 @section('content')
 
-<style>
-    .price-input,
-    .qty-input {
-        text-align: right;
-    }
-    .table-responsive {
-        overflow-x: auto;
-    }
-    .section-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 18px;
-    }
-    .section-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #1e293b;
-        margin-bottom: 12px;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-title i {
-        color: #0284c7;
-        margin-right: 6px;
-    }
-    .summary-box {
-        background: #1e293b;
-        border-radius: 10px;
-        padding: 18px 16px;
-        color: #cbd5e1;
-    }
-    .summary-box .row-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 4px 0;
-        border-bottom: 1px solid #334155;
-    }
-    .summary-box .row-item:last-child {
-        border-bottom: none;
-    }
-    .summary-box .grand-total {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #38bdf8;
-        border-top: 2px solid #475569;
-        padding-top: 8px;
-        margin-top: 4px;
-    }
-    .summary-box .label {
-        font-weight: 500;
-    }
-    .summary-box .value {
-        font-weight: 600;
-        color: #e2e8f0;
-    }
-    .summary-box .grand-total .value {
-        color: #38bdf8;
-    }
-    .product-card {
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 15px;
-        background: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .readonly-bg,
-    .brand-display,
-    .subtotal-display,
-    .code2-display,
-    .name2-display {
-        background: #f8f9fa !important;
-    }
-    .btn-remove {
-        width: 100%;
-    }
-    .card-header-custom {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        color: white;
-        border-radius: 10px 10px 0 0;
-    }
-    .page-title {
-        font-size: 1.4rem;
-        font-weight: 600;
-    }
-    .select2-container .select2-selection--single {
-        min-height: 40px !important;
-        border-color: #cbd5e1 !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 40px !important;
-        padding-left: 12px !important;
-    }
-</style>
+
+
 
 <div class="card shadow-sm border-0">
-    <div class="card-header card-header-custom py-3">
+    <div class="card-header card-header-custom py-3 bgs-page-header">
         <div class="d-flex justify-content-between align-items-center">
             <div class="page-title">
                 <i class="bi bi-pencil-square me-2"></i> Edit Sales Invoice
@@ -116,7 +21,7 @@
 
         {{-- ALERT --}}
         @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" style="border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm bgs-u-336700042f4a">
                 <div class="d-flex">
                     <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                     <div>
@@ -133,7 +38,7 @@
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" style="border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm bgs-u-336700042f4a">
                 <div class="d-flex">
                     <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
                     <span>{{ session('error') }}</span>
@@ -158,7 +63,7 @@
                     <div class="col-md-4">
                         <label class="form-label">Invoice #</label>
                         <input type="text" name="invoice_number" class="form-control readonly-bg"
-                            value="{{ old('invoice_number', $invoice->invoice_number) }}">
+                            value="{{ old('invoice_number', $invoice->invoice_number) }}" readonly>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Customer</label>
@@ -302,13 +207,113 @@
             {{-- ========================================================= --}}
             {{-- BAGIAN 5: PRODUCT DETAILS --}}
             {{-- ========================================================= --}}
+            @if(!$normalAllocationEdit)
             <div class="section-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="section-title mb-0" style="border-bottom: none; padding-bottom: 0;">
-                        <i class="bi bi-box-fill"></i> Product Details
+            @endif
+                @if(!$normalAllocationEdit)
+                <div class="section-title"><i class="bi bi-box-fill"></i> Product Details</div>
+                @endif
+
+                @if($normalAllocationEdit)
+                <div class="section-card">
+                    <div class="section-title"><i class="bi bi-diagram-3-fill"></i> Invoice Allocation</div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Allocation Method</label>
+                        <select name="allocation_mode" id="allocation_mode" class="form-select" required>
+                            <option value="PERCENTAGE" {{ old('allocation_mode', $invoice->allocation_mode) === 'PERCENTAGE' ? 'selected' : '' }}>By Payment Percentage</option>
+                            <option value="ITEM_QTY" {{ old('allocation_mode', $invoice->allocation_mode) === 'ITEM_QTY' ? 'selected' : '' }}>By Item / Quantity</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6" id="percentageStrategyInfo">
+                        <div class="info-box mb-0">Payment Percentage is calculated from the original PO commercial amount.</div>
                     </div>
                 </div>
-
+                </div>
+                <div class="section-card" id="productDetailsCard">
+                    <div class="section-title"><i class="bi bi-box-fill"></i> Product Details</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark"><tr><th class="text-center">Select</th><th>Product</th><th class="text-center">Qty PO</th><th class="text-center">Qty Invoice</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
+                        <tbody>
+                        @foreach($invoice->poCustomer->details as $index => $poDetail)
+                            @php
+                                $balance = $allocationSnapshot['lines']->firstWhere('po_customer_detail_id', $poDetail->id);
+                                $currentQty = $invoice->details->where('po_customer_detail_id', $poDetail->id)->sum('quantity');
+                                $qty = old("details.$index.quantity", $currentQty);
+                            @endphp
+                            <tr class="allocation-row" data-price="{{ $poDetail->unit_price }}" data-available="{{ $balance['remaining_quantity'] }}">
+                                <td class="text-center"><input type="checkbox" class="form-check-input allocation-select" {{ $qty > 0 ? 'checked' : '' }}></td>
+                                <td>{{ $poDetail->product->name ?? '' }}<br><small class="text-muted">{{ $poDetail->product->product_code ?? '' }} — {{ $poDetail->product->brand ?? '-' }}</small></td>
+                                <td class="text-center">{{ $poDetail->quantity }} {{ $poDetail->product->unit ?? '' }}<br><small class="text-muted">Available: {{ $balance['remaining_quantity'] }}</small></td>
+                                <td>
+                                    <input type="hidden" class="allocation-identity" name="details[{{ $index }}][po_customer_detail_id]" value="{{ $poDetail->id }}">
+                                    <input type="number" name="details[{{ $index }}][quantity]" class="form-control allocation-qty text-end" value="{{ $qty }}" min="0" max="{{ $balance['remaining_quantity'] }}" step="1">
+                                </td>
+                                <td><input class="form-control text-end" value="{{ number_format($poDetail->unit_price, 0, ',', '.') }}" readonly></td>
+                                <td class="allocation-line-total text-end text-nowrap">{{ number_format($poDetail->quantity * $poDetail->unit_price, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="5" class="text-end">Subtotal</th>
+                                    <th class="text-end" id="subtotal-text">Rp 0</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="4" class="text-end">Discount (%)</th>
+                                    <td>
+                                        <input type="number" name="discount_percent" id="discount_percent"
+                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('discount_percent', $invoice->discount_percent ?? 0) }}">
+                                    </td>
+                                    <th class="text-end" id="discount-text">Rp 0</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="4" class="text-end">Payment Percentage (%)</th>
+                                    <td>
+                                        <input type="number" name="dp_percent" id="dp_percent"
+                                               class="form-control text-end" step="any" min="0.000001" max="100" value="{{ old('dp_percent', $invoice->dp_percent ?? 100) }}">
+                                    </td>
+                                    <th class="text-end" id="dp-text">Rp 0</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="5" class="text-end">DPP Lain (11/12 × DP)</th>
+                                    <th class="text-end" id="dpplain-text">Rp 0</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="4" class="text-end">PPN (%)</th>
+                                    <td>
+                                        <input type="number" name="tax_percent" id="tax_percent"
+                                               class="form-control text-end" step="0.5" min="0" max="100" value="{{ old('tax_percent', $invoice->tax_percent ?? 11) }}">
+                                    </td>
+                                    <th class="text-end" id="tax-text">Rp 0</th>
+                                </tr>
+                                <tr id="pph23_row" class="{{ old('pph23_percent', $invoice->pph23_percent) > 0 ? '' : 'bgs-hidden' }}">
+                                    <th colspan="4" class="text-end">PPH23 (%)</th>
+                                    <td>
+                                        <input type="number"
+                                               name="pph23_percent" id="pph23_percent"
+                                               class="form-control text-end"
+                                               step="0.01"
+                                               min="0"
+                                               max="100"
+                                               value="{{ old('pph23_percent', $invoice->pph23_percent ?? 0) }}">
+                                    </td>
+                                    <th class="text-end" id="pph23-text">Rp 0</th>
+                                </tr>
+                                <tr class="table-primary">
+                                    <th colspan="5" class="text-end">Grand Total</th>
+                                    <th class="text-end"><strong id="grand-total-text">Rp 0</strong></th>
+                                </tr>
+                                <tr>
+                                    <th colspan="5" class="text-end">Remaining PO Amount Before Tax</th>
+                                    <th class="text-end" id="remaining-text">Rp 0</th>
+                                </tr>
+                            </tfoot>
+                    </table>
+                </div>
+                @else
                 <div id="products-container">
                     @foreach($invoice->details as $index => $detail)
                     <div class="product-card product-row" data-row-id="{{ $index }}">
@@ -368,11 +373,14 @@
                     </div>
                     @endforeach
                 </div>
+                @endif
+
             </div>
 
             {{-- ========================================================= --}}
             {{-- BAGIAN 6: SUMMARY --}}
             {{-- ========================================================= --}}
+            @if(!$normalAllocationEdit)
             <div class="section-card">
                 <div class="section-title"><i class="bi bi-calculator-fill"></i> Summary</div>
                 <div class="row justify-content-end">
@@ -389,8 +397,8 @@
                                 <span class="label">Discount (%)</span>
                                 <span class="value">
                                     <input type="number" name="discount_percent" id="discount_percent"
-                                        class="form-control form-control-sm text-end"
-                                        style="background: #334155; border: 1px solid #475569; color: #ffc107; width: 80px; display: inline-block;"
+                                        class="form-control form-control-sm text-end bgs-u-341b166096f4"
+
                                         value="{{ old('discount_percent', $invoice->discount_percent ?? 0) }}"
                                         min="0" max="100" step="0.5">
                                 </span>
@@ -405,10 +413,10 @@
                                 <span class="label">Payment (%)</span>
                                 <span class="value">
                                     <input type="number" name="dp_percent" id="dp_percent"
-                                        class="form-control form-control-sm text-end"
-                                        style="background: #334155; border: 1px solid #475569; color: #fff; width: 80px; display: inline-block;"
+                                        class="form-control form-control-sm text-end bgs-u-15c93980da4c"
+
                                         value="{{ old('dp_percent', $invoice->dp_percent ?? 100) }}"
-                                        min="0" max="100" step="0.5">
+                                        min="0.000001" max="100" step="any">
                                 </span>
                             </div>
                             <div class="row-item">
@@ -426,8 +434,8 @@
                                 <span class="label">PPN (%)</span>
                                 <span class="value">
                                     <input type="number" name="tax_percent" id="tax_percent"
-                                        class="form-control form-control-sm text-end"
-                                        style="background: #334155; border: 1px solid #475569; color: #0dcaf0; width: 80px; display: inline-block;"
+                                        class="form-control form-control-sm text-end bgs-u-e9c46ed6e89f"
+
                                         value="{{ old('tax_percent', $invoice->tax_percent ?? 11) }}"
                                         min="0" max="100" step="0.5">
                                 </span>
@@ -438,17 +446,17 @@
                                 <input type="hidden" name="tax_amount" id="tax-value">
                             </div>
                             {{-- PPH23 --}}
-                            <div class="row-item" id="pph23_row" style="{{ $invoice->pph23_percent > 0 ? '' : 'display: none;' }}">
+                            <div class="row-item {{ $invoice->pph23_percent > 0 ? '' : 'bgs-hidden' }}" id="pph23_row">
                                 <span class="label">PPH23 (%)</span>
                                 <span class="value">
                                     <input type="number" name="pph23_percent" id="pph23_percent"
-                                        class="form-control form-control-sm text-end"
-                                        style="background: #334155; border: 1px solid #475569; color: #dc3545; width: 80px; display: inline-block;"
+                                        class="form-control form-control-sm text-end bgs-u-28d27d979dee"
+
                                         value="{{ old('pph23_percent', $invoice->pph23_percent ?? 0) }}"
                                         min="0" max="100" step="0.5">
                                 </span>
                             </div>
-                            <div class="row-item" id="pph23_amount_row" style="{{ $invoice->pph23_percent > 0 ? '' : 'display: none;' }}">
+                            <div class="row-item {{ $invoice->pph23_percent > 0 ? '' : 'bgs-hidden' }}" id="pph23_amount_row">
                                 <span class="label">PPH23 Amount</span>
                                 <span class="value" id="pph23-text">Rp 0</span>
                                 <input type="hidden" name="pph23_amount" id="pph23-value">
@@ -469,6 +477,8 @@
                     </div>
                 </div>
             </div>
+
+            @endif
 
             {{-- ========================================================= --}}
             {{-- BAGIAN 7: REMARKS & STATUS --}}
@@ -494,10 +504,10 @@
                         <label class="form-label">Payment Status</label>
                         <select name="payment_status" class="form-select" required>
     <option value="sent" selected>Sent</option>
-    <option value="paid">Paid</option>
+
 </select>
 <div class="form-text">
-    Payment status can only move from Sent to Paid. Paid invoices are locked.
+    Gunakan menu Payment Customer untuk konfirmasi pelunasan. Invoice Paid terkunci.
 </div>
                     </div>
                 </div>
@@ -534,8 +544,24 @@ $(document).ready(function () {
         allowClear: true,
         width: '100%'
     });
+    // BGS invoice edit Select2 focus
+    $('.select2-tags').on('select2:open.bgsInvoiceFocus', function () {
+        const instance = $(this).data('select2');
+        setTimeout(function () {
+            if (!instance || !instance.isOpen()) return;
+            const search = instance.dropdown && instance.dropdown.$search;
+            if (search && search.length) {
+                search[0].focus();
+            }
+        }, 50);
+    });
 
     let rowCounter = {{ count($invoice->details) }};
+    const normalAllocationEdit = @json($normalAllocationEdit);
+    const savedAllocationMode = @json($invoice->allocation_mode);
+    const poAmount = @json($allocationSnapshot['amount']['po_amount'] ?? 0);
+    const availableAmount = @json($allocationSnapshot['amount']['remaining_amount'] ?? 0);
+
 
     // =========================================================
     // ATTACHMENT DELETE HANDLER
@@ -589,14 +615,49 @@ $(document).ready(function () {
         let taxPercent = parseFloat($('#tax_percent').val()) || 0;
         let pph23Percent = parseFloat($('#pph23_percent').val()) || 0;
 
+        const allocationMode = normalAllocationEdit ? $('#allocation_mode').val() : savedAllocationMode;
         let dpAmount = subtotal * dpPercent / 100;
-        let baseAmount = (dpAmount > 0) ? dpAmount : subtotal;
+        if (normalAllocationEdit) {
+            $('#percentageStrategyInfo').toggle(allocationMode === 'PERCENTAGE');
+            if (allocationMode === 'PERCENTAGE') {
+                subtotal = poAmount;
+                $('#dp_percent').prop('readonly', false);
+                $('.allocation-qty, .allocation-select, .allocation-identity').prop('disabled', true);
+                $('.allocation-line-total').text('Rp 0');
+                dpAmount = Math.round(poAmount * dpPercent) / 100;
+            } else {
+                subtotal = 0;
+                $('.allocation-row').each(function () {
+                    const row = $(this);
+                    const qty = row.find('.allocation-qty');
+                    qty.prop('disabled', false);
+                    row.find('.allocation-identity').prop('disabled', false);
+                    const selected = row.find('.allocation-select');
+                    selected.prop('disabled', false);
+                    if (!selected.prop('checked')) qty.val(0);
+                    qty.prop('readonly', false);
+                    const lineTotal = (Number(qty.val()) || 0) * Number(row.data('price'));
+                    subtotal += lineTotal;
+                    row.find('.allocation-line-total').text(formatRupiah(lineTotal));
+                });
+                dpPercent = 100;
+                $('#dp_percent').val(100).prop('readonly', true);
+                dpAmount = subtotal;
+            }
+        }
+        let baseAmount = normalAllocationEdit ? dpAmount : ((dpAmount > 0) ? dpAmount : subtotal);
         let discountAmount = baseAmount * discountPercent / 100;
+        if (normalAllocationEdit) discountAmount = Math.round(discountAmount * 100) / 100;
         let dpp = baseAmount - discountAmount;
         let taxAmount = dpp * taxPercent / 100;
         let pph23Amount = dpp * pph23Percent / 100;
+        if (normalAllocationEdit) {
+            taxAmount = Math.round(taxAmount * 100) / 100;
+            pph23Amount = Math.round(pph23Amount * 100) / 100;
+        }
         let grandTotal = dpp + taxAmount - pph23Amount;
-        let remaining = (dpAmount > 0) ? (subtotal - dpAmount) : 0;
+        if (normalAllocationEdit) grandTotal = Math.round(grandTotal * 100) / 100;
+        let remaining = normalAllocationEdit ? Math.max(0, availableAmount - baseAmount) : ((dpAmount > 0) ? (subtotal - dpAmount) : 0);
 
         let dppLain = dpAmount * 11 / 12;
         $('#dpplain-text').text('Rp ' + formatRupiah(dppLain));
@@ -631,6 +692,13 @@ $(document).ready(function () {
     // EVENT LISTENERS
     // =========================================================
     $('#type').change(calculateGrandTotal);
+    $('.allocation-qty').on('input change', calculateGrandTotal);
+    $('#allocation_mode').on('change', calculateGrandTotal);
+    $('.allocation-select').on('change', function () {
+        const row = $(this).closest('.allocation-row');
+        if ($(this).is(':checked') && !(Number(row.find('.allocation-qty').val()) > 0)) row.find('.allocation-qty').val(Number(row.data('available')));
+        calculateGrandTotal();
+    });
 
     $('#has_pph23').change(function () {
         if ($(this).is(':checked')) {
@@ -644,7 +712,8 @@ $(document).ready(function () {
     });
 
     $('#payment_terms').change(function () {
-        let terms = $(this).val();
+        if (normalAllocationEdit) return;
+        let terms = $(this).val() || '';
         let match = terms.match(/(\d+)%/);
         if (match) {
             $('#dp_percent').val(match[1]);

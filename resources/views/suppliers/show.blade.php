@@ -1,11 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-suppliers-show bgs-mode-screen')
 
 @section('title', 'Supplier Detail')
 
 @section('content')
 <div class="container-fluid">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header bgs-page-header">
             <h3 class="card-title">Supplier Detail</h3>
             <div class="card-tools">
                 <a href="{{ route('suppliers.index') }}" class="btn btn-secondary btn-sm">
@@ -19,7 +20,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <table class="table table-bordered">
+                    <table class="table bgs-detail-table align-middle">
                         <tr>
                             <th width="30%">Supplier Code</th>
                             <td>{{ $supplier->supplier_code }}</td>

@@ -341,7 +341,7 @@ class QuotationController extends Controller
                 $validUntil = date('Y-m-d', strtotime($request->date . ' +7 days'));
             }
 
-            // Update header ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ status bisa diubah dari form
+            // Update header status bisa diubah dari form
             $quotation->update([
                 'quotation_number' => $request->quotation_number,
                 'customer_id' => $request->customer_id,
@@ -492,7 +492,7 @@ class QuotationController extends Controller
      */
     private function isAdmin()
     {
-        return auth()->check() && auth()->user()->email === 'arief@gmail.com';
+        return auth()->check() && auth()->user()->canUseAdminFeatures();
     }
 
     /**

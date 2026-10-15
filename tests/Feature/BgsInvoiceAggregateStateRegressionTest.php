@@ -16,9 +16,9 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
             throw new \RuntimeException('SAFETY BLOCK: APP_ENV must be testing.');
         }
 
-        if (DB::connection()->getDatabaseName() !== 'erp_app_testing') {
+        if (app()->configurationIsCached() || DB::connection()->getDriverName() !== 'mysql' || DB::connection()->getDatabaseName() !== 'erp_app_staging_testing_1026' || DB::selectOne('SELECT DATABASE() AS db')->db !== 'erp_app_staging_testing_1026') {
             throw new \RuntimeException(
-                'SAFETY BLOCK: database must be erp_app_testing.'
+                'SAFETY BLOCK: database must be erp_app_staging_testing_1026.'
             );
         }
 
@@ -37,7 +37,7 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
     private function columns(string $table)
     {
         return DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', $table)
             ->orderBy('ORDINAL_POSITION')
             ->get();
@@ -145,7 +145,22 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
             'total'          => $total,
         ]);
 
-        return DB::table('po_customers')->insertGetId($data);
+        $poCustomerId = DB::table('po_customers')->insertGetId($data);
+
+        $product = $this->genericRow('products', []);
+        $productId = DB::table('products')->insertGetId($product);
+
+        $detail = $this->genericRow('po_customer_details', [
+            'po_customer_id' => $poCustomerId,
+            'product_id'     => $productId,
+            'quantity'       => 1,
+            'unit_price'     => $total,
+            'subtotal'       => $total,
+        ]);
+
+        DB::table('po_customer_details')->insert($detail);
+
+        return $poCustomerId;
     }
 
     private function createInvoice(
@@ -156,12 +171,15 @@ class BgsInvoiceAggregateStateRegressionTest extends TestCase
     ): int {
         $data = $this->genericRow('invoice_customers', [
             'po_customer_id' => $poCustomerId,
+            'allocation_mode' => 'PERCENTAGE',
             'invoice_number' => 'TEST-INV-' . uniqid(),
             'invoice_date'   => now()->toDateString(),
             'status'         => $status,
             'invoice_status' => 'issue yet',
             'payment_status' => $paymentStatus,
             'subtotal'       => $total,
+            'dp_percent'     => 100,
+            'dp_amount'      => $total,
             'total'          => $total,
             'remaining_amount' => 0,
         ]);
