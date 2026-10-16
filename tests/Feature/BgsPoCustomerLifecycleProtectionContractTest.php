@@ -17,9 +17,9 @@ class BgsPoCustomerLifecycleProtectionContractTest extends TestCase
             );
         }
 
-        if (DB::connection()->getDatabaseName() !== 'erp_app_testing') {
+        if (DB::connection()->getDatabaseName() !== 'erp_app_staging_testing_1026') {
             throw new \RuntimeException(
-                'SAFETY BLOCK: database must be erp_app_testing.'
+                'SAFETY BLOCK: database must be erp_app_staging_testing_1026.'
             );
         }
     }

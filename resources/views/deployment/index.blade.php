@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-deployment-index bgs-mode-index')
 
 @section('title', 'Deployment Manager')
 
@@ -8,27 +9,18 @@
     $canUploadDeployment = $deploymentUser?->hasPermission('deployment_upload') ?? false;
     $canInstallDeployment = $deploymentUser?->hasPermission('deployment_install') ?? false;
 @endphp
-<style>
-    body { background-color: #f1f5f9; }
-    .deployment-card { border: 0; border-radius: 12px; overflow: hidden; }
-    .deployment-header { background: linear-gradient(135deg, #0284c7, #075985); color: #fff; padding: 1.5rem; }
-    .deployment-table thead th { background: #0c4a6e; color: #f0f9ff; border: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-    .deployment-table td { vertical-align: middle; color: #334155; }
-    .release-id { color: #0284c7; font-weight: 700; }
-    .status-badge { border-radius: 999px; padding: .45rem .75rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
-    .deployment-action { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; }
-</style>
+
 
 <div class="py-4">
     <div id="deployment-feedback" class="alert d-none" role="alert"></div>
 
     <div class="card deployment-card shadow-sm">
-        <div class="deployment-header d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div class="deployment-header bgs-page-header d-flex justify-content-between align-items-center gap-3 flex-wrap">
             <div>
                 <h4 class="mb-1 fw-bold"><i class="fas fa-code-branch me-2"></i>Deployment Manager</h4>
                 <div class="small opacity-75">Canonical application releases and lifecycle status</div>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
                 @auth
                     @if ($canUploadDeployment)
                         <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#uploadDeploymentModal">
@@ -44,9 +36,14 @@
 
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table deployment-table table-hover mb-0">
+                <table class="table deployment-table table-hover mb-0 bgs-index-table bgs-operations-table">
                     <thead>
                         <tr>
+                            @auth
+                                @if ($canInstallDeployment)
+                                    <th class="text-center col-action bgs-col-action">Actions</th>
+                                @endif
+                            @endauth
                             <th class="px-3 py-3">Release ID</th>
                             <th>Version</th>
                             <th>Scope</th>
@@ -54,11 +51,7 @@
                             <th>Status</th>
                             <th>Uploaded</th>
                             <th>Installed</th>
-                            @auth
-                                @if ($canInstallDeployment)
-                                    <th class="text-center">Action</th>
-                                @endif
-                            @endauth
+
                         </tr>
                     </thead>
                     <tbody>
@@ -73,16 +66,9 @@
                                 };
                             @endphp
                             <tr>
-                                <td class="px-3"><span class="release-id">{{ $release->release_id }}</span></td>
-                                <td>{{ $release->version }}</td>
-                                <td>{{ ucfirst($release->scope) }}</td>
-                                <td>{{ $release->module ?: '-' }}{{ $release->feature ? ' / '.$release->feature : '' }}</td>
-                                <td><span class="status-badge {{ $statusClass }}">{{ str_replace('_', ' ', $release->status) }}</span></td>
-                                <td>{{ $release->created_at ? \Illuminate\Support\Carbon::parse($release->created_at)->format('d M Y H:i') : '-' }}</td>
-                                <td>{{ $release->installed_at ? \Illuminate\Support\Carbon::parse($release->installed_at)->format('d M Y H:i') : '-' }}</td>
                                 @auth
                                     @if ($canInstallDeployment)
-                                        <td class="text-center">
+                                        <td class="text-center col-action bgs-col-action">
                                             @if ($release->status === 'uploaded')
                                                 <button
                                                     type="button"
@@ -97,6 +83,14 @@
                                         </td>
                                     @endif
                                 @endauth
+                                <td class="px-3"><span class="release-id">{{ $release->release_id }}</span></td>
+                                <td>{{ $release->version }}</td>
+                                <td>{{ ucfirst($release->scope) }}</td>
+                                <td>{{ $release->module ?: '-' }}{{ $release->feature ? ' / '.$release->feature : '' }}</td>
+                                <td><span class="status-badge {{ $statusClass }}">{{ str_replace('_', ' ', $release->status) }}</span></td>
+                                <td>{{ $release->created_at ? \Illuminate\Support\Carbon::parse($release->created_at)->format('d M Y H:i') : '-' }}</td>
+                                <td>{{ $release->installed_at ? \Illuminate\Support\Carbon::parse($release->installed_at)->format('d M Y H:i') : '-' }}</td>
+
                             </tr>
                         @empty
                             <tr><td colspan="{{ $canInstallDeployment ? 8 : 7 }}" class="text-center text-muted py-5">No deployment release has been registered.</td></tr>

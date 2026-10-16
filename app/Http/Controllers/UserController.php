@@ -14,7 +14,7 @@ class UserController extends Controller
     {
         // Memastikan hanya Arief dan Cicha yang bisa mengakses controller ini via Gate
         $this->middleware(function ($request, $next) {
-            if (Gate::denies('access-dashboard')) {
+            if (!Auth::user()->canUseAdminFeatures()) {
                 return redirect()->route('landing-page')->with('error', 'Anda tidak memiliki akses ke manajemen user.');
             }
             return $next($request);

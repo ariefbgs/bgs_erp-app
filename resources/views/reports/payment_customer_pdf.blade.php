@@ -2,18 +2,7 @@
 <html>
 <head>
     <title>Laporan Payment dari Customer</title>
-    <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .title { font-size: 18px; font-weight: bold; }
-        .subtitle { font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .text-right { text-align: right; }
-        .footer { margin-top: 30px; text-align: center; font-size: 10px; }
-        .total-row { font-weight: bold; background-color: #f9f9f9; }
-    </style>
+    @include('layouts.print-styles', ['bgsPrintProfile' => 'reports-payment_customer_pdf'])
 </head>
 <body>
     <div class="header">

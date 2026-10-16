@@ -25,10 +25,10 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
 
         if (
             DB::connection()->getDatabaseName()
-            !== 'erp_app_testing'
+            !== 'erp_app_staging_testing_1026'
         ) {
             throw new \RuntimeException(
-                'SAFETY BLOCK: database must be erp_app_testing.'
+                'SAFETY BLOCK: database must be erp_app_staging_testing_1026.'
             );
         }
 
@@ -78,7 +78,7 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
     private function columns(string $table)
     {
         return DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', $table)
             ->orderBy('ORDINAL_POSITION')
             ->get();

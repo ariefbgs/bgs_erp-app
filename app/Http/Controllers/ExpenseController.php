@@ -46,7 +46,7 @@ class ExpenseController extends Controller
                 'expense_doc_date' => 'nullable|date',
                 'period_month'     => 'nullable|date_format:Y-m',
                 'description'      => 'nullable|string',
-                'attachment'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+                'attachment'       => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx|max:2048',
             ]);
 
             // Generate nomor otomatis
@@ -54,7 +54,7 @@ class ExpenseController extends Controller
 
             // Handle attachment
             if ($request->hasFile('attachment')) {
-                $path = $request->file('attachment')->store('attachments', 'public');
+                $path = app(\App\Services\AttachmentImageUploadService::class)->store($request->file('attachment'), 'attachments');
                 $validated['attachment'] = $path;
             }
 
@@ -94,16 +94,12 @@ class ExpenseController extends Controller
                 'expense_doc_date' => 'nullable|date',
                 'period_month'     => 'nullable|date_format:Y-m',
                 'description'      => 'nullable|string',
-                'attachment'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+                'attachment'       => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx|max:2048',
             ]);
 
             // Handle attachment: jika ada file baru, simpan dan hapus yang lama
             if ($request->hasFile('attachment')) {
-                // Hapus file lama jika ada
-                if ($expense->attachment && Storage::disk('public')->exists($expense->attachment)) {
-                    Storage::disk('public')->delete($expense->attachment);
-                }
-                $path = $request->file('attachment')->store('attachments', 'public');
+                $path = app(\App\Services\AttachmentImageUploadService::class)->store($request->file('attachment'), 'attachments');
                 $validated['attachment'] = $path;
             } else {
                 // Jika tidak ada file baru, pertahankan attachment lama

@@ -1,49 +1,39 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-suppliers-index bgs-mode-index')
 
 @section('title', 'Supplier Management')
 
 @section('content')
-<style>
-    .text-right {
-        text-align: right;
-    }
-    .total-column {
-        text-align: right;
-        font-weight: bold;
-    }
-</style>
-<div class="card">
-    <div class="card-header bg-primary text-white">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Supplier Management</h4>
     </div>
-    <div class="card-body">
-        <a href="{{ route('suppliers.create') }}" class="btn btn-success mb-3">Add Supplier</a>
+    <div class="card-body p-4">
+        <a href="{{ route('suppliers.create') }}" class="btn btn-primary mb-3">Add Supplier</a>
         
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
         
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
+        <div class="table-responsive quotation-table-wrap">
+            <table class="table table-modern table-hover align-middle quotation-table bgs-index-table bgs-actions-compact">
+                <thead>
                     <tr>
                         <th class="text-center">No</th>
+                        <th class="text-center col-action">Actions</th>
                         <th class="text-center">Supplier Code</th>
                         <th class="text-center">Name</th>
                         <th class="text-center">Email</th>
                         <th class="text-center">Phone Number</th>
-                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($suppliers as $index => $supplier)
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td>{{ $supplier->supplier_code }}</td>
-                        <td>{{ $supplier->name }}</td>
-                        <td>{{ $supplier->email ?? '-' }}</td>
-                        <td>{{ $supplier->phone ?? '-' }}</td>
-                        <td class="text-center">
+                        <td class="text-center col-action">
+                            <div class="d-flex justify-content-center action-btn-group">
                             <a href="{{ route('suppliers.show', $supplier->id) }}" 
                             class="btn btn-info btn-sm">
                                 <i class="bi bi-eye"></i>
@@ -66,7 +56,13 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
+                                                    </div>
                         </td>
+                        <td>{{ $supplier->supplier_code }}</td>
+                        <td>{{ $supplier->name }}</td>
+                        <td>{{ $supplier->email ?? '-' }}</td>
+                        <td>{{ $supplier->phone ?? '-' }}</td>
+
                     </tr>
                     @endforeach
                 </tbody>

@@ -6,41 +6,10 @@
     <title>Sistem ERP - Beranda</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .hero-section {
-            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-            border-bottom: 1px solid #e2e8f0;
-            padding: 80px 0;
-        }
-        .features-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            transition: all 0.25s ease-in-out;
-            text-decoration: none !important;
-        }
-        .features-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 20px rgba(0,0,0,0.05);
-            border-color: #cbd5e1;
-        }
-        .icon-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-        }
-    </style>
+
+<link rel="stylesheet" href="{{ asset('css/bgs-global.css') }}?v={{ filemtime(public_path('css/bgs-global.css')) }}">
 </head>
-<body>
+<body class="bgs-ui bgs-page-landing bgs-mode-screen">
 
     <nav class="navbar navbar-expand-lg navbar-white bg-white border-bottom sticky-top">
         <div class="container py-1">
@@ -74,7 +43,7 @@
                 </div>
                 <div class="col-md-5 text-center d-none d-md-block">
                     <div class="p-4 bg-white rounded-4 shadow-sm border border-light text-center">
-                        <i class="bi bi-laptop text-primary" style="font-size: 5rem;"></i>
+                        <i class="bi bi-laptop text-primary bgs-u-cca8c07e34a3"></i>
                         <h6 class="fw-bold mt-2 mb-0">Aktivitas Terbuka</h6>
                         <p class="text-muted small">Semua modul siap digunakan sesuai hak akses Anda.</p>
                     </div>
@@ -140,7 +109,7 @@
 
             <div class="col">
                 <a href="{{ route('reports.index') }}" class="card h-100 p-4 features-card">
-                    <div class="icon-circle bg-purple bg-opacity-10 text-purple" style="color: #6f42c1; background-color: rgba(111,66,193,0.1);"><i class="bi bi-journal-check"></i></div>
+                    <div class="icon-circle bg-purple bg-opacity-10 text-purple bgs-u-425b3f6d8269"><i class="bi bi-journal-check"></i></div>
                     <h5 class="fw-bold text-dark mb-1">Laporan</h5>
                     <p class="text-muted small mb-0">Unduh data rekapitulasi sales & purchasing.</p>
                 </a>

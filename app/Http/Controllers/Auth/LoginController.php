@@ -9,7 +9,12 @@ class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    protected $redirectTo = '/dashboard'; // Ganti dari /home ke /dashboard
+    protected function authenticated($request, $user)
+    {
+        // Tujuan tetap sesuai pengaturan, termasuk ketika ada intended URL.
+        $request->session()->forget('url.intended');
+        return redirect()->to($user->loginDestination());
+    }
 
     public function __construct()
     {

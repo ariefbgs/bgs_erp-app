@@ -1,218 +1,14 @@
 
-<style>
-    /* R1E-02H2 Transaction Index Standard */
 
-    .quotation-table-wrap {
-        overflow-x: auto;
-        position: relative;
-    }
-
-    .quotation-table {
-        min-width: 1250px;
-        table-layout: auto;
-    }
-
-    .quotation-table .col-action {
-        position: sticky;
-        left: 0;
-        z-index: 4;
-        min-width: 150px;
-        width: 150px;
-        white-space: nowrap;
-        box-shadow: 3px 0 5px rgba(0, 0, 0, 0.06);
-    }
-
-    /*
-     * Sticky header must explicitly retain the same
-     * background as the normal transaction table header.
-     */
-    .quotation-table.table-modern thead th.col-action {
-        background-color: #0c4a6e !important;
-        color: #f0f9ff !important;
-        z-index: 6;
-    }
-
-    .quotation-table tbody td.col-action {
-        background-color: #ffffff;
-    }
-
-    .quotation-table .col-customer {
-        min-width: 220px;
-        width: 220px;
-        line-height: 1.25;
-    }
-
-    .quotation-table .col-quotation-number {
-        min-width: 50px;
-        width: 50px;
-        white-space: nowrap;
-    }
-
-    .quotation-table .action-btn-group {
-        gap: 4px;
-        flex-wrap: nowrap;
-    }
-
-    .quotation-table .action-btn-group .btn {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        min-height: 34px;
-        padding: 0;
-        margin: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        line-height: 1;
-    }
-
-    .quotation-table .action-btn-group form {
-        display: inline-flex;
-        margin: 0;
-    }
-</style>
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-quotations-index bgs-mode-index')
 @section('title', 'Quotation Management')
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar senada dengan halaman show */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-
-    /* Header dengan gradasi warna Ocean Blue */
-    .card-header-custom {
-        background: linear-gradient(135deg, #0284c7, #075985);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Search & Filter Bar Custom */
-    .search-filter-bar {
-        background-color: #f8fafc; /* Abu-abu dasar super terang */
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
-    }
-    .filter-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569; /* Grey lebih tua tapi terang */
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    /* Styling Tabel Modern */
-    .table-modern thead th {
-        background-color: #0c4a6e; /* Biru Gelap Profesional */
-        color: #f0f9ff;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.78rem;
-        letter-spacing: 0.5px;
-        padding: 14px 10px;
-        border: none;
-        white-space: nowrap;
-    }
-    .table-modern tbody tr {
-        transition: background-color 0.2s ease;
-    }
-    .table-modern tbody tr:nth-child(even) {
-        background-color: #fcfdfe;
-    }
-    .table-modern tbody tr:hover {
-        background-color: #f1f5f9 !important; /* Highlight halus saat di-hover */
-    }
-    .table-modern tbody td {
-        padding: 1rem 0.75rem;
-        vertical-align: middle;
-        font-size: 0.9rem;
-        color: #334155;
-        border-color: #f1f5f9;
-    }
-
-    /* Teks Komponen di Dalam Tabel */
-    .customer-name {
-        font-weight: 600;
-        color: #1e293b; /* Kontras tinggi */
-    }
-    .quotation-number {
-        font-weight: 600;
-        color: #0284c7; /* Warna Ocean Blue penanda link/entitas utama */
-    }
-    .total-column {
-        font-weight: 700;
-        color: #0f172a;
-        white-space: nowrap;
-    }
-
-    /* Badge Status Custom (Pills Bulat & Berwarna Tegas) */
-    .badge-custom {
-        padding: 0.5em 0.9em;
-        font-size: 0.75rem;
-        font-weight: 700;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
-    }
-
-    /* Action Buttons Penyelarasan */
-    .action-btn-group .btn {
-        padding: 5px 10px;
-        font-size: 0.85rem;
-        border-radius: 6px;
-        margin: 0 2px;
-    }
-
-    /* Empty State */
-    .empty-state {
-        padding: 50px 20px;
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    /* Tombol Header & Custom Input */
-    .btn-light-custom {
-        background-color: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        font-weight: 600;
-    }
-    .btn-light-custom:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        color: white;
-    }
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #38bdf8;
-        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4>
                 <i class="bi bi-file-earmark-text-fill me-2"></i>
                 Quotation Management
@@ -226,10 +22,10 @@
         <div class="card-body p-4">
             {{-- SUCCESS MESSAGE ALERT --}}
             @if(session('success'))
-                <div id="success-alert" class="alert alert-success border-0 shadow-sm d-flex align-items-center fade show mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important; border-radius: 6px;">
+                <div id="success-alert" class="alert alert-success border-0 shadow-sm d-flex align-items-center fade show mb-4 bgs-u-8a1856d11134">
                     <i class="bi bi-check-circle-fill me-2 fs-5"></i>
                     <div>{{ session('success') }}</div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
 
                 <script>
@@ -244,14 +40,14 @@
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif
 
             {{-- SEARCH & FILTER BAR --}}
             <div class="search-filter-bar">
-                <form method="GET" action="{{ route('quotations.index') }}">
+                <form method="GET" action="{{ route('quotations.index') }}" class="bgs-filter-form">
                     <div class="row g-3">
                         {{-- INPUT PENCARIAN --}}
                         <div class="col-md-5">
@@ -278,7 +74,7 @@
 
                         {{-- TOMBOL SUBMIT --}}
                         <div class="col-md-3 d-flex align-items-end gap-2">
-                            <button type="submit" class="btn btn-primary py-2 w-100 fw-bold" style="background-color: #0284c7; border-color: #0284c7;">
+                            <button type="submit" class="btn btn-primary py-2 w-100 fw-bold bgs-u-40db451c03f9">
                                 <i class="bi bi-search me-1"></i> Filter
                             </button>
                             <a href="{{ route('quotations.index') }}" class="btn btn-outline-secondary py-2 px-3" title="Reset Filters">
@@ -292,11 +88,11 @@
             {{-- TABEL DATA --}}
             <div class="border rounded-3 overflow-hidden shadow-sm mb-3">
                 <div class="table-responsive quotation-table-wrap">
-                    <table class="table table-modern quotation-table align-middle m-0">
+                    <table class="table table-modern quotation-table align-middle m-0 bgs-index-table">
                         <thead>
                             <tr>
                                 <th width="5%" class="text-center">No</th>
-                                <th class="text-center col-action">Actions</th>
+                                <th class="text-center col-action bgs-col-action">Actions</th>
                                 <th class="col-customer">Customer</th>
                                 <th class="col-quotation-number">Quotation #</th>
                                 <th class="text-center">Quotation Date</th>
@@ -317,8 +113,8 @@
                                     <td class="text-center col-action">
                                         <div class="d-flex justify-content-center action-btn-group">
                                             <a href="{{ route('quotations.show', $quotation->id) }}"
-                                               class="btn btn-info btn-sm text-white"
-                                               title="View Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                                               class="btn btn-info btn-sm text-white bgs-u-7dfad3480fc0"
+                                               title="View Detail">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{{ route('quotations.edit', $quotation->id) }}"
@@ -400,7 +196,7 @@
 
             {{-- PAGINATION BANNER --}}
             <div class="d-flex justify-content-between align-items-center mt-3 pt-2">
-                <div class="small fw-bold" style="color: #475569;">
+                <div class="small fw-bold bgs-u-7e4cfe51c78c">
                     Showing {{ $quotations->firstItem() ?? 0 }} to {{ $quotations->lastItem() ?? 0 }} of {{ $quotations->total() }} entries
                 </div>
                 <div>

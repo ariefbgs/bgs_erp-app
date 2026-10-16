@@ -27,6 +27,8 @@ class PoCustomer extends Model
         'tax_amount',
         'discount_percent',
         'discount_amount',
+        'pph_percent',
+        'pph_amount',
         'total',
         'remaining_amount',
         'attachment',
@@ -113,31 +115,18 @@ class PoCustomer extends Model
      */
     public function updateInvoiceStatus()
     {
-        $poPreTax = max(0, (float) $this->subtotal);
-        if ($poPreTax <= 0) {
-            $poPreTax = max(0, (float) $this->total - (float) $this->tax_amount);
-        }
-        $totalInvoicedPreTax = (float) $this->invoiceCustomers()
-            ->where('status', '!=', 'cancelled')
-            ->selectRaw('COALESCE(SUM(CASE WHEN dp_amount > 0 THEN dp_amount ELSE subtotal END), 0) as amount')
-            ->value('amount');
-        $remainingPreTax = max(0, $poPreTax - $totalInvoicedPreTax);
-        
-        if (round($remainingPreTax) <= 0) {
-            $status = 'completed';
-        } elseif ($totalInvoicedPreTax > 0) {
-            $status = 'partial';
-        } else {
-            $status = 'issue yet';
-        }
-        
-        $remainingAmount = $remainingPreTax;
+        $allocationService = app(\App\Services\InvoiceAllocationService::class);
 
-        $this->update([
-            'invoice_status' => $status,
-            'remaining_amount' => $remainingAmount,
-        ]);
-        return $this;
+        $state = $allocationService->completionState($this);
+
+        $status = $state['status'];
+
+        if ($this->invoice_status !== $status) {
+            $this->invoice_status = $status;
+            $this->save();
+        }
+
+        return $status;
     }
 
     /**

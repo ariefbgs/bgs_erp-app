@@ -1,22 +1,17 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-companies-index bgs-mode-index')
 
 @section('title', 'Company Management')
 
 @section('content')
-<style>
-    .company-logo {
-        width: 50px;
-        height: 50px;
-        object-fit: cover;
-    }
-</style>
 
-<div class="card">
-    <div class="card-header bg-primary text-white">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Company Management</h4>
     </div>
-    <div class="card-body">
-        <a href="{{ route('companies.create') }}" class="btn btn-success mb-3">
+    <div class="card-body p-4">
+        <a href="{{ route('companies.create') }}" class="btn btn-primary mb-3">
             <i class="bi bi-plus-circle"></i> Add Company
         </a>
         
@@ -36,43 +31,26 @@
         </script>
         @endif
         
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
+        <div class="table-responsive quotation-table-wrap">
+            <table class="table table-modern table-hover align-middle quotation-table bgs-index-table bgs-actions-compact">
+                <thead>
                     <tr>
                         <th class="text-center">No</th>
+                        <th class="text-center col-action">Actions</th>
                         <th class="text-center">Logo</th>
                         <th class="text-center">Code</th>
                         <th class="text-center">Company Name</th>
                         <th class="text-center">Email</th>
                         <th class="text-center">Phone</th>
                         <th class="text-center">Status</th>
-                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($companies as $index => $company)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
-                        <td class="text-center">
-                            @if($company->logo && file_exists(public_path($company->logo)))
-                                <img src="{{ asset($company->logo) }}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
-                            @else
-                                <span class="text-muted small">No Logo</span>
-                            @endif
-                        </td>
-                        <td class="text-center">{{ $company->company_code }}</td>
-                        <td>{{ $company->name }}</td>
-                        <td>{{ $company->email ?? '-' }}</td>
-                        <td>{{ $company->phone ?? '-' }}</td>
-                        <td class="text-center">
-                            @if($company->is_active)
-                                <span class="badge bg-success">Active</span>
-                            @else
-                                <span class="badge bg-danger">Inactive</span>
-                            @endif
-                        </td>
-                        <td class="text-center">
+                        <td class="text-center col-action">
+                            <div class="d-flex justify-content-center action-btn-group">
                             <a href="{{ route('companies.show', $company->id) }}" 
                             class="btn btn-info btn-sm">
                                 <i class="bi bi-eye"></i>
@@ -95,7 +73,27 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
+                                                    </div>
                         </td>
+                        <td class="text-center">
+                            @if($company->logo && file_exists(public_path($company->logo)))
+                                <img src="{{ asset($company->logo) }}" class="img-thumbnail bgs-u-10f446f5ed96">
+                            @else
+                                <span class="text-muted small">No Logo</span>
+                            @endif
+                        </td>
+                        <td class="text-center">{{ $company->company_code }}</td>
+                        <td>{{ $company->name }}</td>
+                        <td>{{ $company->email ?? '-' }}</td>
+                        <td>{{ $company->phone ?? '-' }}</td>
+                        <td class="text-center">
+                            @if($company->is_active)
+                                <span class="badge badge-custom bg-success">Active</span>
+                            @else
+                                <span class="badge badge-custom bg-danger">Inactive</span>
+                            @endif
+                        </td>
+
                     </tr>
                     @empty
                         <tr>
