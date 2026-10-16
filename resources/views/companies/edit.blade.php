@@ -38,7 +38,7 @@
                         <div class="mt-2">
                             <img src="{{ asset($company->logo) }}" class="bgs-u-35eef2bf517d">
                             <br>
-                            <a href="{{ asset('storage/' . $company->logo) }}" target="_blank" class="btn btn-sm btn-info text-white mt-1">Lihat Logo Asli</a>
+                            <a href="{{ asset($company->logo) }}" target="_blank" class="btn btn-sm btn-info text-white mt-1">Lihat Logo Asli</a>
                         </div>
                     @endif
                 </div>
@@ -48,16 +48,16 @@
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <label for="pic_sales_support" class="form-label fw-bold">Sales Support</label>
-                    <input type="text" name="pic_sales_support" class="form-control" 
+                    <input type="text" name="pic_sales_support" class="form-control"
                         value="{{ old('pic_sales_support', $company->pic_sales_support) }}">
                 </div>
-                
+
                 <div class="col-md-6 mb-4">
                     <label for="ttd_sales_support" class="form-label fw-bold">Tanda Tangan Sales Support</label>
                     <input type="file" name="ttd_sales_support" class="form-control" accept="image/*">
                     @if($company->ttd_sales_support)
                         <div class="mt-2">
-                            <img src="{{ asset('storage/' . $company->ttd_sales_support) }}" 
+                            <img src="{{ asset($company->ttd_sales_support) }}"
                                 alt="TTD Sales Support" class="bgs-u-e4df2f51d509"
                                >
                         </div>
@@ -72,7 +72,7 @@
                     <input type="file" name="ttd_do" class="form-control" accept="image/*">
                     @if($company->ttd_do)
                         <div class="mt-2">
-                            <img src="{{ asset('storage/' . $company->ttd_do) }}" 
+                            <img src="{{ asset($company->ttd_do) }}"
                                 alt="TTD DO" class="bgs-u-e4df2f51d509"
                                >
                         </div>
@@ -91,7 +91,7 @@
                     <input type="file" name="ttd_inv" class="form-control" accept="image/*">
                     @if($company->ttd_inv)
                         <div class="mt-2">
-                            <img src="{{ asset('storage/' . $company->ttd_inv) }}" 
+                            <img src="{{ asset($company->ttd_inv) }}"
                                 alt="TTD INV" class="bgs-u-e4df2f51d509"
                                >
                         </div>
@@ -102,7 +102,7 @@
                     <input type="file" name="ttd_inv2" class="form-control" accept="image/*">
                     @if($company->ttd_inv2)
                         <div class="mt-2">
-                            <img src="{{ asset('storage/' . $company->ttd_inv2) }}" 
+                            <img src="{{ asset($company->ttd_inv2) }}"
                                 alt="TTD INV2" class="bgs-u-e4df2f51d509"
                                >
                         </div>

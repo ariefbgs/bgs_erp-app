@@ -60,9 +60,18 @@
                         <label class="d-block text-muted small">LOGO PERUSAHAAN</label>
                         @if($company->logo)
                             <img src="{{ asset($company->logo) }}" class="img-thumbnail bgs-u-e34b7515c2af">
+<div class="mt-1">
+    <a href="{{ asset($company->logo) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info text-white">Lihat Logo Asli</a>
+</div>
                         @else <p>-</p> @endif
                     </div>
                     <div class="col-6 mb-4">
+    <label class="d-block text-muted small">TTD SALES SUPPORT</label>
+    @if($company->ttd_sales_support)
+        <img src="{{ asset($company->ttd_sales_support) }}" alt="Tanda tangan Sales Support" class="img-thumbnail bgs-u-e34b7515c2af">
+    @else <p>-</p> @endif
+</div>
+<div class="col-6 mb-4">
                         <label class="d-block text-muted small">TTD DO ({{ $company->pic_do ?? 'PIC' }})</label>
                         @if($company->ttd_do)
                             <img src="{{ asset($company->ttd_do) }}" class="img-thumbnail bgs-u-e34b7515c2af">
