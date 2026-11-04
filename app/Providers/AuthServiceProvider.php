@@ -16,8 +16,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // Pengecekan email akses dashboard
         Gate::define('access-dashboard', function ($user) {
-            $allowedEmails = ['chicha@gmail.com', 'arief@gmail.com'];
-            return in_array($user->email, $allowedEmails);
+            return $user->canAccessDashboard();
         });
     }
 }

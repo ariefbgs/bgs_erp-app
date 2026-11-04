@@ -1,25 +1,13 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-expense-create bgs-mode-create')
 @section('title', 'Add New Expense')
 
 @section('content')
-<style>
-    body { background-color: #f1f5f9; }
-    .main-card { border: none; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); background: #fff; overflow: hidden; }
-    .card-header-custom { background: linear-gradient(135deg, #10b981, #047857); color: white; padding: 1.5rem; border: none; }
-    .card-header-custom h4 { color: white; font-weight: 700; margin-bottom: 0; }
-    .form-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; font-weight: 700; margin-bottom: 6px; }
-    .section-sub-title { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; color: #1e293b; font-weight: 700; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
-    .section-sub-title i { color: #10b981; }
-    .info-group-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; height: 100%; }
-    .form-control, .form-select { border-color: #cbd5e1; padding: 0.5rem 0.75rem; }
-    .form-control:focus, .form-select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
-    .btn-save { background: linear-gradient(135deg, #10b981, #047857); border: none; color: white; }
-    .btn-save:hover { background: linear-gradient(135deg, #059669, #065f46); color: white; }
-</style>
+
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4><i class="bi bi-plus-circle-fill me-2"></i>Add New Expense</h4>
             <a href="{{ route('expense.index') }}" class="btn btn-light btn-sm fw-bold px-3">
                 <i class="bi bi-arrow-left me-1"></i> Back to List
@@ -29,7 +17,7 @@
         <div class="card-body p-4">
             {{-- Error & Success Messages --}}
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color:#fef2f2; color:#991b1b; border-left:4px solid #dc2626!important; border-radius:6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e172afc8903e">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div>
                         <strong class="d-block mb-1">Please fix the following validation errors:</strong>
@@ -44,13 +32,13 @@
             @endif
 
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important;">
+                <div class="alert alert-success border-0 shadow-sm mb-4 bgs-u-be237583235b">
                     <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif
@@ -74,8 +62,8 @@
                             </div>
                             <div class="mb-3">
                                 <label for="expense_no" class="form-label">Expense Number</label>
-                                <input type="text" class="form-control" id="expense_no" 
-                                    value="{{ $defaultExpenseNumber ?? '' }}" readonly style="background-color: #e9ecef; font-weight: bold;">
+                                <input type="text" class="form-control bgs-u-525c53445e47" id="expense_no"
+                                    value="{{ $defaultExpenseNumber ?? '' }}" readonly>
                                 <small class="text-muted">Auto-generated, will be finalized upon saving.</small>
                             </div>
 
@@ -191,7 +179,7 @@
 
                 {{-- Tombol Aksi --}}
                 <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-save px-4 py-2 fw-bold text-white">
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
                         <i class="bi bi-save-fill me-1"></i> Save Expense
                     </button>
                     <a href="{{ route('expense.index') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>

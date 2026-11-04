@@ -1,51 +1,16 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-invoice-customers-index bgs-mode-index')
 
 @section('title', 'Sales Invoice Management')
 
 @section('content')
 
-<style>
-    .text-right {
-        text-align: right;
-    }
 
-    .total-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .search-filter-bar {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 1px solid #dee2e6;
-    }
-
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-
-    .action-buttons .btn {
-        margin: 2px;
-    }
-
-    .badge {
-        font-size: 12px;
-        padding: 6px 8px;
-    }
-
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-</style>
 
 <div class="card shadow-sm">
 
     {{-- HEADER --}}
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4>Data Sales Invoice</h4>
 
         <a href="{{ route('invoice-customers.create') }}"
@@ -83,7 +48,7 @@
         <div class="search-filter-bar">
 
             <form method="GET"
-                  action="{{ route('invoice-customers.index') }}">
+                  action="{{ route('invoice-customers.index') }}" class="bgs-filter-form">
 
                 <div class="row g-3">
 
@@ -213,9 +178,12 @@
 
         {{-- TABLE --}}
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-striped">
-                <thead class="table-dark">
+            <table class="table table-modern align-middle m-0 bgs-index-table">
+                <thead>
                     <tr>
+                        <th class="text-center sticky-action bgs-col-action">
+                            Actions
+                        </th>
                         <th width="3%" class="text-center">No</th>
                         <th width="12%" class="text-center">
                             Invoice #
@@ -233,10 +201,13 @@
                             PO Customer #
                         </th>
                         <th width="10%" class="text-center">
-                            Total
+                            Invoice Amount
                         </th>
                         <th width="10%" class="text-center">
-                            Remaining
+                            Grand Total
+                        </th>
+                        <th width="10%" class="text-center">
+                            PO Remaining
                         </th>
                         {{-- PENAMBAHAN HEADER KOLOM TAX ATTACHMENT INDIKATOR --}}
                         <th width="5%" class="text-center">
@@ -251,14 +222,66 @@
                         <th width="8%" class="text-center">
                             Payment
                         </th>
-                        <th width="12%" class="text-center">
-                            Actions
-                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($invoices as $index => $inv)
                         <tr>
+                            {{-- ACTIONS --}}
+                            <td class="text-center sticky-action bgs-col-action">
+                                <div class="d-flex justify-content-center action-btn-group">
+                                {{-- VIEW --}}
+                                <a href="{{ route('invoice-customers.show', $inv->id) }}"
+                                   class="btn btn-info btn-sm text-white"
+                                   title="View">
+                                   <i class="bi bi-eye"></i>
+                                </a>
+                                {{-- EDIT --}}
+                                @if($inv->status != 'cancelled')
+                                    <a href="{{ route('invoice-customers.edit', $inv->id) }}"
+                                       class="btn btn-warning btn-sm text-dark"
+                                       title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                @endif
+                                {{-- CANCEL --}}
+                                @if(
+                                    $inv->status != 'cancelled' &&
+                                    $inv->payment_status != 'paid'
+                                )
+                                    <form action="{{ route('invoice-customers.cancel', $inv->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure want to cancel this invoice?')">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                class="btn btn-secondary btn-sm"
+                                                title="Cancel">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                                {{-- DELETE --}}
+                                @if(
+                                    $inv->status == 'cancelled' &&
+                                    $inv->payment_status != 'paid'
+                                )
+                                    <form action="{{ route('invoice-customers.destroy', $inv->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Delete this invoice permanently?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                                </div>
+                            </td>
                             {{-- NO --}}
                             <td class="text-center">
                                 {{ $invoices->firstItem() + $index }}
@@ -289,9 +312,12 @@
                             </td>
                             {{-- TOTAL --}}
                             <td class="total-column">
-                                Rp {{ number_format($inv->total, 0, ',', '.') }}
+                                Rp {{ number_format(($inv->dp_amount > 0 ? $inv->dp_amount : $inv->subtotal), 0, ',', '.') }}
                             </td>
                             {{-- REMAINING --}}
+                            <td class="total-column">
+                                Rp {{ number_format($inv->total, 0, ',', '.') }}
+                            </td>
                             <td class="total-column">
                                 Rp {{ number_format($inv->remaining_amount, 0, ',', '.') }}
                             </td>
@@ -360,59 +386,6 @@
                                     <span class="badge bg-dark">
                                         -
                                     </span>
-                                @endif
-                            </td>
-                            {{-- ACTIONS --}}
-                            <td class="text-center action-buttons">
-                                {{-- VIEW --}}
-                                <a href="{{ route('invoice-customers.show', $inv->id) }}"
-                                   class="btn btn-info btn-sm"
-                                   title="View">
-                                   <i class="bi bi-eye"></i>
-                                </a>
-                                {{-- EDIT --}}
-                                @if($inv->status != 'cancelled')
-                                    <a href="{{ route('invoice-customers.edit', $inv->id) }}"
-                                       class="btn btn-warning btn-sm"
-                                       title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                @endif
-                                {{-- CANCEL --}}
-                                @if(
-                                    $inv->status != 'cancelled' &&
-                                    $inv->payment_status != 'paid'
-                                )
-                                    <form action="{{ route('invoice-customers.cancel', $inv->id) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Are you sure want to cancel this invoice?')">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit"
-                                                class="btn btn-secondary btn-sm"
-                                                title="Cancel">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                                {{-- DELETE --}}
-                                @if(
-                                    $inv->status == 'cancelled' &&
-                                    $inv->payment_status != 'paid'
-                                )
-                                    <form action="{{ route('invoice-customers.destroy', $inv->id) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Delete this invoice permanently?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="btn btn-danger btn-sm"
-                                                title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
                                 @endif
                             </td>
                         </tr>

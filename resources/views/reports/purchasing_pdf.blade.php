@@ -2,17 +2,7 @@
 <html>
 <head>
     <title>Laporan Pembelian</title>
-    <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .title { font-size: 18px; font-weight: bold; }
-        .subtitle { font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .footer { margin-top: 30px; text-align: center; font-size: 10px; }
-        .total-row { font-weight: bold; background-color: #f9f9f9; }
-    </style>
+    @include('layouts.print-styles', ['bgsPrintProfile' => 'reports-purchasing_pdf'])
 </head>
 <body>
     <div class="header">

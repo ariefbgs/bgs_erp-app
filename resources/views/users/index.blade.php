@@ -1,9 +1,10 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-users-index bgs-mode-index')
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark"><i class="fas fa-user-shield me-2"></i> User Management</h2>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 bgs-page-header">
+        <h2 class="fw-bold text-dark"><i class="fas fa-user-shield me-2"></i> Pengaturan Pengguna</h2>
         <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
             <i class="fas fa-user-plus me-1"></i> Tambah User Baru
         </button>
@@ -34,32 +35,21 @@
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0">
-                    <thead class="table-dark">
+                <table class="table table-hover align-middle mb-0 bgs-index-table bgs-admin-index-table">
+                    <thead class="table-light">
                         <tr>
-                            <th class="ps-3" style="width: 80px;">No</th>
+                            <th class="text-center bgs-u-db10dc535a0f bgs-col-action col-action bgs-col-action">Actions</th>
+<th class="ps-3 bgs-u-3476ab9fcc04">No</th>
                             <th>Nama Pengguna</th>
                             <th>Email (Username)</th>
                             <th>Role / Status</th>
-                            <th class="text-center" style="width: 250px;">Aksi / Maintain</th>
+
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($users as $index => $user)
                         <tr>
-                            <td class="ps-3 fw-bold">{{ $index + 1 }}</td>
-                            <td><span class="fw-semibold">{{ $user->name }}</span></td>
-                            <td><code>{{ $user->email }}</code></td>
-                            <td>
-                                @if($user->email == 'arief@gmail.com')
-                                    <span class="badge bg-danger">Super Admin</span>
-                                @elseif($user->email == 'chicha@gmail.com')
-                                    <span class="badge bg-warning text-dark">Admin</span>
-                                @else
-                                    <span class="badge bg-secondary">User Operasional</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
+                            <td class="text-center col-action bgs-col-action">
                                 <div class="d-flex justify-content-center gap-2">
                                     <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#passwordModal{{ $user->id }}" title="Maintain Password">
                                         <i class="fas fa-key"></i> Password
@@ -78,9 +68,22 @@
                                     @endif
                                 </div>
                             </td>
+<td class="ps-3 fw-bold">{{ $index + 1 }}</td>
+                            <td><span class="fw-semibold">{{ $user->name }}</span></td>
+                            <td><code>{{ $user->email }}</code></td>
+                            <td>
+                                @if($user->isAdmin())
+                                    <span class="badge bg-danger">Admin</span>
+                                @elseif($user->isAdmin())
+                                    <span class="badge bg-warning text-dark">Admin</span>
+                                @else
+                                    <span class="badge bg-secondary">User Operasional</span>
+                                @endif
+                            </td>
+
                         </tr>
 
-                        <div class="modal fade" id="passwordModal{{ $user->id }}" isset-tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="passwordModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header bg-dark text-white">

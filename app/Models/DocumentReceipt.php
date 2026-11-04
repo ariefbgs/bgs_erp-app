@@ -11,17 +11,36 @@ class DocumentReceipt extends Model
 
     protected $fillable = [
         'receipt_number',
-        'delivery_order_id',
+        'po_customer_id',
+
+        // Transitional legacy fields.
+        // Preserved until all DR views/print are migrated.
+
         'receipt_date',
-        'invoice_number',
-        'tax_invoice_number',
         'attachment',
         'notes',
         'status',
     ];
 
-    public function deliveryOrder()
+    public function poCustomer()
     {
-        return $this->belongsTo(DeliveryOrder::class);
+        return $this->belongsTo(PoCustomer::class);
     }
+
+    public function deliveryOrders()
+    {
+        return $this->belongsToMany(
+            DeliveryOrder::class,
+            'document_receipt_delivery_orders'
+        )->withTimestamps();
+    }
+
+    public function invoices()
+    {
+        return $this->belongsToMany(
+            InvoiceCustomer::class,
+            'document_receipt_invoices'
+        )->withTimestamps();
+    }
+
 }

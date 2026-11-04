@@ -1,85 +1,14 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-products-create bgs-mode-create')
 @section('title', 'Add Product')
 @section('content')
 {{-- CDN SELECT2 CSS --}}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Hijau khas Create State */
-    .card-header-custom {
-        background: linear-gradient(135deg, #10b981, #047857);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
 
-    /* Styling Label & Bagian Sub-title */
-    .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-sub-title i {
-        color: #10b981;
-    }
-
-    /* Info Box Area */
-    .info-box-bg {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 15px;
-    }
-
-    .price-input {
-        text-align: right;
-    }
-
-    /* Form Utilities */
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4><i class="bi bi-plus-circle me-2"></i>Add New Product</h4>
             <a href="{{ route('products.index') }}" class="btn btn-light btn-sm fw-bold px-3">
                 <i class="bi bi-arrow-left me-1"></i> Back to List
@@ -89,7 +18,7 @@
         <div class="card-body p-4">
             {{-- ALERT VALIDASI ERROR --}} 
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important; border-radius: 6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e6478a190de4">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div>
                         <strong class="d-block mb-1">Please fix the following validation errors:</strong>
@@ -99,18 +28,18 @@
                             @endforeach
                         </ul>
                     </div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important;">
+                <div class="alert alert-success border-0 shadow-sm mb-4 bgs-u-be237583235b">
                     <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif  
@@ -120,7 +49,7 @@
                 
                 <div class="row g-3 mb-4 p-3 rounded-3 info-box-bg">
                     <div class="col-12">
-                        <div class="section-sub-title mb-2" style="border:none;"><i class="bi bi-building-fill me-2"></i>Primary Identification</div>
+                        <div class="section-sub-title mb-2 bgs-u-87798f9f54e8"><i class="bi bi-building-fill me-2"></i>Primary Identification</div>
                     </div>
                     
                     {{-- PRODUCT CODE --}}
@@ -168,8 +97,8 @@
                         <textarea name="name"
                                 id="name"
                                 rows="1"
-                                class="form-control auto-row-textarea @error('name') is-invalid @enderror"
-                                style="resize: none; overflow-y: hidden;"
+                                class="form-control auto-row-textarea @error('name') is-invalid @enderror bgs-u-023bfb47d76b"
+
                                 required>{{ old('name') }}</textarea>
                         @error('name')
                             <div class="invalid-feedback">
@@ -186,8 +115,8 @@
                         <textarea name="name2"
                                 id="name2"
                                 rows="1"
-                                class="form-control auto-row-textarea @error('name2') is-invalid @enderror"
-                                style="resize: none; overflow-y: hidden;"
+                                class="form-control auto-row-textarea @error('name2') is-invalid @enderror bgs-u-023bfb47d76b"
+
                                 required>{{ old('name2') }}</textarea>     
                         <small class="text-muted small d-block mt-1">
                             Default follows Product Name, but can be changed manually.
@@ -203,9 +132,9 @@
                     <div class="col-md-6">
                         <label class="form-label">Specification</label>
                         <textarea name="specification"
-                                class="form-control auto-row-textarea @error('specification') is-invalid @enderror"
+                                class="form-control auto-row-textarea @error('specification') is-invalid @enderror bgs-u-023bfb47d76b"
                                 rows="1"
-                                style="resize: none; overflow-y: hidden;">{{ old('specification') }}</textarea>
+                               >{{ old('specification') }}</textarea>
                         @error('specification')
                             <div class="invalid-feedback">
                                 {{ $message }}
@@ -250,19 +179,7 @@
                     </div>
 
                     {{-- STOCK --}}
-                    <div class="col-md-4">
-                        <label class="form-label">Stock <span class="text-danger">*</span></label>
-                        <input type="number"
-                            name="stock"
-                            class="form-control @error('stock') is-invalid @enderror"
-                            value="{{ old('stock', 0) }}"
-                            required>
-                        @error('stock')
-                            <div class="invalid-feedback">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                    </div>
+                    <input type="hidden" name="stock" value="{{ old('stock', 0) }}">
 
                     {{-- PRODUCT IMAGE --}}
                     <div class="col-md-4">
@@ -283,12 +200,12 @@
                         @enderror
 
                         {{-- Preview gambar yang akan diupload --}}
-                        <div id="image-preview-container" class="mt-2" style="display: none;">
+                        <div id="image-preview-container" class="mt-2 bgs-u-6e22c58a7a6a">
                             <div class="product-image-preview-wrapper mb-2 d-block">
                                 <img id="image-preview"
                                     src="#"
-                                    alt="Preview Gambar"
-                                    style="max-width: 100%; max-height: 200px; border-radius: 4px; object-fit: contain; border: 1px solid #ddd; padding: 4px; background: #fff;">
+                                    alt="Preview Gambar" class="bgs-u-bb35827dda08"
+                                   >
                             </div>
                         </div>
                     </div>
@@ -334,7 +251,7 @@
 
                     {{-- ACTION BUTTONS --}}
                     <div class="mt-4 pt-3 border-top d-flex gap-2">
-                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white" style="background-gradient: linear-gradient(135deg, #10b981, #047857);">
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
                             <i class="bi bi-save-fill me-1"></i> Save Product
                         </button>
                         <a href="{{ route('products.index') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>

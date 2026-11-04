@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 final class DatabaseDeploymentHistoryRepositoryTest
@@ -15,11 +16,12 @@ final class DatabaseDeploymentHistoryRepositoryTest
 {
     private DatabaseDeploymentHistoryRepository $repository;
 
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        DB::table('deployment_history')->delete();
 
         $this->repository =
             new DatabaseDeploymentHistoryRepository();
@@ -27,7 +29,6 @@ final class DatabaseDeploymentHistoryRepositoryTest
 
     protected function tearDown(): void
     {
-        DB::table('deployment_history')->delete();
 
         parent::tearDown();
     }

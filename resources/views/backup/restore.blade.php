@@ -1,10 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-backup-restore bgs-mode-edit')
 
 @section('title', 'Restore Database')
 
 @section('content')
 <div class="card">
-    <div class="card-header bg-warning text-white">
+    <div class="card-header bg-warning text-white bgs-page-header">
         <h4>Restore Database</h4>
     </div>
     <div class="card-body">
@@ -16,7 +17,7 @@
             <i class="bi bi-exclamation-triangle"></i> <strong>Peringatan:</strong> Restore akan mengganti semua data saat ini dengan data dari file backup. Pastikan Anda sudah melakukan backup terbaru. Proses ini tidak dapat dibatalkan.
         </div>
 
-        <form action="{{ route('backup.restore') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('backup.restore') }}" class="bgs-admin-form" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label class="form-label">Pilih File SQL</label>

@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 final class DatabaseDeploymentExecutionContextProviderBehaviorTest
@@ -19,11 +20,12 @@ final class DatabaseDeploymentExecutionContextProviderBehaviorTest
     private string $recoveryRoot;
     private string $applicationRoot;
 
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        DB::table('application_releases')->delete();
 
         $base =
             storage_path(
@@ -62,7 +64,6 @@ final class DatabaseDeploymentExecutionContextProviderBehaviorTest
 
     protected function tearDown(): void
     {
-        DB::table('application_releases')->delete();
 
         parent::tearDown();
     }

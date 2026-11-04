@@ -7,6 +7,7 @@ use App\Services\Deployment\DeploymentStateTransitionPolicy;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 final class DatabaseDeploymentReleaseStateRepositoryTest
@@ -14,11 +15,12 @@ final class DatabaseDeploymentReleaseStateRepositoryTest
 {
     private DatabaseDeploymentReleaseStateRepository $repository;
 
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        DB::table('application_releases')->delete();
 
         $this->repository =
             new DatabaseDeploymentReleaseStateRepository(
@@ -28,7 +30,6 @@ final class DatabaseDeploymentReleaseStateRepositoryTest
 
     protected function tearDown(): void
     {
-        DB::table('application_releases')->delete();
 
         parent::tearDown();
     }

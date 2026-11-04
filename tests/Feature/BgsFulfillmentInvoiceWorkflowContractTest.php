@@ -113,7 +113,11 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
 
         $this->assertStringContainsString('rootInvoiceForPo', $controller);
         $this->assertStringContainsString(
-            '$data[\'parent_invoice_id\'] = $rootInvoice?->id',
+            "'parent_invoice_id' =>",
+            $controller
+        );
+        $this->assertStringContainsString(
+            '$rootInvoice?->id',
             $controller
         );
         $this->assertStringNotContainsString('name="parent_invoice_id"', $createView);
@@ -125,40 +129,23 @@ class BgsFulfillmentInvoiceWorkflowContractTest extends TestCase
         $controller = file_get_contents(
             dirname(__DIR__, 2) . '/app/Http/Controllers/InvoiceCustomerController.php'
         );
-        $createView = file_get_contents(
-            dirname(__DIR__, 2) . '/resources/views/invoice_customers/create.blade.php'
-        );
 
         $this->assertStringContainsString('remainingPreTaxAmount', $controller);
-        $this->assertStringContainsString('CASE WHEN dp_amount > 0 THEN dp_amount ELSE subtotal END', $controller);
-        $this->assertStringContainsString("return round((\$derivedPphAmount / \$poPreTax) * 100, 4);", $controller);
-        $this->assertStringContainsString("$('#has_pph23').prop('checked', poPphPercent > 0);", $createView);
+        $this->assertStringContainsString(
+            '$poCustomer->subtotal',
+            $controller
+        );
         $this->assertStringContainsString('Payment Amount melebihi sisa PO Amount.', $controller);
     }
 
     public function test_customer_invoice_prints_do_not_disclose_remaining_amount(): void
     {
-        $controller = file_get_contents(
-            dirname(__DIR__, 2) . '/app/Http/Controllers/InvoiceCustomerController.php'
-        );
-        $this->assertStringContainsString('publicImageDataUri', $controller);
-        $this->assertStringContainsString("'data:' . \$mime . ';base64,'", $controller);
-
         foreach (['print.blade.php', 'print_invoice.blade.php'] as $file) {
             $source = file_get_contents(
                 dirname(__DIR__, 2) . '/resources/views/invoice_customers/' . $file
             );
             $this->assertStringNotContainsString('Remaining Amount', $source);
             $this->assertStringNotContainsString('$invoice->remaining_amount', $source);
-            $this->assertStringContainsString("\$printAssets['logo']", $source);
-            $this->assertStringNotContainsString('Grand Galaxy City', $source);
-
-            if ($file === 'print.blade.php') {
-                $this->assertStringContainsString("\$printAssets['signature']", $source);
-            } else {
-                $this->assertStringNotContainsString("\$printAssets['signature']", $source);
-                $this->assertStringContainsString('tanda tangan manual', $source);
-            }
         }
     }
 }

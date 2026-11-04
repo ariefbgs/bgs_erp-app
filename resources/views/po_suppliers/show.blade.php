@@ -1,155 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-po-suppliers-show bgs-mode-screen')
 
 @section('title', 'Detail PO Supplier')
 
 @section('content')
 
-<style>
-    body {
-        background-color: #f1f5f9;
-    }
 
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-
-    .card-header-custom {
-        background: linear-gradient(135deg, #0ea5e9, #0284c7);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    .section-sub-title {
-        font-size: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 5px;
-        display: inline-block;
-    }
-
-    .section-sub-title i {
-        color: #0ea5e9;
-    }
-
-    .info-box-bg {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-    }
-
-    .info-table {
-        margin-bottom: 0;
-    }
-
-    .info-table td {
-        padding: 0.65rem 0.5rem;
-        border: none;
-        font-size: 0.92rem;
-        vertical-align: top;
-    }
-
-    .info-table .label {
-        font-weight: 600;
-        color: #1e293b;
-        width: 40%;
-    }
-
-    .info-table .value {
-        color: #334155;
-    }
-
-    .table-modern thead th {
-        background-color: #0369a1;
-        color: #f0f9ff;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.78rem;
-        letter-spacing: 0.5px;
-        padding: 14px;
-        border: none;
-    }
-
-    .table-modern tbody tr:nth-child(even) {
-        background-color: #fcfdfe;
-    }
-
-    .table-modern tbody td {
-        padding: 1rem 0.75rem;
-        vertical-align: middle;
-        font-size: 0.9rem;
-        color: #334155;
-        border-color: #f1f5f9;
-    }
-
-    .summary-card {
-        background-color: #1e293b;
-        border-radius: 8px;
-        padding: 1.25rem;
-        color: #f1f5f9;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .summary-line {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.5rem 0;
-        font-size: 0.9rem;
-        color: #cbd5e1;
-    }
-
-    .summary-line .main-label {
-        font-weight: 500;
-    }
-
-    .summary-line.grand-total {
-        border-top: 2px solid #334155;
-        margin-top: 0.5rem;
-        padding-top: 1rem;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #fff;
-    }
-
-    .grand-total .total-rp {
-        color: #38bdf8;
-    }
-
-    .badge-custom {
-        padding: 0.5em 0.9em;
-        font-size: 0.75rem;
-        font-weight: 700;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .btn-light {
-        background-color: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-    }
-
-    .btn-light:hover {
-        background-color: rgba(255,255,255,0.3);
-        border-color: rgba(255,255,255,0.4);
-        color: white;
-    }
-</style>
 
 
 <div class="container-fluid py-4">
@@ -159,7 +15,7 @@
         {{-- =====================================================
              HEADER
         ====================================================== --}}
-        <div class="card-header card-header-custom py-3">
+        <div class="card-header card-header-custom py-3 bgs-page-header">
 
             <div class="d-flex justify-content-between align-items-center">
 
@@ -169,6 +25,20 @@
                 </h4>
 
                 <div class="d-flex gap-2">
+{{-- BGS Confirm PO action --}}
+@auth
+@if(auth()->user()->canUseAdminFeatures() && $poSupplier->status === 'draft')
+<form method="POST"
+      action="{{ route('po-suppliers.update-status', $poSupplier->id) }}"
+      onsubmit="return confirm('Konfirmasi PO Supplier ini untuk diproses?')">
+    @csrf
+    <input type="hidden" name="status" value="confirmed">
+    <button type="submit" class="btn btn-success btn-sm fw-bold px-3">
+        Confirm PO
+    </button>
+</form>
+@endif
+@endauth
 
                     <a
                         href="{{ route('po-suppliers.edit', $poSupplier->id) }}"
@@ -219,7 +89,7 @@
                             Customer & PO Relationship
                         </div>
 
-                        <table class="table info-table">
+                        <table class="table info-table bgs-detail-table align-middle">
 
                             <tr>
                                 <td class="label">Customer</td>
@@ -258,7 +128,7 @@
                             Supplier PO Registry
                         </div>
 
-                        <table class="table info-table">
+                        <table class="table info-table bgs-detail-table align-middle">
 
                             <tr>
                                 <td class="label">PO Supplier #</td>
@@ -408,7 +278,7 @@
 
                     <div class="table-responsive">
 
-                        <table class="table table-modern align-middle m-0">
+                        <table class="table table-modern align-middle m-0 bgs-detail-table">
 
                             <thead>
                                 <tr>
@@ -565,11 +435,8 @@
                         @if(!empty($poSupplier->notes))
 
                             <p
-                                class="text-secondary mb-0"
-                                style="
-                                    white-space:pre-line;
-                                    line-height:1.6;
-                                "
+                                class="text-secondary mb-0 bgs-u-83260ac9c6c3"
+
                             >{!! nl2br(e($poSupplier->notes)) !!}</p>
 
                         @else
@@ -627,14 +494,8 @@
 
 
                         <div
-                            class="summary-line"
-                            style="
-                                background-color:
-                                rgba(255,255,255,0.05);
-                                border-radius:4px;
-                                padding-left:8px;
-                                padding-right:8px;
-                            "
+                            class="summary-line bgs-u-319a459af405"
+
                         >
                             <span class="main-label text-info">
                                 Subtotal After Discount

@@ -15,7 +15,7 @@ class BgsBusinessStateRegressionTest extends TestCase
          * HARD SAFETY GATE.
          *
          * These tests are allowed to mutate only the dedicated
-         * erp_app_testing database.
+         * erp_app_staging_testing_1026 database.
          */
         $database = DB::connection()->getDatabaseName();
 
@@ -25,9 +25,9 @@ class BgsBusinessStateRegressionTest extends TestCase
             );
         }
 
-        if ($database !== 'erp_app_testing') {
+        if ($database !== 'erp_app_staging_testing_1026') {
             throw new \RuntimeException(
-                'SAFETY BLOCK: expected erp_app_testing, got ' . $database
+                'SAFETY BLOCK: expected erp_app_staging_testing_1026, got ' . $database
             );
         }
 
@@ -48,7 +48,7 @@ class BgsBusinessStateRegressionTest extends TestCase
         $this->assertSame('testing', app()->environment());
 
         $this->assertSame(
-            'erp_app_testing',
+            'erp_app_staging_testing_1026',
             DB::connection()->getDatabaseName()
         );
 
@@ -82,7 +82,7 @@ class BgsBusinessStateRegressionTest extends TestCase
 
         foreach ($requiredTables as $table) {
             $exists = DB::table('information_schema.tables')
-                ->where('table_schema', 'erp_app_testing')
+                ->where('table_schema', 'erp_app_staging_testing_1026')
                 ->where('table_name', $table)
                 ->exists();
 
@@ -96,7 +96,7 @@ class BgsBusinessStateRegressionTest extends TestCase
     public function test_invoice_customer_invoice_status_schema_exposes_legacy_typo(): void
     {
         $column = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', 'invoice_customers')
             ->where('column_name', 'invoice_status')
             ->first();
@@ -117,7 +117,7 @@ class BgsBusinessStateRegressionTest extends TestCase
     public function test_po_customer_invoice_status_uses_correct_completed_spelling(): void
     {
         $column = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', 'po_customers')
             ->where('column_name', 'invoice_status')
             ->first();
@@ -139,31 +139,54 @@ class BgsBusinessStateRegressionTest extends TestCase
 
     public function test_testing_database_fixture_mutation_is_rolled_back(): void
     {
-        /*
-         * Use a table with minimal required columns.
-         * We first inspect its schema so the test remains explicit.
-         */
-
+        // A self-created fixture eliminates dependency on pre-existing ERP data.
+        // setUp() opens the outer transaction; tearDown() rolls it back.
         $columns = DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
-            ->where('table_name', 'companies')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
+            ->where('table_name', 'migrations')
             ->pluck('COLUMN_NAME')
             ->all();
 
-        $this->assertNotEmpty($columns);
+        foreach (['id', 'migration', 'batch'] as $column) {
+            $this->assertContains($column, $columns);
+        }
 
-        /*
-         * The safety proof here is transaction behavior itself.
-         * No fixture is permanently committed.
-         */
+        $this->assertGreaterThan(0, DB::transactionLevel());
 
-        $before = DB::table('companies')->count();
+        $id = DB::table('migrations')->insertGetId([
+            'migration' => 'ci_rollback_fixture_'.bin2hex(random_bytes(8)),
+            'batch' => 0,
+        ]);
 
-        $this->assertSame(0, $before);
-
-        $this->assertGreaterThan(
+        $this->assertSame(
             0,
-            DB::transactionLevel()
+            (int) DB::table('migrations')->where('id', $id)->value('batch')
+        );
+
+        $level = DB::transactionLevel();
+
+        DB::beginTransaction();
+        try {
+            $changed = DB::table('migrations')
+                ->where('id', $id)
+                ->update(['batch' => 1]);
+
+            $this->assertSame(1, $changed);
+
+            $this->assertSame(
+                1,
+                (int) DB::table('migrations')->where('id', $id)->value('batch')
+            );
+        } finally {
+            if (DB::transactionLevel() > $level) {
+                DB::rollBack();
+            }
+        }
+
+        $this->assertSame(
+            0,
+            (int) DB::table('migrations')->where('id', $id)->value('batch'),
+            'Nested transaction mutation was not rolled back.'
         );
     }
 }

@@ -1,80 +1,22 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-goods-receipts-index bgs-mode-index')
 @section('title', 'Good Receipt Management')
 @section('content')
-<style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
 
-    .text-right {
-        text-align: right;
-    }
 
-    .total-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .search-filter-bar {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 18px;
-        margin-bottom: 20px;
-    }
-
-    .table thead th {
-        white-space: nowrap;
-        font-size: 13px;
-    }
-
-    .badge {
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-
-    .action-btn .btn {
-        margin: 2px;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-
-    .customer-name {
-        font-weight: 600;
-    }
-
-    .empty-state {
-        padding: 40px 20px;
-        color: #6c757d;
-    }
-
-    .filter-label {
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-</style>
-
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+<div class="card main-card">
+    <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
         <h4>
             <i class="bi bi-file-earmark-text"></i>
             Good Receipt Management
         </h4>
-        <a href="{{ route('goods-receipts.create') }}" class="btn btn-light btn-sm">
+        <a href="{{ route('goods-receipts.create') }}" class="btn btn-light-custom btn-sm">
             <i class="bi bi-plus-circle"></i>
             Add New Good Receipt
         </a>
     </div>
 
-    <div class="card-body">
+    <div class="card-body p-4">
         {{-- SUCCESS MESSAGE --}}
         @if(session('success'))
             <div id="success-alert" class="alert alert-success alert-dismissible fade show">
@@ -94,7 +36,7 @@
             </script>
         @endif
         @if(session('error'))
-            <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                 <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
             </div>
         @endif  
@@ -133,11 +75,12 @@
         </div>
 
         {{-- TABLE --}}
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-dark">
+        <div class="table-responsive quotation-table-wrap">
+            <table class="table table-modern table-hover align-middle quotation-table bgs-index-table bgs-actions-compact">
+                <thead>
                     <tr>
                         <th width="5%" class="text-center">No</th>
+                        <th class="text-center col-action">Actions</th>
                         <th width="20%" class="text-center">Supplier</th>
                         <th width="15%" class="text-center">PO Supplier #</th>
                         <th width="15%" class="text-center">PO Date</th>
@@ -145,7 +88,6 @@
                         <th width="12%" class="text-center">Receipt Date</th>
                         <th width="10%" class="text-center">Status</th>
                         <th width="10%" class="text-center">Receipt Status</th>
-                        <th width="10%" class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -156,41 +98,8 @@
                         @endphp
                         <tr>
                             <td class="text-center">{{ $receipts->firstItem() + $index }}</td>
-                            <td>{{ $poSupplier->supplier->name ?? '-' }}</td>
-                            <td>{{ $poSupplier->po_supplier_number ?? '-' }}</td>
-                            <td class="text-center">
-                                {{ $poSupplier && $poSupplier->po_date ? \Carbon\Carbon::parse($poSupplier->po_date)->format('d/m/Y') : '-' }}
-                            </td>
-                            <td>{{ $receipt->receipt_number }}</td>
-                            <td class="text-center">
-                                {{ $receipt->receipt_date ? \Carbon\Carbon::parse($receipt->receipt_date)->format('d/m/Y') : '-' }}
-                            </td>
-                            <td class="text-center">
-                                @if($receipt->status == 'partial')
-                                    <span class="badge bg-secondary">Partial</span>
-                                @elseif($receipt->status == 'completed')
-                                    <span class="badge bg-success">Completed</span>
-                                @elseif($receipt->status == 'cancelled')
-                                    <span class="badge bg-danger">Cancelled</span>
-                                @else
-                                    <span class="badge bg-secondary">{{ ucfirst($receipt->status) }}</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                @php
-                                    $status = $poSupplier ? $poSupplier->receipt_status : 'pending';
-                                @endphp
-                                @if($status == 'pending')
-                                    <span class="badge bg-secondary">Pending</span>
-                                @elseif($status == 'partial')
-                                    <span class="badge bg-warning">Partially Received</span>
-                                @elseif($status == 'completed')
-                                    <span class="badge bg-success">Fully Received</span>
-                                @else
-                                    <span class="badge bg-secondary">{{ ucfirst($status) }}</span>
-                                @endif
-                            </td>
-                            <td class="text-center action-btn">
+                            <td class="text-center col-action">
+                                <div class="d-flex justify-content-center action-btn-group">
                                 {{-- Detail --}}
                                 <a href="{{ route('goods-receipts.show', $receipt->id) }}" class="btn btn-info btn-sm" title="Detail">
                                     <i class="bi bi-eye"></i>
@@ -218,6 +127,41 @@
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     </form>
+                                @endif
+                                </div>
+                            </td>
+                            <td class="col-customer customer-name">{{ $poSupplier->supplier->name ?? '-' }}</td>
+                            <td>{{ $poSupplier->po_supplier_number ?? '-' }}</td>
+                            <td class="text-center">
+                                {{ $poSupplier && $poSupplier->po_date ? \Carbon\Carbon::parse($poSupplier->po_date)->format('d/m/Y') : '-' }}
+                            </td>
+                            <td>{{ $receipt->receipt_number }}</td>
+                            <td class="text-center">
+                                {{ $receipt->receipt_date ? \Carbon\Carbon::parse($receipt->receipt_date)->format('d/m/Y') : '-' }}
+                            </td>
+                            <td class="text-center">
+                                @if($receipt->status == 'partial')
+                                    <span class="badge badge-custom bg-secondary">Partial</span>
+                                @elseif($receipt->status == 'completed')
+                                    <span class="badge badge-custom bg-success">Completed</span>
+                                @elseif($receipt->status == 'cancelled')
+                                    <span class="badge badge-custom bg-danger">Cancelled</span>
+                                @else
+                                    <span class="badge badge-custom bg-secondary">{{ ucfirst($receipt->status) }}</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @php
+                                    $status = $poSupplier ? $poSupplier->receipt_status : 'pending';
+                                @endphp
+                                @if($status == 'pending')
+                                    <span class="badge badge-custom bg-secondary">Pending</span>
+                                @elseif($status == 'partial')
+                                    <span class="badge badge-custom bg-warning">Partially Received</span>
+                                @elseif($status == 'completed')
+                                    <span class="badge badge-custom bg-success">Fully Received</span>
+                                @else
+                                    <span class="badge badge-custom bg-secondary">{{ ucfirst($status) }}</span>
                                 @endif
                             </td>
                         </tr>

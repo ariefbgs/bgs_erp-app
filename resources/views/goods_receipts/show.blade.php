@@ -1,10 +1,11 @@
 {{-- resources/views/goods_receipts/show.blade.php --}}
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-goods-receipts-show bgs-mode-screen')
 
 @section('content')
 <div class="container">
     <div class="card">
-        <div class="card-header d-flex justify-content-between">
+        <div class="card-header d-flex justify-content-between bgs-page-header">
             <h3>Detail Goods Receipt</h3>
             <div>
                 <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary">Kembali</a>
@@ -14,7 +15,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <table class="table table-bordered">
+                    <table class="table bgs-detail-table align-middle">
                         <tr>
                             <th width="35%">No Receipt</th>
                             <td>{{ $receipt->receipt_number }}</td>
@@ -38,7 +39,7 @@
                     </table>
                 </div>
                 <div class="col-md-6">
-                    <table class="table table-bordered">
+                    <table class="table bgs-detail-table align-middle">
                         <tr>
                             <th width="35%">PO Supplier</th>
                             <td>{{ $receipt->poSupplier->po_supplier_number }}</td>
@@ -56,7 +57,7 @@
             </div>
             
             <h5>Items Diterima</h5>
-            <table class="table table-bordered">
+            <table class="table bgs-detail-table align-middle">
                 <thead>
                     <tr>
                         <th>Produk</th>
@@ -85,11 +86,5 @@
     </div>
 </div>
 
-<style>
-@media print {
-    .btn, .card-header .btn {
-        display: none !important;
-    }
-}
-</style>
+
 @endsection

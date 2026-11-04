@@ -1,25 +1,16 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-goods-receipts-create bgs-mode-create')
 
 @section('title', 'Add Goods Receipt')
 
 @section('content')
-<style>
-    .received-qty {
-        text-align: right;
-    }
-    .table-responsive {
-        overflow-x: auto;
-    }
-    .remove-item {
-        white-space: nowrap;
-    }
-</style>
 
-<div class="card">
-    <div class="card-header bg-primary text-white">
+
+<div class="card main-card">
+    <div class="card-header-custom bgs-page-header">
         <h4>Add Goods Receipt</h4>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
 
         {{-- ===================================================== --}}
         {{-- ALERT SUKSES & ERROR DARI SESSION --}}
@@ -55,14 +46,14 @@
             </div>
         @endif
         @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4" style="background-color: #f0fdf4; color: #166534; border-left: 4px solid #16a34a !important; border-radius: 6px;">
+            <div class="alert alert-success border-0 shadow-sm d-flex fade show mb-4 bgs-u-2e9c7cf0569c">
                 <div class="me-2"><i class="bi bi-check-circle-fill fs-5"></i></div>
                 <div>{{ session('success') }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
             </div>
         @endif
         @if(session('error'))
-            <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+            <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                 <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
             </div>
         @endif 
@@ -92,7 +83,7 @@
                 </div>
             </div>
 
-            <div id="poDetails" style="display: none;">
+            <div id="poDetails" class="bgs-u-6e22c58a7a6a">
                 <hr>
                 <div class="alert alert-info">
                     <strong>Info PO Supplier:</strong> <span id="poInfo"></span>
@@ -103,10 +94,10 @@
                     <textarea name="notes" class="form-control" rows="2" placeholder="Remarks for goods receipt...">{{ old('notes') }}</textarea>
                 </div>
 
-                <h5>Received Items</h5>
+                <h5 class="section-sub-title">Received Items</h5>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="itemsTable">
-                        <thead class="table-dark">
+                    <table class="table align-middle" id="itemsTable">
+                        <thead class="table-light">
                             <tr>
                                 <th width="30%">Product</th>
                                 <th width="15%">PO Quantity</th>
@@ -119,7 +110,7 @@
                         <tbody id="itemsBody">
                             <tr><td colspan="6" class="text-center">Select a PO Supplier first</td></tr>
                         </tbody>
-                        <tfoot id="itemsFooter" style="display: none;">
+                        <tfoot id="itemsFooter" class="bgs-u-6e22c58a7a6a">
                             <tr class="table-info">
                                 <td colspan="3" class="text-end"><strong>Total Received:</strong></td>
                                 <td colspan="2"><strong id="totalReceived">0</strong></td>
@@ -130,14 +121,14 @@
                 </div>
 
                 {{-- LOADING INDICATOR --}}
-                <div id="loadingIndicator" class="text-center" style="display: none;">
+                <div id="loadingIndicator" class="text-center bgs-u-6e22c58a7a6a">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     <p>Memuat data...</p>
                 </div>
 
-                <div class="text-right mt-3">
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                     <button type="submit" class="btn btn-primary" id="submitBtn">
                         <i class="bi bi-save-fill me-1"></i> Save Receipt
                     </button>
@@ -266,7 +257,7 @@ $(document).ready(function() {
             qtyInput.val(0);
             qtyInput.trigger('change');
             row.find('.remove-item').prop('disabled', true);
-            row.css('opacity', '0.5');
+            row.addClass('bgs-row-muted');
         }
     });
 
@@ -304,10 +295,10 @@ $(document).ready(function() {
             var maxQty = parseInt($(this).data('max'));
             if (qty > maxQty) {
                 isValid = false;
-                $(this).css('border-color', 'red');
+                $(this).addClass('bgs-field-invalid');
                 errorMsg = 'Quantity must not exceed the remaining quantity! Maximum: ' + maxQty;
             } else {
-                $(this).css('border-color', '');
+                $(this).removeClass('bgs-field-invalid');
             }
         });
 

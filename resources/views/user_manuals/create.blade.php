@@ -1,90 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-user-manuals-create bgs-mode-create')
 @section('title', 'Create New Documentation')
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Emerald Green */
-    .card-header-custom {
-        background: linear-gradient(135deg, #10b981, #047857);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Form Label Custom Styling */
-    .filter-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569; 
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    /* Input dan Select Custom Focus (Nuansa Hijau) */
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-        border-radius: 8px;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #34d399;
-        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
-    }
-
-    /* Sidebar Info Panel */
-    .info-panel {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 24px;
-    }
-
-    /* Tombol Header & Custom Action */
-    .btn-light-custom {
-        background-color: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        font-weight: 600;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-    }
-    .btn-light-custom:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        color: white;
-    }
-    .btn-submit-green {
-        background-color: #10b981;
-        border-color: #10b981;
-        color: white;
-    }
-    .btn-submit-green:hover {
-        background-color: #059669;
-        border-color: #059669;
-        color: white;
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4>
                 <i class="bi bi-plus-circle-fill me-2"></i>
                 Create New Documentation Structure
@@ -126,7 +48,7 @@
                             @enderror
                         </div>
 
-                        <div class="mb-4" id="parent_container" style="display: none;">
+                        <div class="mb-4 bgs-u-6e22c58a7a6a" id="parent_container">
                             <label for="parent_id" class="filter-label text-success"><i class="bi bi-diagram-2 me-1"></i>Pilih Panduan Induk (Parent)</label>
                             <select name="parent_id" id="parent_id" class="form-select py-2.5 @error('parent_id') is-invalid @enderror">
                                 <option value="">-- Pilih Dokumen Induk --</option>
@@ -152,7 +74,7 @@
 
                         <div class="mb-4">
                             <label for="content" class="filter-label">Isi / Langkah-Langkah Panduan</label>
-                            <textarea name="content" id="content" class="form-control @error('content') is-invalid @enderror" rows="12" placeholder="Tuliskan petunjuk operasional sistem di sini secara detail..." style="border-radius: 8px;" required>{{ old('content') }}</textarea>
+                            <textarea name="content" id="content" class="form-control @error('content') is-invalid @enderror bgs-u-25561090436f" rows="12" placeholder="Tuliskan petunjuk operasional sistem di sini secara detail..." required>{{ old('content') }}</textarea>
                             @error('content')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -161,8 +83,8 @@
                         <hr class="text-muted my-4">
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('user-manuals.index') }}" class="btn btn-outline-secondary py-2 px-4 fw-semibold" style="border-radius: 6px;">Batal</a>
-                            <button type="submit" class="btn btn-submit-green py-2 px-4 fw-bold shadow-sm" style="border-radius: 6px;">
+                            <a href="{{ route('user-manuals.index') }}" class="btn btn-outline-secondary py-2 px-4 fw-semibold bgs-u-8dbba0d7e895">Batal</a>
+                            <button type="submit" class="btn btn-submit-green py-2 px-4 fw-bold shadow-sm bgs-u-8dbba0d7e895">
                                 <i class="bi bi-save-fill me-2"></i>Simpan Panduan
                             </button>
                         </div>
@@ -170,26 +92,26 @@
                 </div>
 
                 <div class="col-lg-4">
-                    <div class="info-panel" style="border-top: 4px solid #10b981;">
+                    <div class="info-panel bgs-u-f084f7a04044">
                         <h6 class="fw-bold text-dark mb-3">
                             <i class="bi bi-diagram-3-fill text-success me-2"></i>
                             Konsep Struktur Panduan
                         </h6>
-                        <p class="small text-muted mb-3" style="line-height: 1.6;">Sistem membagi dokumentasi bantuan operasional ke dalam 3 level utama untuk mempermudah pemetaan:</p>
+                        <p class="small text-muted mb-3 bgs-u-9477dd6c397e">Sistem membagi dokumentasi bantuan operasional ke dalam 3 level utama untuk mempermudah pemetaan:</p>
                         
-                        <div class="mb-3 p-2.5 rounded-3" style="background-color: #f0fdf4; border-left: 3px solid #10b981;">
+                        <div class="mb-3 p-2.5 rounded-3 bgs-u-382ab01da681">
                             <div class="small fw-bold text-success mb-0">LEVEL 1: MODUL</div>
-                            <span class="text-muted d-block" style="font-size: 0.8rem;">Penjelasan global saat user baru masuk halaman utama (Index) modul terkait.</span>
+                            <span class="text-muted d-block bgs-u-aae30f4ce161">Penjelasan global saat user baru masuk halaman utama (Index) modul terkait.</span>
                         </div>
                         
-                        <div class="mb-3 p-2.5 rounded-3" style="background-color: #fffbeb; border-left: 3px solid #f59e0b;">
+                        <div class="mb-3 p-2.5 rounded-3 bgs-u-bdf2e2ae4b6e">
                             <div class="small fw-bold text-warning mb-0">LEVEL 2: SUB-MODUL</div>
-                            <span class="text-muted d-block" style="font-size: 0.8rem;">Petunjuk khusus untuk aksi pengisian form (Create, Edit) atau manajemen cetak (Print).</span>
+                            <span class="text-muted d-block bgs-u-aae30f4ce161">Petunjuk khusus untuk aksi pengisian form (Create, Edit) atau manajemen cetak (Print).</span>
                         </div>
                         
-                        <div class="p-2.5 rounded-3" style="background-color: #f0fdf4; border-left: 3px solid #10b981;">
+                        <div class="p-2.5 rounded-3 bgs-u-382ab01da681">
                             <div class="small fw-bold text-success mb-0">LEVEL 3: FITUR</div>
-                            <span class="text-muted d-block" style="font-size: 0.8rem;">Logika perhitungan atau penanganan tombol khusus/rumit (Contoh: Price Calculation).</span>
+                            <span class="text-muted d-block bgs-u-aae30f4ce161">Logika perhitungan atau penanganan tombol khusus/rumit (Contoh: Price Calculation).</span>
                         </div>
                     </div>
                 </div>

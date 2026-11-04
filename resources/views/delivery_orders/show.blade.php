@@ -1,60 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-delivery-orders-show bgs-mode-screen')
 @section('title', 'Detail Delivery Order')
 @section('content')
-<style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-    .table-detail th {
-        width: 35%;
-        background: #f8f9fa;
-        white-space: nowrap;
-    }
-    .table-product thead th {
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    .text-right {
-        text-align: right;
-    }
-    .amount-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .badge {
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-    .summary-box {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 20px;
-    }
-    .notes-box {
-        background: #f8f9fa;
-        border-left: 4px solid #0d6efd;
-        padding: 15px;
-        border-radius: 6px;
-    }
-    .empty-text {
-        color: #6c757d;
-    }
-</style>
+
 <div class="card shadow-sm border-0">
     {{-- HEADER --}}
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4>
             <i class="bi bi-file-earmark-text"></i>
             Detail Delivery Order
@@ -85,11 +36,17 @@
                 <div class="section-title">
                     DO Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>DO #</th>
                         <td>
                             {{ $do->do_number }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>PO Customer #</th>
+                        <td>
+                            {{ $do->poCustomer->po_number ?? '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -101,7 +58,13 @@
                     <tr>
                         <th>Shipping Address</th>
                         <td>
-                            {{ $do->shipping_address }}
+                            {!! nl2br(e($do->shipping_address ?? '-')) !!}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <td>
+                            {{ $do->receiver_name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -113,10 +76,13 @@
                     <tr>
                         <th>Status</th>
                         <td>
-                            @if($do->status == 'pending') <span class="badge bg-warning">Pending</span>
-                            @elseif($do->status == 'shipped') <span class="badge bg-primary">Shipped</span>
-                            @else <span class="badge bg-success">Delivered</span> @endif
-                        </span>
+                            @if($do->status == 'pending')
+                                <span class="badge bg-warning">Pending</span>
+                            @elseif($do->status == 'delivered')
+                                <span class="badge bg-success">Delivered</span>
+                            @else
+                                <span class="badge bg-secondary">Legacy: {{ ucfirst($do->status) }}</span>
+                            @endif
                         </td>
                     </tr>
                 </table>
@@ -126,7 +92,7 @@
                 <div class="section-title">
                     Customer Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>Customer</th>
                         <td>
@@ -142,7 +108,7 @@
                     <tr>
                         <th>PIC Phone</th>
                         <td>
-                            {{ $do->poCustomer->customer->pic_quotation_phone ?? '-' }}
+                            {{ $do->poCustomer->customer->pic_do_phone ?? '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -166,8 +132,8 @@
             Product Detail
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-product">
-                <thead class="table-dark">
+            <table class="table table-hover table-product bgs-detail-table align-middle">
+                <thead class="table-light">
                     <tr>
                         <th width="5%" class="text-center">
                             No
@@ -233,6 +199,46 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- ADDITIONAL INFORMATION --}}
+        <hr>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="section-title">
+                    Attachment
+                </div>
+
+                @if($do->attachment)
+                    <a href="{{ Storage::url($do->attachment) }}"
+                       target="_blank"
+                       class="btn btn-info btn-sm">
+                        <i class="bi bi-paperclip"></i>
+                        View Attachment
+                    </a>
+                @else
+                    <div class="empty-text">
+                        No attachment available.
+                    </div>
+                @endif
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="section-title">
+                    Remarks
+                </div>
+
+                <div class="notes-box">
+                    @if(!empty($do->notes))
+                        {!! nl2br(e($do->notes)) !!}
+                    @else
+                        <span class="empty-text">
+                            No remarks.
+                        </span>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>

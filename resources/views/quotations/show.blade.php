@@ -1,194 +1,14 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-quotations-show bgs-mode-screen')
 
 @section('title', 'Detail Quotation')
 
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar warna card lebih pop-out */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama & Elemen */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna biru profesional */
-    .card-header-custom {
-        background: linear-gradient(135deg, #0284c7, #075985); /* Ocean Blue Gradient */
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom .page-title-sub {
-        color: #e0f2fe; /* Biru sangat muda */
-        font-size: 0.85rem;
-    }
-    .card-header-custom h3 {
-        color: white;
-        font-weight: 700;
-    }
-
-    /* Styling Judul Seksi - Abu-abu dibuat lebih tua tapi terang */
-    .section-sub-title {
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #475569; /* Grey lebih tua (Slate 600) tapi tetap terang */
-        font-weight: 700;
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 5px;
-        display: inline-block;
-    }
-    .section-sub-title i {
-        color: #0284c7; /* Ikon warna biru */
-    }
-    
-    /* Meta / Info Detail Box */
-    .info-box-bg {
-        background-color: #f8fafc; /* Abu-abu dasar super terang */
-        border: 1px solid #e2e8f0;
-    }
-    .info-table {
-        margin-bottom: 0;
-    }
-    .info-table td {
-        padding: 0.65rem 0.5rem;
-        border: none;
-        font-size: 0.92rem;
-    }
-    .info-table .label {
-        font-weight: 600;
-        color: #1e293b; /* Hampir hitam agar kontras */
-        width: 40%;
-    }
-    .info-table .value {
-        color: #334155; /* Abu-abu tua */
-    }
-
-    /* Penataan Tabel Produk */
-    .table-modern thead th {
-        background-color: #0c4a6e; /* Biru Gelap Profesional */
-        color: #f0f9ff; /* Teks Biru Putih */
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.78rem;
-        letter-spacing: 0.5px;
-        padding: 14px;
-        border: none;
-    }
-    .table-modern tbody tr:nth-child(even) {
-        background-color: #fcfdfe; /* Zebra strip biru super samar */
-    }
-    .table-modern tbody td {
-        padding: 1rem 0.75rem;
-        vertical-align: top;
-        font-size: 0.9rem;
-        color: #334155;
-        border-color: #f1f5f9;
-    }
-    
-    .product-name-title {
-        font-weight: 600;
-        color: #0284c7; /* Nama produk warna biru */
-        font-size: 0.95rem;
-    }
-    
-    /* Box Spesifikasi & Deskripsi */
-    .meta-box {
-        margin-top: 6px;
-        padding: 8px 12px;
-        background-color: #fff; /* Putih agar kontras dengan zebra strip */
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #cbd5e1;
-        border-radius: 4px;
-    }
-    .meta-box-spec {
-        border-left-color: #38bdf8; /* Biru cerah */
-        background-color: #f0f9ff;
-    }
-    .meta-box-desc {
-        border-left-color: #94a3b8; /* Abu-abu Slate */
-        background-color: #f8fafc;
-    }
-    .meta-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #0369a1; /* Biru tua */
-        text-transform: uppercase;
-        margin-bottom: 3px;
-    }
-    .meta-label-desc {
-        color: #475569;
-    }
-    .meta-value {
-        font-size: 0.82rem;
-        color: #1e293b;
-        white-space: pre-line;
-    }
-
-    /* Summary / Total Ringkasan */
-    .summary-card {
-        background-color: #1e293b; /* Abu-abu gelap (paling tua) */
-        border-radius: 8px;
-        padding: 1.25rem;
-        color: #f1f5f9;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .summary-line {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        font-size: 0.9rem;
-        color: #cbd5e1; /* Abu-abu terang untuk teks */
-    }
-    .summary-line .main-label {
-        font-weight: 500;
-    }
-    .summary-line.grand-total {
-        border-top: 2px solid #334155;
-        margin-top: 0.5rem;
-        padding-top: 1rem;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #fff; /* Putih bersih */
-    }
-    .grand-total .total-rp {
-        color: #38bdf8; /* Highlight Grand Total dengan biru cerah */
-    }
-    
-    /* Badge Status Custom */
-    .badge-custom {
-        padding: 0.5em 0.9em;
-        font-size: 0.78rem;
-        font-weight: 700;
-        border-radius: 20px; /* Lebih bulat */
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Tombol */
-    .btn-light {
-        background-color: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-    }
-    .btn-light:hover {
-        background-color: rgba(255,255,255,0.3);
-        border: 1px solid rgba(255,255,255,0.4);
-        color: white;
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header card-header-custom py-3">
+        <div class="card-header card-header-custom py-3 bgs-page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="page-title fw-bold fs-5">
                     <i class="bi bi-file-earmark-text-fill me-2"></i> Detail Quotation
@@ -226,7 +46,7 @@
                 <div class="col-md-6">
                     <div class="h-100 p-3 rounded-3 info-box-bg">
                         <div class="section-sub-title"><i class="bi bi-file-earmark-text-fill me-2"></i>Quotation Info</div>
-                        <table class="table info-table">
+                        <table class="table info-table bgs-detail-table align-middle">
                             <tr>
                                 <td class="label">Quotation #</td>
                                 <td class="value">: {{ $quotation->quotation_number }}</td>
@@ -283,14 +103,14 @@
                 <div class="col-md-6">
                     <div class="h-100 p-3 rounded-3 info-box-bg">
                         <div class="section-sub-title"><i class="bi bi-building-fill me-2"></i>Customer Info</div>
-                        <table class="table info-table">
+                        <table class="table info-table bgs-detail-table align-middle">
                             <tr>
                                 <td class="label">Company Name</td>
                                 <td class="value fw-bold text-dark">: {{ $quotation->customer->name }}</td>
                             </tr>
                             <tr>
                                 <td class="label">Address</td>
-                                <td class="value">: {!! nl2br(e($quotation->customer->document_address ?? '-')) !!}</td>
+                                <td class="value">: {!! nl2br(e($quotation->customer->address ?? '-')) !!}</td>
                             </tr>
                             <tr>
                                 <td class="label">Contact</td>
@@ -313,7 +133,7 @@
                 <div class="section-sub-title"><i class="bi bi-box-seam-fill me-2"></i>Line Items / Product Details</div>
                 <div class="border rounded-3 overflow-hidden shadow-sm">
                     <div class="table-responsive">
-                        <table class="table table-modern align-middle m-0">
+                        <table class="table table-modern align-middle m-0 bgs-detail-table">
                             <thead>
                                 <tr>
                                     <th class="text-center" width="5%">No</th>
@@ -364,7 +184,7 @@
                     @if($quotation->notes)
                         <div class="p-3 border rounded-3 bg-white h-100 info-box-bg">
                             <div class="section-sub-title mb-2"><i class="bi bi-pencil-square me-2"></i>Terms & Remarks</div>
-                            <p class="text-secondary small mb-0" style="white-space: pre-line; line-height: 1.6;">{{ $quotation->notes }}</p>
+                            <p class="text-secondary small mb-0 bgs-u-1d172bf7f784">{{ $quotation->notes }}</p>
                         </div>
                     @endif
                 </div>
@@ -385,7 +205,7 @@
                         </div>
                         
                         {{-- 3. DPP (Subtotal After Discount) --}}
-                        <div class="summary-line" style="border-top: 1px dashed #334155; padding-top: 0.5rem; margin-top: 0.25rem;">
+                        <div class="summary-line bgs-u-69936becd9ee">
                             <span class="main-label">Subtotal After Discount (DPP)</span>
                             <span class="fw-semibold text-white">Rp {{ number_format($quotation->dpp, 0, ',', '.') }}</span>
                         </div>

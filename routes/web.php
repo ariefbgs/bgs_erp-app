@@ -37,43 +37,13 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
 
     // ==========================================
-    // STORAGE LINK (PERBAIKAN)
-    // ==========================================
-    Route::get('/reset-storage', function () {
-        $shortcutPath = public_path('storage');
-        
-        // Jika path adalah symlink, hapus dengan unlink
-        if (is_link($shortcutPath)) {
-            unlink($shortcutPath);
-        } 
-        // Jika path adalah direktori (bukan symlink), hapus isinya terlebih dahulu
-        elseif (is_dir($shortcutPath)) {
-            File::deleteDirectory($shortcutPath);
-        }
-        
-        // Buat symlink baru
-        Artisan::call('storage:link');
-        return 'Symlink storage berhasil direset!';
-    });
-
-    // Route untuk membuat storage link (jika belum ada)
-    Route::get('/link-storage', function () {
-        $shortcutPath = public_path('storage');
-        if (is_link($shortcutPath) || is_dir($shortcutPath)) {
-            return 'Folder public/storage sudah ada. Silakan gunakan /reset-storage untuk mereset.';
-        }
-        Artisan::call('storage:link');
-        return 'Storage link telah berhasil dibuat!';
-    });
-
-    // ==========================================
     // DASHBOARD
     // ==========================================
     Route::get('/dashboard', function() {
         if (Gate::allows('access-dashboard')) {
             return app(DashboardController::class)->index();
         }
-        return redirect()->route('landing-page');
+        abort(403, 'Anda tidak memiliki akses Dashboard.');
     })->name('dashboard');
 
     Route::get('/welcome', function () {
@@ -125,6 +95,17 @@ Route::resource('quotations', QuotationController::class);
 
     // Delivery Order
     Route::resource('delivery-orders', DeliveryOrderController::class);
+    Route::patch(
+        'delivery-orders/{id}/mark-delivered',
+        [DeliveryOrderController::class, 'markDelivered']
+    )->name('delivery-orders.mark-delivered');
+
+    Route::patch(
+        'delivery-orders/{id}/reopen',
+        [DeliveryOrderController::class, 'reopen']
+    )->name('delivery-orders.reopen');
+
+
     Route::get('delivery-orders/get-po-customer-details/{id}', [DeliveryOrderController::class, 'getPoCustomerDetails'])->name('delivery-orders.get-po-customer-details');
     Route::get('delivery-orders/get-invoices-by-po/{po_customer_id}', [DeliveryOrderController::class, 'getInvoicesByPo'])->name('delivery-orders.get-invoices-by-po');
     Route::get('delivery-orders/{id}/print', [DeliveryOrderController::class, 'print'])->name('delivery-orders.print');
@@ -133,15 +114,14 @@ Route::resource('quotations', QuotationController::class);
     // Document Receipt
     Route::resource('document-receipts', DocumentReceiptController::class);
     Route::get('document-receipts/get-do-details/{id}', [DocumentReceiptController::class, 'getDoDetails'])->name('document-receipts.get-do-details');
+    Route::get('document-receipts/get-create-options-by-po/{po_customer_id}', [DocumentReceiptController::class, 'getCreateOptionsByPo'])->name('document-receipts.get-create-options-by-po');
+    Route::get('document-receipts/get-create-options-by-do/{id}', [DocumentReceiptController::class, 'getCreateOptionsByDo'])->name('document-receipts.get-create-options-by-do');
     Route::get('document-receipts/get-invoices-by-po/{po_customer_id}', [DocumentReceiptController::class, 'getInvoicesByPo'])->name('document-receipts.get-invoices-by-po');
     Route::get('document-receipts/{id}/print', [DocumentReceiptController::class, 'print'])->name('document-receipts.print');
 
     // Invoice Customer
     Route::resource('invoice-customers', InvoiceCustomerController::class);
     Route::get('invoice-customers/get-po-customer-details/{id}', [InvoiceCustomerController::class, 'getPoCustomerDetails'])->name('invoice-customers.get-po-customer-details');
-    Route::get('invoice-customers/{id}/edit', [InvoiceCustomerController::class, 'edit'])->name('invoice-customers.edit');
-    Route::put('invoice-customers/{id}', [InvoiceCustomerController::class, 'update'])->name('invoice-customers.update');
-    Route::delete('invoice-customers/{id}', [InvoiceCustomerController::class, 'destroy'])->name('invoice-customers.destroy');
     Route::patch('/invoice-customers/{id}/cancel', [InvoiceCustomerController::class, 'cancel'])->name('invoice-customers.cancel');
     Route::get('invoice-customers/{id}/print', [InvoiceCustomerController::class, 'print'])->name('invoice-customers.print');
     Route::get('invoice-customers/{id}/print_invoice', [InvoiceCustomerController::class, 'printInvoice'])->name('invoice-customers.print_invoice');
@@ -247,3 +227,22 @@ Route::middleware('auth')
             ->middleware('permission:deployment_view')
             ->name('history');
     });
+
+// BGS customer/supplier payment confirmation (admin only in controller).
+Route::middleware('auth')->group(function () {
+    Route::get('/invoice-payments/{kind}', [\App\Http\Controllers\InvoicePaymentController::class, 'index'])->where('kind', 'customer|supplier')->name('invoice-payments.index');
+    Route::post('/invoice-payments/{kind}', [\App\Http\Controllers\InvoicePaymentController::class, 'store'])->where('kind', 'customer|supplier')->name('invoice-payments.store');
+});
+
+// BGS supplier invoice input R1
+Route::middleware('auth')->group(function () {
+    Route::get('/supplier-invoice-input', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'index'])->name('supplier-invoice-input.index');
+    Route::get('/supplier-invoice-input/create', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'create'])->name('supplier-invoice-input.create');
+    Route::post('/supplier-invoice-input', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'store'])->name('supplier-invoice-input.store');
+    Route::get('/supplier-invoice-input/{id}', [\App\Http\Controllers\SupplierInvoiceInputController::class, 'show'])->whereNumber('id')->name('supplier-invoice-input.show');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/user-access', [\App\Http\Controllers\UserAccessController::class, 'index'])->name('user-access.index');
+    Route::put('/user-access/{user}', [\App\Http\Controllers\UserAccessController::class, 'update'])->name('user-access.update');
+});

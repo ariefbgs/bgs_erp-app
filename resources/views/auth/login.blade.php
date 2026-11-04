@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ERP System - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/bgs-global.css') }}?v={{ filemtime(public_path('css/bgs-global.css')) }}">
 </head>
-<body class="bg-light">
+<body class="bg-light bgs-ui bgs-page-auth-login bgs-mode-create">
     <div class="container">
         <div class="row justify-content-center min-vh-100 align-items-center">
             <div class="col-md-4">
                 <div class="card shadow">
-                    <div class="card-header bg-primary text-white text-center">
+                    <div class="card-header bg-primary text-white text-center bgs-page-header">
                         <h4>ERP System</h4>
                         <small>Silahkan Login</small>
                     </div>
@@ -44,6 +45,9 @@
                                 <button type="submit" class="btn btn-primary">Login</button>
                             </div>
                         </form>
+                        @if (Route::has('password.request'))
+                            <div class="text-center mt-3"><a href="{{ route('password.request') }}">Lupa Password?</a></div>
+                        @endif
                     </div>
                     <div class="card-footer text-center">
                         <a href="{{ route('register') }}">Belum punya akun? Register</a>

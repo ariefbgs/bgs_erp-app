@@ -12,7 +12,7 @@ class UserManualController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!Auth::check() || Auth::user()->email !== 'arief@gmail.com') {
+            if (!Auth::check() || !Auth::user()->canUseAdminFeatures()) {
                 abort(403, 'Anda tidak memiliki hak akses untuk mengelola dokumentasi sistem.');
             }
             return $next($request);

@@ -1,60 +1,11 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-document-receipts-show bgs-mode-screen')
 @section('title', 'Detail Document Receipt')
 @section('content')
-<style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-    .table-detail th {
-        width: 35%;
-        background: #f8f9fa;
-        white-space: nowrap;
-    }
-    .table-product thead th {
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    .text-right {
-        text-align: right;
-    }
-    .amount-column {
-        text-align: right;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .card-header h4 {
-        margin-bottom: 0;
-    }
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-    .badge {
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-    .summary-box {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 20px;
-    }
-    .notes-box {
-        background: #f8f9fa;
-        border-left: 4px solid #0d6efd;
-        padding: 15px;
-        border-radius: 6px;
-    }
-    .empty-text {
-        color: #6c757d;
-    }
-</style>
+
 <div class="card shadow-sm border-0">
     {{-- HEADER --}}
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center bgs-page-header">
         <h4>
             <i class="bi bi-file-earmark-text"></i>
             Detail Document Receipt
@@ -85,7 +36,7 @@
                 <div class="section-title">
                     DO Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>Receipt #</th>
                         <td>
@@ -101,25 +52,25 @@
                     <tr>
                         <th>DO #</th>
                         <td>
-                            {{ $receipt->deliveryOrder->do_number ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('do_number')->filter()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>DO Date</th>
                         <td>
-                            {{ $receipt->deliveryOrder->delivery_date ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('delivery_date')->filter()->map(fn($v) => (string) $v)->unique()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Shipping Address</th>
                         <td>
-                            {{ $receipt->deliveryOrder->shipping_address ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('shipping_address')->filter()->unique()->implode(' | ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Delivery by</th>
                         <td>
-                            {{ $receipt->deliveryOrder->delivery_by ?? '-' }}
+                            {{ $receipt->deliveryOrders->pluck('delivery_by')->filter()->unique()->implode(', ') ?: '-' }}
                         </td>
                     </tr>
                     <tr>
@@ -143,35 +94,35 @@
                 <div class="section-title">
                     Customer Information
                 </div>
-                <table class="table table-bordered table-detail">
+                <table class="table table-detail bgs-detail-table align-middle">
                     <tr>
                         <th>Customer</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->name ?? '-' }}
+                            {{ $receipt->poCustomer->customer->name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>PIC Customer</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->pic_do_name ?? '-' }}
+                            {{ $receipt->poCustomer->customer->pic_invoice_name ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>PIC Phone</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->pic_quotation_phone ?? '-' }}
+                            {{ $receipt->poCustomer->customer->pic_invoice_phone ?? '-' }}
                         </td>
                     </tr>
                     <tr>
                         <th>Customer Address</th>
                         <td>
-                            {!! nl2br(e($receipt->deliveryOrder->poCustomer->customer->address ?? '-')) !!}
+                            {!! nl2br(e($receipt->poCustomer->customer->address ?? '-')) !!}
                         </td>
                     </tr>
                     <tr>
                         <th>Email</th>
                         <td>
-                            {{ $receipt->deliveryOrder->poCustomer->customer->email ?? '-' }}
+                            {{ $receipt->poCustomer->customer->email ?? '-' }}
                         </td>
                     </tr>
                 </table>
@@ -182,55 +133,8 @@
         <!-- TANDA TERIMA DOKUMEN (DIAMBIL DARI $receipt)              -->
         <!-- ========================================================= -->
         <hr>
-        <h5 class="mb-3">Document Receipt</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th width="5%" class="text-center">No</th>
-                        <th>Description</th>
-                        <th width="25%">Qty</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Invoice - DIAMBIL DARI $receipt, BUKAN dari deliveryOrder -->
-                    <tr>
-                        <td class="text-center">1</td>
-                        <td>
-                            <strong>Invoice</strong><br>
-                            {{ $receipt->invoice_number ?? '-' }}
-                        </td>
-                        <td class="align-middle">1 Rangkap (Asli)</td>
-                    </tr>
-                    <!-- Faktur Pajak - DIAMBIL DARI $receipt -->
-                    <tr>
-                        <td class="text-center">2</td>
-                        <td>
-                            <strong>Faktur Pajak</strong><br>
-                            {{ $receipt->tax_invoice_number ?? '-' }}
-                        </td>
-                        <td class="align-middle">2 Rangkap (Asli + Copy)</td>
-                    </tr>
-                    <!-- PO -->
-                    <tr>
-                        <td class="text-center">3</td>
-                        <td>
-                            <strong>PO Customer</strong><br>
-                            <span class="text-primary">{{ $receipt->deliveryOrder->poCustomer->po_number ?? '-' }}</span>
-                        </td>
-                        <td class="align-middle">1 Rangkap</td> 
-                    </tr>
-                    <!-- DO -->
-                    <tr>
-                        <td class="text-center">4</td>
-                        <td>
-                            <strong>Delivery Order</strong><br>
-                            <span class="text-success">{{ $receipt->deliveryOrder->do_number ?? '-' }}</span>
-                        </td>
-                        <td class="align-middle">3 Rangkap (Asli + Copy)</td>
-                    </tr>
-                </tbody>
-            </table>
+            <h5 class="mb-3">Daftar Dokumen yang Dikirim</h5>
+@include('document-receipts.document-list')
         </div>
 
         <!-- ========================================================= -->
@@ -249,7 +153,7 @@
             @endif
             @if(!empty($receipt->attachment))
             <div class="col-md-6">
-                <div class="notes-box" style="border-left-color: #198754;">
+                <div class="notes-box bgs-u-951604446a6c">
                     <strong><i class="bi bi-paperclip"></i> Attachment:</strong>
                     <p class="mb-0 mt-2">
                         <a href="{{ asset('storage/' . $receipt->attachment) }}" target="_blank" class="btn btn-sm btn-success">

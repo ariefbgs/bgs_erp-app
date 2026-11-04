@@ -19,7 +19,7 @@ final class DeploymentReadModelContractTest extends TestCase
         parent::setUp();
 
         $this->assertSame(
-            'erp_app_testing',
+            'erp_app_staging_testing_1026',
             DB::connection()->getDatabaseName()
         );
 

@@ -1,48 +1,18 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-po-customers-create bgs-mode-create')
 @section('title', 'Add Customer PO')
 @section('content')
-<style>
-    body { background-color: #f1f5f9; }
-    .main-card { border: none; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); background: #fff; overflow: hidden; }
-    .card-header-custom { background: linear-gradient(135deg, #10b981, #047857); color: white; padding: 1.5rem; border: none; }
-    .card-header-custom h4 { color: white; font-weight: 700; margin-bottom: 0; }
-    .form-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; font-weight: 700; margin-bottom: 6px; }
-    .section-sub-title { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; color: #1e293b; font-weight: 700; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
-    .section-sub-title i { color: #10b981; }
-    .info-group-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; height: 100%; }
-    .form-control, .form-select { border-color: #cbd5e1; padding: 0.5rem 0.75rem; }
-    .form-control:focus, .form-select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
-    .source-option { cursor: pointer; padding: 20px; border: 2px solid #cbd5e1; border-radius: 10px; text-align: center; background-color: #fff; transition: all 0.25s ease; height: 100%; }
-    .source-option:hover { border-color: #3b82f6; background-color: #f0f9ff; transform: translateY(-2px); }
-    .source-option.active { border-color: #10b981; background-color: #f0fdf4; box-shadow: 0 4px 12px rgba(16,185,129,0.1); }
-    .source-option i { color: #64748b; transition: color 0.25s; }
-    .source-option.active i { color: #10b981; }
-    .product-row { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; transition: all 0.2s; }
-    .product-row:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-    .price-input, .subtotal-display, .qty-input, .price-display, .summary-input-num { text-align: right; }
-    .brand-display, .code2-display, .name2-display { background-color: #f1f5f9 !important; color: #475569; font-weight: 500; }
-    .table-summary th { font-size: 0.85rem; text-transform: uppercase; color: #475569; vertical-align: middle; }
-    .select2-container--bootstrap-5 .select2-selection {
-        min-height: calc(1.5em + 0.75rem + 2px);
-        font-size: 0.875rem;
-    }
-    .select2-container--bootstrap-5 .select2-selection__rendered {
-        line-height: 1.5;
-    }
-    .product-row .select2-container {
-        width: 100% !important;
-    }
-</style>
+
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4><i class="bi bi-file-earmark-plus-fill me-2"></i>Add Customer PO</h4>
             <a href="{{ route('po-customers.index') }}" class="btn btn-light btn-sm fw-bold px-3"><i class="bi bi-arrow-left me-1"></i> Back to List</a>
         </div>
         <div class="card-body p-4">
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color:#fef2f2; color:#991b1b; border-left:4px solid #dc2626!important; border-radius:6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e172afc8903e">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div><strong class="d-block mb-1">Please fix the following validation errors:</strong>
                         <ul class="mb-0 ps-3 small">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
@@ -51,13 +21,13 @@
                 </div>
             @endif
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important;">
+                <div class="alert alert-success border-0 shadow-sm mb-4 bgs-u-be237583235b">
                     <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif  
@@ -70,14 +40,14 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <div class="source-option" id="option-quotation" data-source="quotation">
-                            <i class="bi bi-file-earmark-check-fill d-block mb-2" style="font-size:28px;"></i>
+                            <i class="bi bi-file-earmark-check-fill d-block mb-2 bgs-u-7d47860d5375"></i>
                             <h5 class="fw-bold mb-1">Based on Approved Quotation</h5>
                             <p class="text-muted small mb-0">Fetch, lock, and synchronize items automatically from an approved quotation</p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="source-option" id="option-manual" data-source="manual">
-                            <i class="bi bi-pencil-square d-block mb-2" style="font-size:28px;"></i>
+                            <i class="bi bi-pencil-square d-block mb-2 bgs-u-7d47860d5375"></i>
                             <h5 class="fw-bold mb-1">Direct Manual Input (Without Quotation)</h5>
                             <p class="text-muted small mb-0">Manually select products and input specific custom prices independently</p>
                         </div>
@@ -90,25 +60,25 @@
                         <div class="info-group-box d-flex flex-column gap-3">
                             <div>
                                 <div class="section-sub-title mb-3"><i class="bi bi-building me-2"></i>2. Client / Customer Relationship</div>
-                                <div id="quotation-section" style="display: none;" class="mb-3">
+                                <div id="quotation-section" class="mb-3 bgs-u-6e22c58a7a6a">
                                     <label class="form-label fw-bold">Select Reference Quotation <span class="text-danger">*</span></label>
-                                    <select name="quotation_id" id="quotation_id" class="form-select" style="width:100%;">
+                                    <select name="quotation_id" id="quotation_id" class="form-select bgs-u-9ccc4ca9d661">
                                         <option value="">-- Type to search Approved Quotation --</option>
                                         @foreach($quotations as $quotation)
                                             <option value="{{ $quotation->id }}">{{ $quotation->quotation_number }} - {{ $quotation->customer->name }} (Rp {{ number_format($quotation->total,0,',','.') }})</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div id="manual-section" style="display: none;" class="mb-3">
+                                <div id="manual-section" class="mb-3 bgs-u-6e22c58a7a6a">
                                     <label class="form-label">Customer Link <span class="text-danger">*</span></label>
-                                    <select name="customer_id" id="customer_id" class="form-select" style="width:100%;">
+                                    <select name="customer_id" id="customer_id" class="form-select bgs-u-9ccc4ca9d661">
                                         <option value="">-- Select Customer Destination --</option>
                                         @foreach($customers as $customer)
                                             <option value="{{ $customer->id }}" data-pic-name="{{ $customer->pic_quotation_name }}" data-pic-phone="{{ $customer->pic_quotation_phone }}" data-address="{{ $customer->shipping_address ?? $customer->address }}">{{ $customer->customer_code }} - {{ $customer->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div id="pic-info" class="alert border-0 shadow-sm d-flex align-items-center mt-3 mb-0" style="background-color:#eff6ff; color:#1e40af; display:none!important;">
+                                <div id="pic-info" class="alert border-0 shadow-sm d-flex align-items-center mt-3 mb-0 bgs-u-0680122c3328">
                                     <i class="bi bi-person-lines-fill me-2 fs-5"></i>
                                     <div><span class="fw-bold">Active Contact Personnel:</span> <span id="pic-name" class="fw-semibold"></span> <span class="mx-1">|</span> <i class="bi bi-telephone-fill small me-1"></i><span id="pic-phone"></span></div>
                                 </div>
@@ -168,7 +138,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-12" id="wrapper-update-quotation" style="display:none;">
+                                <div class="col-12 bgs-u-d0466aa33fa8" id="wrapper-update-quotation">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" name="update_quotation_master_terms" id="update_quotation_master_terms" value="1">
                                         <label class="form-check-label text-muted small fw-semibold" for="update_quotation_master_terms">Sync & update these Terms & Delivery back to reference Quotation</label>
@@ -203,16 +173,16 @@
                             <table class="table table-bordered table-summary m-0 bg-white align-middle">
                                 <tr><th width="45%" class="ps-3">Subtotal</th><td colspan="2" class="text-end pe-3 fw-bold text-dark" id="subtotal-text">Rp 0</td><input type="hidden" name="subtotal" id="subtotal-value" value="0"></tr>
                                 <tr><th class="ps-3">Discount</th><td width="25%" class="px-2"><div class="input-group input-group-sm"><input type="number" name="discount_percent" id="discount_percent" class="form-control text-end summary-input-num" step="0.01" min="0" max="100" value="0"><span class="input-group-text">%</span></div></td><td width="30%" class="pe-2"><div class="input-group input-group-sm"><span class="input-group-text">Rp</span><input type="text" id="discount_amount_display" class="form-control text-end summary-input-num" value="0"><input type="hidden" name="discount_amount" id="discount-value" value="0"></div></td></tr>
-                                <tr style="background-color:#f8fafc;"><th class="ps-3 fw-semibold text-secondary">DPP Nilai Lain</th><td colspan="2" class="text-end pe-3 fw-bold text-secondary"><span id="subtotal-after-discount-text">Rp 0</span><input type="hidden" name="dpp_amount" id="dpp-value" value="0"></td></tr>
+                                <tr class="bgs-u-fe4fba31fc25"><th class="ps-3 fw-semibold text-secondary">DPP Nilai Lain</th><td colspan="2" class="text-end pe-3 fw-bold text-secondary"><span id="subtotal-after-discount-text">Rp 0</span><input type="hidden" name="dpp_amount" id="dpp-value" value="0"></td></tr>
                                 <tr><th class="ps-3">PPN</th><td class="px-2"><div class="input-group input-group-sm"><input type="number" name="tax_percent" id="tax_percent" class="form-control text-end summary-input-num" step="0.01" min="0" max="100" value="11"><span class="input-group-text">%</span></div></td><td class="pe-2"><div class="input-group input-group-sm"><span class="input-group-text">Rp</span><input type="text" id="tax_amount_display" class="form-control text-end summary-input-num" value="0"><input type="hidden" name="tax_amount" id="tax-value" value="0"></div></td></tr>
                                 <tr><th class="ps-3">PPh 23</th><td class="px-2"><div class="input-group input-group-sm"><input type="number" name="pph_percent" id="pph_percent" class="form-control text-end summary-input-num" step="0.01" min="0" max="100" value="0"><span class="input-group-text">%</span></div></td><td class="pe-2"><div class="input-group input-group-sm"><span class="input-group-text">Rp</span><input type="text" id="pph_amount_display" class="form-control text-end summary-input-num" value="0"><input type="hidden" name="pph_amount" id="pph-value" value="0"></div></td></tr>
-                                <tr style="background-color:#f8fafc; border-top:2px solid #cbd5e1;"><th class="ps-3 fs-6 text-dark"><strong>Grand Total Invoice</strong></th><td colspan="2" class="text-end pe-3 fs-5 text-success fw-bold"><strong><span id="grand-total-text">Rp 0</span></strong><input type="hidden" name="total" id="grand-total-value" value="0"></td></tr>
+                                <tr class="bgs-u-d2bc7fdd0d83"><th class="ps-3 fs-6 text-dark"><strong>Grand Total Invoice</strong></th><td colspan="2" class="text-end pe-3 fs-5 text-success fw-bold"><strong><span id="grand-total-text">Rp 0</span></strong><input type="hidden" name="total" id="grand-total-value" value="0"></td></tr>
                             </table>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white" style="background: linear-gradient(135deg, #10b981, #047857); border:none;"><i class="bi bi-save-fill me-1"></i> Save Customer PO</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white bgs-u-5c3a9bfaf58c"><i class="bi bi-save-fill me-1"></i> Save Customer PO</button>
                     <a href="{{ route('po-customers.index') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>
                 </div>
             </form>
@@ -250,8 +220,8 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+
 
 <script>
 let rowCount = 0;
@@ -526,7 +496,7 @@ $(document).ready(function() {
         let qid = $(this).val();
         if (qid) {
             $.ajax({
-                url: @json(route('po-customers.get-quotation', ['id' => '__ID__'])).replace('__ID__', encodeURIComponent(qid)),
+                url: '{{ route("po-customers.get-quotation", ["id" => "__ID__"]) }}'.replace('__ID__', encodeURIComponent(qid)),
                 method: 'GET',
                 success: function(resp) {
                     // 1. Customer & Alamat

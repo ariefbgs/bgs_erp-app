@@ -1,11 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-deployment-history bgs-mode-screen')
 
 @section('title', 'Deployment History')
 
 @section('content')
 <div class="py-4">
-    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap text-white p-4" style="background: linear-gradient(135deg, #0284c7, #075985);">
+    <div class="card border-0 shadow-sm bgs-u-83c08529611b">
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap text-white p-4 bgs-u-4053972e12fd bgs-page-header">
             <div>
                 <h4 class="mb-1 fw-bold"><i class="fas fa-history me-2"></i>Deployment History</h4>
                 <div class="small opacity-75">Immutable execution audit trail</div>
@@ -16,8 +17,8 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead style="background: #0c4a6e; color: #f0f9ff;">
+            <table class="table table-hover mb-0 bgs-detail-table align-middle">
+                <thead class="bgs-u-c536b9dac802">
                     <tr>
                         <th class="px-3 py-3">Release ID</th>
                         <th>Version</th>

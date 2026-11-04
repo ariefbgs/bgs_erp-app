@@ -1,98 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-customers-create bgs-mode-create')
 @section('title', 'Add Customer')
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Hijau khas Create State */
-    .card-header-custom {
-        background: linear-gradient(135deg, #10b981, #047857);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Styling Label & Bagian Sub-title */
-    .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-sub-title i {
-        color: #10b981;
-    }
-
-    /* Info Box Area */
-    .info-group-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        height: 100%;
-    }
-
-    /* Form Utilities */
-    .form-control {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-    .form-control:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-    }
-
-    /* Sub-card khusus untuk membedakan kategori PIC */
-    .pic-sub-card {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 18px;
-        height: 100%;
-    }
-    .pic-title-badge {
-        font-size: 0.75rem;
-        font-weight: bold;
-        padding: 4px 10px;
-        border-radius: 4px;
-        text-transform: uppercase;
-        display: inline-block;
-        margin-bottom: 15px;
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4><i class="bi bi-person-plus-fill me-2"></i>Add New Customer</h4>
             <a href="{{ route('customers.index') }}" class="btn btn-light btn-sm fw-bold px-3">
                 <i class="bi bi-arrow-left me-1"></i> Back to List
@@ -102,7 +16,7 @@
         <div class="card-body p-4">
             {{-- ALERT VALIDASI ERROR --}}
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important; border-radius: 6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e6478a190de4">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div>
                         <strong class="d-block mb-1">Please fix the following validation errors:</strong>
@@ -112,17 +26,17 @@
                             @endforeach
                         </ul>
                     </div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
             @endif
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm mb-4" style="background-color: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a !important;">
+                <div class="alert alert-success border-0 shadow-sm mb-4 bgs-u-be237583235b">
                     <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif  
@@ -196,8 +110,8 @@
                             {{-- OFFICE ADDRESS --}}
                             <div class="mb-3">
                                 <label for="address" class="form-label">Office Address</label>
-                                <textarea class="form-control auto-row-textarea @error('address') is-invalid @enderror" 
-                                          id="address" name="address" rows="1" style="resize: none; overflow-y: hidden;">{{ old('address') }}</textarea>
+                                <textarea class="form-control auto-row-textarea @error('address') is-invalid @enderror bgs-u-023bfb47d76b"
+                                          id="address" name="address" rows="1">{{ old('address') }}</textarea>
                                 @error('address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -206,8 +120,8 @@
                             {{-- SHIPPING ADDRESS --}}
                             <div class="mb-3">
                                 <label for="shipping_address" class="form-label text-primary">Shipping Address (Pengiriman Barang)</label>
-                                <textarea class="form-control auto-row-textarea @error('shipping_address') is-invalid @enderror" 
-                                          id="shipping_address" name="shipping_address" rows="1" style="resize: none; overflow-y: hidden;">{{ old('shipping_address') }}</textarea>
+                                <textarea class="form-control auto-row-textarea @error('shipping_address') is-invalid @enderror bgs-u-023bfb47d76b"
+                                          id="shipping_address" name="shipping_address" rows="1">{{ old('shipping_address') }}</textarea>
                                 @error('shipping_address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -216,8 +130,8 @@
                             {{-- DOCUMENT SHIPPING ADDRESS --}}
                             <div class="mb-0">
                                 <label for="document_address" class="form-label text-success">Document Shipping Address (Invoice/Kwitansi)</label>
-                                <textarea class="form-control auto-row-textarea @error('document_address') is-invalid @enderror" 
-                                          id="document_address" name="document_address" rows="1" style="resize: none; overflow-y: hidden;">{{ old('document_address') }}</textarea>
+                                <textarea class="form-control auto-row-textarea @error('document_address') is-invalid @enderror bgs-u-023bfb47d76b"
+                                          id="document_address" name="document_address" rows="1">{{ old('document_address') }}</textarea>
                                 @error('document_address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -305,7 +219,7 @@
 
                     {{-- ACTION BUTTONS --}}
                     <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
-                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold text-white" style="background: linear-gradient(135deg, #10b981, #047857);">
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
                             <i class="bi bi-save-fill me-1"></i> Save Customer
                         </button>
                         <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>

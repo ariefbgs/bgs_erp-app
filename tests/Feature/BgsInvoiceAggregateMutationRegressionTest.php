@@ -19,9 +19,9 @@ class BgsInvoiceAggregateMutationRegressionTest extends TestCase
             );
         }
 
-        if (DB::connection()->getDatabaseName() !== 'erp_app_testing') {
+        if (app()->configurationIsCached() || DB::connection()->getDriverName() !== 'mysql' || DB::connection()->getDatabaseName() !== 'erp_app_staging_testing_1026' || DB::selectOne('SELECT DATABASE() AS db')->db !== 'erp_app_staging_testing_1026') {
             throw new \RuntimeException(
-                'SAFETY BLOCK: database must be erp_app_testing.'
+                'SAFETY BLOCK: database must be erp_app_staging_testing_1026.'
             );
         }
 
@@ -40,7 +40,7 @@ class BgsInvoiceAggregateMutationRegressionTest extends TestCase
     private function columns(string $table)
     {
         return DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', $table)
             ->orderBy('ORDINAL_POSITION')
             ->get();
@@ -257,6 +257,10 @@ class BgsInvoiceAggregateMutationRegressionTest extends TestCase
                     500000,
                     'partial'
                 );
+
+                DB::table('invoice_customers')
+                    ->where('po_customer_id', $poId)
+                    ->update(['allocation_mode' => 'PERCENTAGE']);
 
                 $po = PoCustomer::findOrFail($poId);
 

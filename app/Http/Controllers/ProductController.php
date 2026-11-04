@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Services\ImageUploadService;
 
 class ProductController extends Controller
 {
@@ -120,22 +120,23 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'description' => 'nullable',
             'specification' => 'nullable',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
-        // Upload gambar ke public/uploads/products
         if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-            $destination = public_path('uploads/products');
-            if (!file_exists($destination)) {
-                mkdir($destination, 0777, true);
-            }
-            $file->move($destination, $filename);
-            $validated['image'] = 'uploads/products/' . $filename;
+            $validated['image'] = app(ImageUploadService::class)->store(
+                $request->file('image'), 'uploads/products', 1600
+            );
         }
 
-        Product::create($validated);
+        try {
+            Product::create($validated);
+        } catch (\Throwable $exception) {
+            if ($request->hasFile('image') && is_file(public_path($validated['image']))) {
+                @unlink(public_path($validated['image']));
+            }
+            throw $exception;
+        }
 
         return redirect()->route('products.index')
             ->with('success', 'Product successfully added');
@@ -169,25 +170,30 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'description' => 'nullable',
             'specification' => 'nullable',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
+        $oldImage = $product->image;
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
-            if ($product->image && file_exists(public_path($product->image))) {
-                unlink(public_path($product->image));
-            }
-            $file = $request->file('image');
-            $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-            $destination = public_path('uploads/products');
-            if (!file_exists($destination)) {
-                mkdir($destination, 0777, true);
-            }
-            $file->move($destination, $filename);
-            $validated['image'] = 'uploads/products/' . $filename;
+            $validated['image'] = app(ImageUploadService::class)->store(
+                $request->file('image'), 'uploads/products', 1600
+            );
+        } else {
+            // An empty upload must preserve the previous image.
+            unset($validated['image']);
         }
 
-        $product->update($validated);
+        try {
+            $product->update($validated);
+        } catch (\Throwable $exception) {
+            if ($request->hasFile('image') && is_file(public_path($validated['image']))) {
+                @unlink(public_path($validated['image']));
+            }
+            throw $exception;
+        }
+        if ($request->hasFile('image') && $oldImage && is_file(public_path($oldImage))) {
+            @unlink(public_path($oldImage));
+        }
 
         return redirect()->route('products.index')
             ->with('success', 'Product successfully updated');

@@ -9,53 +9,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <style>
-        body { overflow-x: hidden; }
-        .sidebar {
-            min-height: 100vh;
-            background-color: #343a40;
-            transition: all 0.3s;
-        }
 
-        /* Responsive Sidebar */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -250px; /* Sembunyikan sidebar di kiri */
-                z-index: 1000;
-                width: 250px;
-            }
-            .sidebar.show {
-                left: 0;
-            }
-            .content {
-                padding: 15px !important;
-            }
-        }
-
-        .sidebar a {
-            color: #adb5bd;
-            text-decoration: none;
-            padding: 12px 20px;
-            display: block;
-            transition: 0.3s;
-            font-size: 0.95rem;
-        }
-        .sidebar a:hover, .sidebar a.active {
-            color: #fff;
-            background-color: #007bff;
-        }
-        .sidebar .nav-link i { margin-right: 10px; width: 20px; }
-
-        /* Tampilan Mobile friendly untuk card/container */
-        .card { border-radius: 10px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+<link rel="stylesheet" href="{{ asset('css/bgs-global.css') }}?v={{ filemtime(public_path('css/bgs-global.css')) }}">
 </head>
-<body>
+<body class="bgs-ui @yield('bgs-page-class', 'bgs-mode-screen')">
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-dark bg-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url('/dashboard') }}">
+                <a class="navbar-brand" href="{{ auth()->check() ? auth()->user()->loginDestination() : url('/') }}">
                     {{ config('app.name', 'ERP System') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" id="sidebarToggle">
@@ -73,6 +36,16 @@
                                     {{ Auth::user()->name }}
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end">
+<!-- BGS USER NAVBAR -->
+@if(Auth::user()->canManageUserAccess())
+<a class="dropdown-item" href="{{ route('users.index') }}">
+    Pengaturan Pengguna
+</a>
+<a class="dropdown-item" href="{{ route('user-access.index') }}">
+    Pengaturan Akses
+</a>
+<div class="dropdown-divider"></div>
+@endif
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         Logout
@@ -93,11 +66,18 @@
                 <!-- Sidebar -->
                 <div class="col-md-2 p-0 sidebar">
                     <div class="nav flex-column">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        @can('access-dashboard')
+<a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
+@endcan
 
-                        <!-- Master Data -->
+                        @auth
+@if(Auth::user()->isAdmin())
+
+@endif
+@endauth
+<!-- Master Data -->
                         <div class="nav-item">
                             <a class="nav-link" data-bs-toggle="collapse" href="#masterDataMenu" role="button">
                                 <i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-down float-end"></i>
@@ -120,53 +100,24 @@
                             </div>
                         </div>
 
-                        <!-- Transaksi -->
-                        <div class="nav-item">
-                            <a class="nav-link" data-bs-toggle="collapse" href="#transaksiMenu" role="button">
-                                <i class="fas fa-exchange-alt"></i> Transaksi <i class="fas fa-chevron-down float-end"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('quotations.*') || request()->routeIs('po-customers.*') || request()->routeIs('po-suppliers.*') ? 'show' : '' }}" id="transaksiMenu">
-                                <div class="ms-3">
-                                    <a class="nav-link {{ request()->routeIs('quotations.*') ? 'active' : '' }}" href="{{ route('quotations.index') }}">
-                                        <i class="fas fa-file-alt"></i> Quotation
-                                    </a>
-                                    <a class="nav-link {{ request()->routeIs('po-customers.*') ? 'active' : '' }}" href="{{ route('po-customers.index') }}">
-                                        <i class="fas fa-shopping-cart"></i> PO Customer
-                                    </a>
-                                    <a class="nav-link {{ request()->routeIs('po-suppliers.*') ? 'active' : '' }}" href="{{ route('po-suppliers.index') }}">
-                                        <i class="fas fa-truck-loading"></i> PO Supplier
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <a class="nav-link {{ request()->routeIs('quotations.*') ? 'active' : '' }}" href="{{ route('quotations.index') }}">
+                            <i class="fas fa-file-alt"></i> Quotation
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('po-customers.*') ? 'active' : '' }}" href="{{ route('po-customers.index') }}">
+                            <i class="fas fa-shopping-cart"></i> PO Customer
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('po-suppliers.*') ? 'active' : '' }}" href="{{ route('po-suppliers.index') }}">
+                            <i class="fas fa-truck-loading"></i> PO Supplier
+                        </a>
 
-                        <!-- Warehouse -->
-                        <div class="nav-item">
-                            <a class="nav-link" data-bs-toggle="collapse" href="#warehouseMenu" role="button">
-                                <i class="fas fa-warehouse"></i> Warehouse <i class="fas fa-chevron-down float-end"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('goods-receipts.*') ? 'show' : '' }}" id="warehouseMenu">
-                                <div class="ms-3">
-                                    <a class="nav-link {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}" href="{{ route('goods-receipts.index') }}">
-                                        <i class="fas fa-dolly"></i> Goods Receipt
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <a class="nav-link {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}" href="{{ route('goods-receipts.index') }}">
+                            <i class="fas fa-dolly"></i> Goods Receipt
+                        </a>
 
-                        <!-- Invoice Customer -->
-                        <div class="nav-item">
-                            <a class="nav-link" data-bs-toggle="collapse" href="#invoiceMenu" role="button">
-                                <i class="fas fa-file-invoice"></i> Sales Invoice <i class="fas fa-chevron-down float-end"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('invoice-customers.*') ? 'show' : '' }}" id="invoiceMenu">
-                                <div class="ms-3">
-                                    <a class="nav-link {{ request()->routeIs('invoice-customers.*') ? 'active' : '' }}" href="{{ route('invoice-customers.index') }}">
-                                        <i class="fas fa-dolly"></i> Sales Invoice
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <a class="nav-link {{ request()->routeIs('invoice-customers.*') ? 'active' : '' }}" href="{{ route('invoice-customers.index') }}">
+                            <i class="fas fa-dolly"></i> Sales Invoice
+                        </a>
+
                         <!-- Delivery Order -->
                         <div class="nav-item">
                             <a class="nav-link" data-bs-toggle="collapse" href="#deliveryMenu" role="button">
@@ -184,19 +135,29 @@
                             </div>
                         </div>
 
-                        <!-- Expense -->
-                        <div class="nav-item">
-                            <a class="nav-link" data-bs-toggle="collapse" href="#expenseMenu" role="button">
-                                <i class="fas fa-file-alt"></i> Expense <i class="fas fa-chevron-down float-end"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('expense.*') ? 'show' : '' }}" id="expenseMenu">
-                                <div class="ms-3">
-                                    <a class="nav-link {{ request()->routeIs('expense.*') ? 'active' : '' }}" href="{{ route('expense.index') }}">
-                                        <i class="fas fa-dolly"></i> Expense
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <a class="nav-link {{ request()->routeIs('expense.*') ? 'active' : '' }}" href="{{ route('expense.index') }}">
+                            <i class="fas fa-dolly"></i> Expense
+                        </a>
+
+                        @auth
+                        @if(Auth::user()->canUseAdminFeatures())
+                        <a class="nav-link" href="{{ route('invoice-payments.index', 'customer') }}"><i class="fas fa-money-bill-wave"></i> Payment Customer</a>
+                        <a class="nav-link" href="{{ route('invoice-payments.index', 'supplier') }}"><i class="fas fa-money-bill-wave"></i> Payment Supplier</a>
+                        @endif
+                        @endauth
+                        @auth
+                        <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                        @endauth
+                        @auth
+                            @if (Auth::user()->hasPermission('deployment_view'))
+                                <a class="nav-link {{ request()->routeIs('deployment.*') ? 'active' : '' }}" href="{{ route('deployment.index') }}">
+                                    <i class="fas fa-code-branch"></i> Deployment Manager
+                                </a>
+                            @endif
+                        @endauth
+                        @if(auth()->user()?->canAccessBackup())
                         <!-- Backup & Restore -->
                         <div class="nav-item">
                             <a class="nav-link" data-bs-toggle="collapse" href="#backupMenu" role="button">
@@ -210,14 +171,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        @auth
-                            @if (Auth::user()->hasPermission('deployment_view'))
-                                <a class="nav-link {{ request()->routeIs('deployment.*') ? 'active' : '' }}" href="{{ route('deployment.index') }}">
-                                    <i class="fas fa-code-branch"></i> Deployment Manager
-                                </a>
-                            @endif
-                        @endauth
+                        @endif
 
                     </div>
                 </div>
@@ -238,5 +192,6 @@
     </script>
     @stack('scripts')
     <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.10.0/dist/autoNumeric.min.js"></script>
+<script src="{{ asset('js/bgs-form-ux.js') }}?v=20261012-r1"></script>
 </body>
 </html>

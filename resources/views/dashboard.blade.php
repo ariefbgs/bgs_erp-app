@@ -1,119 +1,10 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-dashboard bgs-mode-screen')
 
 @section('title', 'Dashboard')
 
 @section('content')
-<style>
-    :root {
-        --subtle-primary: rgba(13, 110, 253, 0.08);
-        --subtle-success: rgba(25, 135, 84, 0.08);
-        --subtle-info: rgba(13, 202, 240, 0.08);
-        --subtle-warning: rgba(255, 193, 7, 0.08);
-        --subtle-secondary: rgba(108, 117, 125, 0.08);
-        --subtle-dark: rgba(33, 37, 41, 0.08);
-        --subtle-danger: rgba(220, 53, 69, 0.08);
-        --subtle-purple: rgba(111, 66, 193, 0.08);
-    }
 
-    /* Optimasi Mobile */
-    @media (max-width: 768px) {
-        .container-fluid { padding-left: 10px !important; padding-right: 10px !important; }
-        .dashboard-card { margin-bottom: 10px; }
-        .chart-card { min-height: 300px; }
-        .icon-box { width: 40px !important; height: 40px !important; font-size: 1.1rem !important; }
-        h4 { font-size: 1.1rem; }
-        h5 { font-size: 1rem; }
-    }
-
-    /* Memastikan Canvas Chart tidak meluap */
-    .chart-body { position: relative; height: 250px; width: 100%; }
-
-    /* Perbaikan agar tabel di HP tidak berantakan */
-    .table-responsive { 
-        overflow-x: auto; 
-        -webkit-overflow-scrolling: touch; 
-    }
-
-    .recent-table { min-width: 500px; } /* Mencegah kolom terlalu gepeng di HP */
-
-    body {
-        background-color: #f8f9fa;
-    }
-
-    /* Modern Card Style */
-    .dashboard-card {
-        background: #ffffff;
-        border: 1px solid #e9ecef;
-        border-radius: 16px;
-        transition: all 0.25s ease-in-out;
-        cursor: pointer;
-        text-decoration: none !important;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    
-    .dashboard-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
-        border-color: rgba(0, 0, 0, 0.12);
-    }
-
-    /* Icon Containers dengan warna lembut */
-    .icon-box {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-
-    /* Table Design Upgrade */
-    .table-card {
-        border: 1px solid #e9ecef;
-        border-radius: 16px;
-        overflow: hidden;
-        background: #ffffff;
-    }
-
-    .table-card .card-header {
-        border-bottom: 1px solid #e9ecef;
-        padding: 1rem 1.25rem;
-    }
-
-    .recent-table th {
-        font-weight: 600;
-        text-uppercase: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        color: #6c757d;
-        background-color: #f8f9fa;
-        padding: 10px 15px;
-    }
-
-    .recent-table td {
-        padding: 12px 15px;
-        vertical-align: middle;
-        font-size: 0.85rem;
-        color: #495057;
-    }
-
-    /* Badge Soft Styles */
-    .badge-soft {
-        font-weight: 600;
-        padding: 0.35em 0.65em;
-        border-radius: 6px;
-    }
-    
-    /* Chart Container */
-    .chart-card {
-        border: 1px solid #e9ecef;
-        border-radius: 16px;
-        background: #ffffff;
-    }
-</style>
 
 <div class="container-fluid px-4 py-4">
     <div class="row mb-4">
@@ -138,7 +29,7 @@
             <a href="{{ route('invoice-customers.index', ['status' => 'paid']) }}" class="card dashboard-card h-100 p-3 shadow-sm border-start border-success border-3">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <span class="text-uppercase tracking-wider small fw-bold text-success">Total Invoice Paid (In)</span>
-                    <div class="icon-box text-success" style="background-color: var(--subtle-success);"><i class="bi bi-cash-stack"></i></div>
+                    <div class="icon-box text-success bgs-u-5ccb9913d269"><i class="bi bi-cash-stack"></i></div>
                 </div>
                 <div>
                     <h3 class="fw-bold text-success mb-1">Rp {{ number_format($totalInvoicePaid, 0, ',', '.') }}</h3>
@@ -151,7 +42,7 @@
             <a href="{{ route('expense.index') }}" class="card dashboard-card h-100 p-3 shadow-sm border-start border-danger border-3">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <span class="text-uppercase tracking-wider small fw-bold text-danger">Total Biaya / Pengeluaran (Out)</span>
-                    <div class="icon-box text-danger" style="background-color: var(--subtle-danger);"><i class="bi bi-credit-card"></i></div>
+                    <div class="icon-box text-danger bgs-u-7956242edca5"><i class="bi bi-credit-card"></i></div>
                 </div>
                 <div>
                     <h3 class="fw-bold text-danger mb-1">Rp {{ number_format($totalExpenses ?? 0, 0, ',', '.') }}</h3>
@@ -161,10 +52,10 @@
         </div>
 
         <div class="col">
-            <div class="card dashboard-card h-100 p-3 shadow-sm border-start border-purple border-3" style="cursor: default;">
+            <div class="card dashboard-card h-100 p-3 shadow-sm border-start border-purple border-3 bgs-u-8de77ed0af45">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="text-uppercase tracking-wider small fw-bold text-purple" style="color: #6f42c1 !important;">Estimasi Profit Bersih</span>
-                    <div class="icon-box text-purple" style="background-color: var(--subtle-purple); color: #6f42c1;"><i class="bi bi-wallet2"></i></div>
+                    <span class="text-uppercase tracking-wider small fw-bold text-purple bgs-u-6c07f82a9cf8">Estimasi Profit Bersih</span>
+                    <div class="icon-box text-purple bgs-u-95fdcf1daf54"><i class="bi bi-wallet2"></i></div>
                 </div>
                 <div>
                     @php $netProfit = $totalInvoicePaid - ($totalExpenses ?? 0); @endphp
@@ -182,12 +73,12 @@
         <div class="col">
             <a href="{{ route('quotations.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">Quotation</span>
-                    <div class="icon-box text-primary" style="background-color: var(--subtle-primary); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-file-text"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">Quotation</span>
+                    <div class="icon-box text-primary bgs-u-e6ad4df84820"><i class="bi bi-file-text"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalQuotation) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Rp {{ number_format($totalQuotationValue, 0, ',', '.') }}</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Rp {{ number_format($totalQuotationValue, 0, ',', '.') }}</p>
                 </div>
             </a>
         </div>
@@ -195,12 +86,12 @@
         <div class="col">
             <a href="{{ route('po-customers.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">PO Customer</span>
-                    <div class="icon-box text-success" style="background-color: var(--subtle-success); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-cart-check"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">PO Customer</span>
+                    <div class="icon-box text-success bgs-u-3170c709785d"><i class="bi bi-cart-check"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalPoCustomer) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Rp {{ number_format($totalPoCustomerValue, 0, ',', '.') }}</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Rp {{ number_format($totalPoCustomerValue, 0, ',', '.') }}</p>
                 </div>
             </a>
         </div>
@@ -208,12 +99,12 @@
         <div class="col">
             <a href="{{ route('po-suppliers.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">PO Supplier</span>
-                    <div class="icon-box text-info" style="background-color: var(--subtle-info); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-truck"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">PO Supplier</span>
+                    <div class="icon-box text-info bgs-u-253b5b4ff472"><i class="bi bi-truck"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalPoSupplier) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Rp {{ number_format($totalPoSupplierValue, 0, ',', '.') }}</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Rp {{ number_format($totalPoSupplierValue, 0, ',', '.') }}</p>
                 </div>
             </a>
         </div>
@@ -221,12 +112,12 @@
         <div class="col">
             <a href="{{ route('goods-receipts.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">Goods Receipt</span>
-                    <div class="icon-box text-warning" style="background-color: var(--subtle-warning); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-box-seam"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">Goods Receipt</span>
+                    <div class="icon-box text-warning bgs-u-40c28036ba00"><i class="bi bi-box-seam"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalGoodsReceipt) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Logistik Masuk</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Logistik Masuk</p>
                 </div>
             </a>
         </div>
@@ -234,12 +125,12 @@
         <div class="col">
             <a href="{{ route('delivery-orders.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">Delivery Order</span>
-                    <div class="icon-box text-secondary" style="background-color: var(--subtle-secondary); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-truck"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">Delivery Order</span>
+                    <div class="icon-box text-secondary bgs-u-afe3ab471398"><i class="bi bi-truck"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalDeliveryOrder) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Pengiriman Barang</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Pengiriman Barang</p>
                 </div>
             </a>
         </div>
@@ -247,12 +138,12 @@
         <div class="col">
             <a href="{{ route('invoice-customers.index') }}" class="card dashboard-card h-100 p-3 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-uppercase tracking-wider text-muted fw-bold" style="font-size: 0.75rem;">Sales Invoice</span>
-                    <div class="icon-box text-dark" style="background-color: var(--subtle-dark); width: 38px; height: 38px; font-size: 1.1rem;"><i class="bi bi-receipt"></i></div>
+                    <span class="text-uppercase tracking-wider text-muted fw-bold bgs-u-8b511f076fb1">Sales Invoice</span>
+                    <div class="icon-box text-dark bgs-u-93b6462ec4d7"><i class="bi bi-receipt"></i></div>
                 </div>
                 <div>
                     <h4 class="fw-bold text-dark mb-1">{{ number_format($totalInvoice) }}</h4>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Rp {{ number_format($totalInvoiceValue, 0, ',', '.') }}</p>
+                    <p class="mb-0 text-muted bgs-u-8b511f076fb1">Rp {{ number_format($totalInvoiceValue, 0, ',', '.') }}</p>
                 </div>
             </a>
         </div>
@@ -262,32 +153,32 @@
     <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="card shadow-sm chart-card h-100">
-                <div class="card-header bg-white"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Tren Penawaran (Quotation)</h6></div>
-                <div class="card-body"><canvas id="quotationChart" style="height: 240px;"></canvas></div>
+                <div class="card-header bg-white bgs-page-header"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Tren Penawaran (Quotation)</h6></div>
+                <div class="card-body"><canvas id="quotationChart" class="bgs-u-11170c050093"></canvas></div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card shadow-sm chart-card h-100">
                 <div class="card-header bg-white"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-graph-up text-success me-2"></i>Kesehatan Keuangan (Invoice vs Terbayar vs Biaya)</h6></div>
-                <div class="card-body"><canvas id="invoiceChart" style="height: 240px;"></canvas></div>
+                <div class="card-body"><canvas id="invoiceChart" class="bgs-u-11170c050093"></canvas></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm chart-card h-100">
                 <div class="card-header bg-white"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-pie-chart text-danger me-2"></i>Alokasi Kategori Biaya</h6></div>
-                <div class="card-body"><canvas id="expensePieChart" style="height: 240px;"></canvas></div>
+                <div class="card-body"><canvas id="expensePieChart" class="bgs-u-11170c050093"></canvas></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm chart-card h-100">
                 <div class="card-header bg-white"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-info me-2"></i>Perbandingan PO Customer vs Supplier</h6></div>
-                <div class="card-body"><canvas id="poComparisonChart" style="height: 240px;"></canvas></div>
+                <div class="card-body"><canvas id="poComparisonChart" class="bgs-u-11170c050093"></canvas></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm chart-card h-100">
                 <div class="card-header bg-white"><h6 class="card-title fw-bold mb-0 text-dark"><i class="bi bi-box-seam text-warning me-2"></i>Alur Logistik (GR vs DO)</h6></div>
-                <div class="card-body"><canvas id="logisticChart" style="height: 240px;"></canvas></div>
+                <div class="card-body"><canvas id="logisticChart" class="bgs-u-11170c050093"></canvas></div>
             </div>
         </div>
     </div>

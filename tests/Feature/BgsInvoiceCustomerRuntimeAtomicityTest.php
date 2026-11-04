@@ -10,6 +10,9 @@ use Tests\TestCase;
 
 class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
 {
+    private ?int $fixtureCustomerId = null;
+    private ?int $fixturePoId = null;
+    private ?int $fixtureInvoiceId = null;
     private const TRIGGER =
         'bgs_test_fail_po_invoice_status_update';
 
@@ -25,29 +28,37 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
 
         if (
             DB::connection()->getDatabaseName()
-            !== 'erp_app_testing'
+            !== 'erp_app_staging_testing_1026'
         ) {
             throw new \RuntimeException(
-                'SAFETY BLOCK: database must be erp_app_testing.'
+                'SAFETY BLOCK: database must be erp_app_staging_testing_1026.'
             );
         }
 
+        // Existing operational fixtures are never deleted by setUp().
         $this->dropFailureTrigger();
-
-        DB::table('invoice_customers')->delete();
-        DB::table('po_customers')->delete();
-        DB::table('customers')->delete();
     }
 
     protected function tearDown(): void
     {
-        $this->dropFailureTrigger();
-
-        DB::table('invoice_customers')->delete();
-        DB::table('po_customers')->delete();
-        DB::table('customers')->delete();
-
-        parent::tearDown();
+        try {
+            $this->dropFailureTrigger();
+        } finally {
+            try {
+                // Remove only fixture IDs created by this test, child first.
+                if ($this->fixtureInvoiceId !== null) {
+                    DB::table('invoice_customers')->where('id', $this->fixtureInvoiceId)->delete();
+                }
+                if ($this->fixturePoId !== null) {
+                    DB::table('po_customers')->where('id', $this->fixturePoId)->delete();
+                }
+                if ($this->fixtureCustomerId !== null) {
+                    DB::table('customers')->where('id', $this->fixtureCustomerId)->delete();
+                }
+            } finally {
+                parent::tearDown();
+            }
+        }
     }
 
     private function dropFailureTrigger(): void
@@ -78,7 +89,7 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
     private function columns(string $table)
     {
         return DB::table('information_schema.columns')
-            ->where('table_schema', 'erp_app_testing')
+            ->where('table_schema', 'erp_app_staging_testing_1026')
             ->where('table_name', $table)
             ->orderBy('ORDINAL_POSITION')
             ->get();
@@ -170,16 +181,17 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
 
     private function createCustomer(): int
     {
-        return DB::table('customers')->insertGetId(
+        $this->fixtureCustomerId = DB::table('customers')->insertGetId(
             $this->genericRow('customers')
         );
+        return $this->fixtureCustomerId;
     }
 
     private function createPo(): int
     {
         $customerId = $this->createCustomer();
 
-        return DB::table('po_customers')->insertGetId(
+        $this->fixturePoId = DB::table('po_customers')->insertGetId(
             $this->genericRow('po_customers', [
                 'customer_id'    => $customerId,
                 'quotation_id'   => null,
@@ -190,11 +202,12 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
                 'total'          => 1000000,
             ])
         );
+        return $this->fixturePoId;
     }
 
     private function createInvoice(int $poId): int
     {
-        return DB::table('invoice_customers')->insertGetId(
+        $this->fixtureInvoiceId = DB::table('invoice_customers')->insertGetId(
             $this->genericRow('invoice_customers', [
                 'po_customer_id'   => $poId,
                 'invoice_number'   => 'TEST-INV-' . uniqid(),
@@ -207,6 +220,7 @@ class BgsInvoiceCustomerRuntimeAtomicityTest extends TestCase
                 'remaining_amount' => 0,
             ])
         );
+        return $this->fixtureInvoiceId;
     }
 
     public function test_cancel_rolls_back_when_po_aggregate_sync_fails(): void

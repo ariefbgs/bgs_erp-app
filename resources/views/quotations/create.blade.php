@@ -1,221 +1,23 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-quotations-create bgs-mode-create')
 
 @section('title', 'Add New Quotation')
 
 @section('content')
 {{-- CDN SELECT2 CSS --}}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Ocean Blue */
-    .card-header-custom {
-        background: linear-gradient(135deg, #0284c7, #075985);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
 
-    /* Styling Label & Bagian Sub-title */
-    .filter-label, .form-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-    .section-sub-title {
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #1e293b;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 6px;
-    }
-    .section-sub-title i {
-        color: #0284c7;
-    }
-
-    /* Info Box Area (Customer & PIC) */
-    .info-box-bg {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 15px;
-    }
-    .pic-info {
-        background-color: #f0f9ff;
-        padding: 12px;
-        border-left: 4px solid #0ea5e9;
-        border-radius: 0 8px 8px 0;
-        font-size: 0.9rem;
-        color: #0369a1;
-    }
-
-    /* Kotak Item Produk Dinamis */
-    .product-box {
-        border: 1px solid #e2e8f0;
-        padding: 20px;
-        border-radius: 10px;
-        background-color: #ffffff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        transition: border-color 0.2s;
-    }
-    .product-box:hover {
-        border-color: #cbd5e1;
-    }
-    .qty-input, .price-display, .subtotal-display {
-        text-align: right;
-    }
-    .brand-display, .subtotal-display {
-        background-color: #f8fafc !important;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    /* Kustomisasi Textarea Inner Specs & Description */
-    .spec-display {
-        background-color: #f0f9ff;
-        border-color: #e0f2fe;
-        font-size: 0.88rem;
-        resize: none;
-    }
-    .spec-display:focus {
-        background-color: #fff;
-    }
-    .desc-display {
-        background-color: #f8fafc;
-        border-color: #f1f5f9;
-        font-size: 0.88rem;
-        resize: none;
-    }
-    .desc-display:focus {
-        background-color: #fff;
-    }
-
-    /* Select2 Style Sync */
-    .select2-container .select2-selection--single {
-        height: auto !important;
-        min-height: 40px !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 0.375rem !important;
-        display: flex;
-        align-items: center;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        white-space: normal !important;
-        word-break: break-word !important;
-        line-height: 1.4 !important;
-        padding-left: 12px !important;
-        padding-right: 25px !important;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-        color: #1e293b !important;
-        width: 100%;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 100% !important;
-        top: 0 !important;
-        right: 8px !important;
-    }
-    .select2-container--default .select2-results__option {
-        white-space: normal !important;
-        word-break: break-word !important;
-        line-height: 1.5 !important;
-        padding: 8px 12px !important;
-    }
-
-    /* Summary Card Dark Side Layout */
-    .summary-table-container {
-        background-color: #1e293b;
-        border-radius: 10px;
-        padding: 1.25rem;
-        color: #cbd5e1;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .summary-table-custom {
-        width: 100%;
-        margin-bottom: 0;
-    }
-    .summary-table-custom th, .summary-table-custom td {
-        padding: 8px 6px;
-        border-bottom: 1px solid #334155;
-        font-size: 0.92rem;
-        color: #cbd5e1;
-        vertical-align: middle;
-    }
-    .summary-table-custom th {
-        font-weight: 500;
-    }
-    .summary-table-custom tr.grand-total-row th, 
-    .summary-table-custom tr.grand-total-row td {
-        border-top: 2px solid #334155;
-        border-bottom: none;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #fff;
-        padding-top: 15px;
-    }
-    .summary-table-custom tr.grand-total-row td {
-        color: #38bdf8;
-    }
-    .summary-table-custom input.form-control-summary {
-        background: #334155;
-        border: 1px solid #475569;
-        color: #fff;
-        text-align: right;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 6px;
-        width: 100%;
-    }
-    .summary-table-custom input.form-control-summary:focus {
-        border-color: #38bdf8;
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
-    }
-
-    /* Form Utilities */
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-        padding: 0.5rem 0.75rem;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #38bdf8;
-        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom">
+        <div class="card-header-custom bgs-page-header">
             <h4><i class="bi bi-file-earmark-plus-fill me-2"></i>Create New Quotation</h4>
         </div>
         
         <div class="card-body p-4">
             {{-- ALERT VALIDASI ERROR --}}
             @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important; border-radius: 6px;">
+                <div class="alert alert-danger border-0 shadow-sm d-flex fade show mb-4 bgs-u-e6478a190de4">
                     <div class="me-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
                     <div>
                         <strong class="d-block mb-1">Please fix the following validation errors:</strong>
@@ -225,12 +27,12 @@
                             @endforeach
                         </ul>
                     </div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.8rem;"></button>
+                    <button type="button" class="btn-close ms-auto bgs-u-aae30f4ce161" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #dc2626 !important;">
+                <div class="alert alert-danger border-0 shadow-sm mb-4 bgs-u-f812d16479e9">
                     <i class="bi bi-exclamation-circle-fill me-2"></i>{{ session('error') }}
                 </div>
             @endif  
@@ -275,7 +77,7 @@
 
                 <div class="row g-3 mb-4 p-3 rounded-3 info-box-bg">
                     <div class="col-12">
-                        <div class="section-sub-title mb-2" style="border:none;"><i class="bi bi-building-fill me-2"></i>Primary Identification</div>
+                        <div class="section-sub-title mb-2 bgs-u-87798f9f54e8"><i class="bi bi-building-fill me-2"></i>Primary Identification</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Customer / Perusahaan <span class="text-danger">*</span></label>
@@ -290,7 +92,7 @@
                             @endforeach
                         </select>
                         
-                        <div class="mt-3" id="pic-quotation-container" style="display: none;">
+                        <div class="mt-3 bgs-u-6e22c58a7a6a" id="pic-quotation-container">
                             <div class="pic-info shadow-sm">
                                 <div class="fw-bold mb-1"><i class="bi bi-person-badge-fill me-1"></i> Attention Person (PIC):</div>
                                 <span id="pic-quotation-name" class="fw-semibold"></span>
@@ -313,13 +115,13 @@
                             <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar-check"></i></span>
                             <input type="date" name="valid_until" id="valid_until" class="form-control border-start-0" value="{{ date('Y-m-d', strtotime('+7 days')) }}">
                         </div>
-                        <small class="text-muted" style="font-size: 0.78rem;">Auto-generated +7 days</small>
+                        <small class="text-muted bgs-u-0a0d7006d78e">Auto-generated +7 days</small>
                     </div>
 
                     <div class="col-12 mt-2">
                         <div class="form-check form-switch">
                             <input type="checkbox" name="show_image_on_print" class="form-check-input" id="show_image" value="1">
-                            <label class="form-check-label fw-semibold text-dark small" for="show_image" style="cursor: pointer;">
+                            <label class="form-check-label fw-semibold text-dark small bgs-u-7c0f86ab5456" for="show_image">
                                 Display Product Images on Quotation PDF Printout
                             </label>
                         </div>
@@ -371,11 +173,11 @@
                             
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label small mb-1" style="color: #0284c7;"><i class="bi bi-gear-fill me-1"></i>Specification (Editable)</label>
+                                    <label class="form-label small mb-1 bgs-u-7d6c768eb355"><i class="bi bi-gear-fill me-1"></i>Specification (Editable)</label>
                                     <textarea name="items[0][specification]" class="form-control spec-display auto-row-textarea" id="specification-0" rows="1" placeholder="Product specification snapshot from database...">{{ old('items.0.specification', '') }}</textarea>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small mb-1" style="color: #64748b;"><i class="bi bi-info-circle-fill me-1"></i>Description / Item Remarks</label>
+                                    <label class="form-label small mb-1 bgs-u-52ffd4ac77f5"><i class="bi bi-info-circle-fill me-1"></i>Description / Item Remarks</label>
                                     <textarea name="items[0][description]" class="form-control desc-display auto-row-textarea" id="description-0" rows="1" placeholder="Add specific remarks for this line item if needed...">{{ old('items.0.description', '') }}</textarea>
                                 </div>
                             </div>
@@ -456,7 +258,7 @@
                                 <tr>
                                     <th width="45%">Subtotal Item Gross</th>
                                     <td width="55%">
-                                        <input type="text" id="subtotal_display" class="form-control-summary" style="background:transparent; border:none; padding-right:0;" readonly value="Rp 0">
+                                        <input type="text" id="subtotal_display" class="form-control-summary bgs-u-ce64a67b85cd" readonly value="Rp 0">
                                         <input type="hidden" name="subtotal" id="subtotal-value" value="0">
                                     </td>
                                 </tr>
@@ -466,9 +268,9 @@
                                     <th>Discount</th>
                                     <td>
                                         <div class="d-flex gap-2 align-items-center">
-                                            <div style="width: 75px; position: relative;">
-                                                <input type="number" name="discount_percent" id="discount_percent" class="form-control form-control-summary text-warning text-end pe-3" step="0.01" min="0" max="100" value="0" style="padding-left: 5px;">
-                                                <span style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #ffc107; pointer-events: none;">%</span>
+                                            <div class="bgs-u-a64cdda8d6f7">
+                                                <input type="number" name="discount_percent" id="discount_percent" class="form-control form-control-summary text-warning text-end pe-3 bgs-u-d3c4159c31eb" step="0.01" min="0" max="100" value="0">
+                                                <span class="bgs-u-fa533bb6d49b">%</span>
                                             </div>
                                             <div class="flex-grow-1">
                                                 <input type="text" id="discount_amount_display" class="form-control-summary text-warning" placeholder="Rp 0">
@@ -482,7 +284,7 @@
                                 <tr>
                                     <th>Subtotal After Discount (DPP)</th>
                                     <td>
-                                        <input type="text" id="after_discount_display" class="form-control-summary" style="background:transparent; border:none; padding-right:0;" readonly value="Rp 0">
+                                        <input type="text" id="after_discount_display" class="form-control-summary bgs-u-ce64a67b85cd" readonly value="Rp 0">
                                         <input type="hidden" name="dpp" id="dpp-value" value="0">
                                     </td>
                                 </tr>
@@ -492,9 +294,9 @@
                                     <th>VAT PPN</th>
                                     <td>
                                         <div class="d-flex gap-2 align-items-center">
-                                            <div style="width: 75px; position: relative;">
-                                                <input type="number" name="tax_percent" id="tax_percent" class="form-control form-control-summary text-info text-end pe-3" step="0.01" min="0" max="100" value="11" style="padding-left: 5px;">
-                                                <span style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #0dcaf0; pointer-events: none;">%</span>
+                                            <div class="bgs-u-a64cdda8d6f7">
+                                                <input type="number" name="tax_percent" id="tax_percent" class="form-control form-control-summary text-info text-end pe-3 bgs-u-d3c4159c31eb" step="0.01" min="0" max="100" value="11">
+                                                <span class="bgs-u-1bdcd976346d">%</span>
                                             </div>
                                             <div class="flex-grow-1">
                                                 <input type="text" id="tax_amount_display" class="form-control-summary text-info" placeholder="Rp 0">
@@ -509,9 +311,9 @@
                                     <th>PPh Income Tax 23</th>
                                     <td>
                                         <div class="d-flex gap-2 align-items-center">
-                                            <div style="width: 75px; position: relative;">
-                                                <input type="number" name="pph23_percent" id="pph23_percent" class="form-control form-control-summary text-danger text-end pe-3" step="0.01" min="0" max="100" value="0" style="padding-left: 5px;">
-                                                <span style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #dc3545; pointer-events: none;">%</span>
+                                            <div class="bgs-u-a64cdda8d6f7">
+                                                <input type="number" name="pph23_percent" id="pph23_percent" class="form-control form-control-summary text-danger text-end pe-3 bgs-u-d3c4159c31eb" step="0.01" min="0" max="100" value="0">
+                                                <span class="bgs-u-914d997b8dbb">%</span>
                                             </div>
                                             <div class="flex-grow-1">
                                                 <input type="text" id="pph23_amount_display" class="form-control-summary text-danger" placeholder="Rp 0">
@@ -525,7 +327,7 @@
                                 <tr class="grand-total-row">
                                     <th>Grand Total Due</th>
                                     <td>
-                                        <input type="text" id="grand_total_display" class="form-control-summary" style="background:transparent; border:none; padding-right:0; color:#38bdf8; font-size:1.2rem; font-weight:700;" readonly value="Rp 0">
+                                        <input type="text" id="grand_total_display" class="form-control-summary bgs-u-3fc277f965ac" readonly value="Rp 0">
                                         <input type="hidden" name="total" id="grand-total-value" value="0">
                                     </td>
                                 </tr>
@@ -535,7 +337,7 @@
                 </div>
                 
                 <div class="mt-4 pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4 py-2 fw-bold" style="background-color: #0284c7; border-color: #0284c7;">
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-bold bgs-u-40db451c03f9">
                         <i class="bi bi-save-fill me-1"></i> Save Quotation
                     </button>
                     <a href="{{ route('quotations.index') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>
@@ -778,8 +580,8 @@ $(document).ready(function() {
                     <div class="col-md-2"><label class="form-label">Subtotal (Rp)</label><input type="text" class="form-control subtotal-display" id="subtotal-${rowCount}" readonly placeholder="0"><input type="hidden" name="items[${rowCount}][subtotal]" id="subtotal-hidden-${rowCount}" value="0"></div>
                 </div>
                 <div class="row g-3">
-                    <div class="col-md-6"><label class="form-label small mb-1" style="color: #0284c7;"><i class="bi bi-gear-fill me-1"></i>Specification</label><textarea name="items[${rowCount}][specification]" class="form-control spec-display auto-row-textarea" id="specification-${rowCount}" rows="1"></textarea></div>
-                    <div class="col-md-6"><label class="form-label small mb-1" style="color: #64748b;"><i class="bi bi-info-circle-fill me-1"></i>Description</label><textarea name="items[${rowCount}][description]" class="form-control desc-display auto-row-textarea" id="description-${rowCount}" rows="1"></textarea>
+                    <div class="col-md-6"><label class="form-label small mb-1 bgs-u-7d6c768eb355"><i class="bi bi-gear-fill me-1"></i>Specification</label><textarea name="items[${rowCount}][specification]" class="form-control spec-display auto-row-textarea" id="specification-${rowCount}" rows="1"></textarea></div>
+                    <div class="col-md-6"><label class="form-label small mb-1 bgs-u-52ffd4ac77f5"><i class="bi bi-info-circle-fill me-1"></i>Description</label><textarea name="items[${rowCount}][description]" class="form-control desc-display auto-row-textarea" id="description-${rowCount}" rows="1"></textarea>
                     <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger remove-product" data-row="${rowCount}"><i class="bi bi-trash3-fill"></i> Remove</button></div></div>
                 </div>
             </div>`;

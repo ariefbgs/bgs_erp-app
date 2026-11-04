@@ -12,7 +12,6 @@ use App\Models\DeliveryOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\QueryException;
@@ -42,10 +41,13 @@ class PoCustomerController extends Controller
 
         $poCustomers = $query->orderBy('id', 'desc')->paginate(8);
         
+        $allocationService = app(\App\Services\InvoiceAllocationService::class);
+
         foreach ($poCustomers as $po) {
-            $totalInvoiced = $po->total_invoiced;
-            $po->total_invoiced = $totalInvoiced;
-            $po->remaining_total = $po->total - $totalInvoiced;
+            $amountBalance = $allocationService->amountBalance($po);
+            $po->po_commercial_amount = (float) $amountBalance['po_amount'];
+            $po->total_invoiced = (float) $amountBalance['invoiced_amount'];
+            $po->remaining_total = (float) $amountBalance['remaining_amount'];
         }
 
         $poCustomers->appends(
@@ -75,7 +77,7 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // STORE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan try-catch dan notifikasi error
+    // STORE dengan try-catch dan notifikasi error
     // ============================================================
     public function store(Request $request)
     {
@@ -101,7 +103,7 @@ class PoCustomerController extends Controller
                 'pph_amount' => 'nullable|numeric|min:0',
                 'payment_terms' => 'nullable|string|max:150',
                 'delivery_time' => 'nullable|string|max:150',
-                'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+                'attachment' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
             ], [
                 'po_number.unique' => 'Nomor PO ":input" sudah terdaftar. Silakan gunakan nomor lain.',
                 'delivery_date.after' => 'Tanggal pengiriman harus lebih besar dari tanggal PO.',
@@ -132,31 +134,9 @@ class PoCustomerController extends Controller
             // Upload attachment
             $attachmentPath = null;
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $extension = strtolower($file->getClientOriginalExtension());
-                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName) . '.' . $extension;
-                
-                $folder = 'po_customers';
-                if (!Storage::disk('public')->exists($folder)) {
-                    Storage::disk('public')->makeDirectory($folder);
-                }
-
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                    // PERBAIKAN: Menggunakan ImageManager versi 3
-                    try {
-                        $manager = ImageManager::gd(); // atau ->imagick() jika tersedia
-                        $image = $manager->read($file->getRealPath());
-                        $image->resize(800, 800); // lebar 800, tinggi menyesuaikan
-                        $image->toJpeg(80)->save(storage_path('app/public/' . $folder . '/' . $safeName));
-                    } catch (\Exception $e) {
-                        // Fallback: simpan asli jika gagal kompres
-                        Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                    }
-                } else {
-                    Storage::disk('public')->putFileAs($folder, $file, $safeName);
-                }
-                $attachmentPath = $folder . '/' . $safeName;
+                $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                    $request->file('attachment'), 'po_customers'
+                );
             }
 
             // Simpan PO
@@ -239,7 +219,7 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // EDIT ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan pengecekan apakah PO sudah digunakan
+    // EDIT dengan pengecekan apakah PO sudah digunakan
     // ============================================================
     public function edit($id) 
     {
@@ -267,7 +247,7 @@ class PoCustomerController extends Controller
     }
 
     // ============================================================
-    // UPDATE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ dengan try-catch dan notifikasi error
+    // UPDATE dengan try-catch dan notifikasi error
     // ============================================================
     public function update(Request $request, $id)
     {
@@ -311,7 +291,7 @@ class PoCustomerController extends Controller
                 'delivery_time' =>
                     'nullable|string|max:150',
                 'attachment' =>
-                    'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+                    'nullable|file|max:5120|mimes:jpg,jpeg,png,webp,pdf',
             ], [
                 'po_number.unique' =>
                     'Nomor PO ":input" sudah terdaftar. Silakan gunakan nomor lain.',
@@ -509,8 +489,7 @@ class PoCustomerController extends Controller
                 $poCustomer->attachment;
 
             if (
-                $request->input('delete_attachment') == '1' ||
-                $request->hasFile('attachment')
+                $request->input('delete_attachment') == '1' && !$request->hasFile('attachment')
             ) {
                 if (
                     $attachmentPath &&
@@ -529,90 +508,9 @@ class PoCustomerController extends Controller
             }
 
             if ($request->hasFile('attachment')) {
-
-                $file =
-                    $request->file('attachment');
-
-                $extension =
-                    strtolower(
-                        $file->getClientOriginalExtension()
-                    );
-
-                $originalName =
-                    pathinfo(
-                        $file->getClientOriginalName(),
-                        PATHINFO_FILENAME
-                    );
-
-                $safeName =
-                    time() .
-                    '_' .
-                    preg_replace(
-                        '/[^A-Za-z0-9_-]/',
-                        '_',
-                        $originalName
-                    ) .
-                    '.' .
-                    $extension;
-
-                $folder = 'po_customers';
-
-                if (
-                    !Storage::disk('public')
-                        ->exists($folder)
-                ) {
-                    Storage::disk('public')
-                        ->makeDirectory($folder);
-                }
-
-                if (
-                    in_array(
-                        $extension,
-                        ['jpg', 'jpeg', 'png', 'gif', 'webp']
-                    )
-                ) {
-                    try {
-                        $manager =
-                            ImageManager::gd();
-
-                        $image =
-                            $manager->read(
-                                $file->getRealPath()
-                            );
-
-                        $image->resize(800, 800);
-
-                        $image->toJpeg(80)->save(
-                            storage_path(
-                                'app/public/' .
-                                $folder .
-                                '/' .
-                                $safeName
-                            )
-                        );
-
-                    } catch (\Exception $e) {
-
-                        Storage::disk('public')
-                            ->putFileAs(
-                                $folder,
-                                $file,
-                                $safeName
-                            );
-                    }
-
-                } else {
-
-                    Storage::disk('public')
-                        ->putFileAs(
-                            $folder,
-                            $file,
-                            $safeName
-                        );
-                }
-
-                $attachmentPath =
-                    $folder . '/' . $safeName;
+                $attachmentPath = app(\App\Services\AttachmentImageUploadService::class)->store(
+                    $request->file('attachment'), 'po_customers'
+                );
             }
 
             /*

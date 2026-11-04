@@ -24,7 +24,7 @@ final class DeploymentUploadRegistrationIntegrationTest extends TestCase
         $database = (string) DB::connection()->getDatabaseName();
 
         $this->assertSame(
-            'erp_app_testing',
+            'erp_app_staging_testing_1026',
             $database,
             'Upload registration integration must use the isolated testing database.'
         );

@@ -1,90 +1,12 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-user-manuals-edit bgs-mode-edit')
 @section('title', 'Edit Documentation Structure')
 @section('content')
-<style>
-    /* Mengubah Background dasar halaman agar senada */
-    body {
-        background-color: #f1f5f9;
-    }
 
-    /* Desain Card Utama */
-    .main-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-        overflow: hidden;
-    }
-    
-    /* Header dengan gradasi warna Sunset Orange / Amber */
-    .card-header-custom {
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        color: white;
-        padding: 1.5rem;
-        border: none;
-    }
-    .card-header-custom h4 {
-        color: white;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Form Label Custom Styling */
-    .filter-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569; 
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    /* Input dan Select Custom Focus (Nuansa Orange) */
-    .form-control, .form-select {
-        border-color: #cbd5e1;
-        border-radius: 8px;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #fb923c;
-        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15);
-    }
-
-    /* Sidebar Info Panel */
-    .info-panel {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 24px;
-    }
-
-    /* Tombol Header & Custom Action */
-    .btn-light-custom {
-        background-color: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        font-weight: 600;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-    }
-    .btn-light-custom:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        color: white;
-    }
-    .btn-submit-orange {
-        background-color: #f97316;
-        border-color: #f97316;
-        color: white;
-    }
-    .btn-submit-orange:hover {
-        background-color: #d97706;
-        border-color: #d97706;
-        color: white;
-    }
-</style>
 
 <div class="container-fluid py-4">
     <div class="card main-card">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
             <h4>
                 <i class="bi bi-pencil-square me-2"></i>
                 Modify Documentation Structure
@@ -126,7 +48,7 @@
                             @enderror
                         </div>
 
-                        <div class="mb-4" id="parent_container" style="display: none;">
+                        <div class="mb-4 bgs-u-6e22c58a7a6a" id="parent_container">
                             <label for="parent_id" class="filter-label text-warning"><i class="bi bi-diagram-2 me-1"></i>Pilih Panduan Induk (Parent)</label>
                             <select name="parent_id" id="parent_id" class="form-select py-2.5 @error('parent_id') is-invalid @enderror">
                                 <option value="">-- Pilih Dokumen Induk --</option>
@@ -157,7 +79,7 @@
 
                         <div class="mb-4">
                             <label for="content" class="filter-label">Isi / Langkah-Langkah Panduan</label>
-                            <textarea name="content" id="content" class="form-control @error('content') is-invalid @enderror" rows="12" style="border-radius: 8px;" required>{{ old('content', $userManual->content) }}</textarea>
+                            <textarea name="content" id="content" class="form-control @error('content') is-invalid @enderror bgs-u-25561090436f" rows="12" required>{{ old('content', $userManual->content) }}</textarea>
                             @error('content')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -166,8 +88,8 @@
                         <hr class="text-muted my-4">
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('user-manuals.index') }}" class="btn btn-outline-secondary py-2 px-4 fw-semibold" style="border-radius: 6px;">Batal</a>
-                            <button type="submit" class="btn btn-submit-orange py-2 px-4 fw-bold shadow-sm" style="border-radius: 6px;">
+                            <a href="{{ route('user-manuals.index') }}" class="btn btn-outline-secondary py-2 px-4 fw-semibold bgs-u-8dbba0d7e895">Batal</a>
+                            <button type="submit" class="btn btn-submit-orange py-2 px-4 fw-bold shadow-sm bgs-u-8dbba0d7e895">
                                 <i class="bi bi-arrow-repeat me-2"></i>Perbarui Panduan
                             </button>
                         </div>
@@ -175,31 +97,31 @@
                 </div>
 
                 <div class="col-lg-4">
-                    <div class="info-panel" style="border-top: 4px solid #f97316;">
+                    <div class="info-panel bgs-u-a8365112a722">
                         <h6 class="fw-bold text-dark mb-3">
                             <i class="bi bi-clock-history text-warning me-2"></i>
                             Informasi Log Data
                         </h6>
                         
                         <div class="table-responsive">
-                            <table class="table table-sm table-borderless small text-muted mb-0" style="line-height: 1.8;">
+                            <table class="table table-sm table-borderless small text-muted mb-0 bgs-u-a4639a186af7">
                                 <tr>
-                                    <td class="ps-0" style="width: 120px; font-weight: 600;">Dibuat Pada</td>
+                                    <td class="ps-0 bgs-u-86a8f11b3eff">Dibuat Pada</td>
                                     <td>: {{ $userManual->created_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="ps-0" style="font-weight: 600;">Terakhir Diperbarui</td>
+                                    <td class="ps-0 bgs-u-3d9df89ef84d">Terakhir Diperbarui</td>
                                     <td>: {{ $userManual->updated_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="ps-0" style="font-weight: 600;">ID Dokumen</td>
+                                    <td class="ps-0 bgs-u-3d9df89ef84d">ID Dokumen</td>
                                     <td>: <span class="font-monospace text-secondary">#{{ $userManual->id }}</span></td>
                                 </tr>
                             </table>
                         </div>
                         
                         <hr class="text-muted my-3">
-                        <div class="p-2.5 rounded-3 bg-light" style="font-size: 0.78rem; line-height: 1.5;">
+                        <div class="p-2.5 rounded-3 bg-light bgs-u-7822efd5f5f9">
                             <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
                             <strong>Pemberitahuan Keamanan:</strong> Mengubah relasi level hirarki di sini akan memengaruhi pemetaan tombol bantuan **"?"** pada modul transaksi operasional secara langsung.
                         </div>

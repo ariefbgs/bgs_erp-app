@@ -1,19 +1,20 @@
 @extends('layouts.app')
+@section('bgs-page-class', 'bgs-page-suppliers-edit bgs-mode-edit')
 
 @section('title', 'Edit Supplier')
 
 @section('content')
 <div class="container-fluid">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Edit Supplier</h3>
+    <div class="card main-card">
+        <div class="card-header-custom d-flex justify-content-between align-items-center bgs-page-header">
+            <h4>Edit Supplier</h4>
             <div class="card-tools">
                 <a href="{{ route('suppliers.index') }}" class="btn btn-secondary btn-sm">
                     <i class="bi bi-arrow-left"></i> Kembali
                 </a>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
             <form action="{{ route('suppliers.update', $supplier->id) }}" method="POST">
                 @csrf
                 @method('PUT')
@@ -74,10 +75,10 @@
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary">
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top"><button type="submit" class="btn btn-primary">
                     <i class="bi bi-save"></i> Update
                 </button>
-                <a href="{{ route('suppliers.index') }}" class="btn btn-secondary">Batal</a>
+                <a href="{{ route('suppliers.index') }}" class="btn btn-secondary">Batal</a></div>
             </form>
         </div>
     </div>
