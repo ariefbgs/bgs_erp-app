@@ -1,4 +1,4 @@
-﻿name: ERP BGS R3 Regression
+name: ERP BGS R3 Regression
 
 on:
   push:
