@@ -139,52 +139,54 @@ class BgsBusinessStateRegressionTest extends TestCase
 
     public function test_testing_database_fixture_mutation_is_rolled_back(): void
     {
-        /*
-         * Use a table with minimal required columns.
-         * We first inspect its schema so the test remains explicit.
-         */
-
+        // A self-created fixture eliminates dependency on pre-existing ERP data.
+        // setUp() opens the outer transaction; tearDown() rolls it back.
         $columns = DB::table('information_schema.columns')
             ->where('table_schema', 'erp_app_staging_testing_1026')
-            ->where('table_name', 'companies')
+            ->where('table_name', 'migrations')
             ->pluck('COLUMN_NAME')
             ->all();
 
-        $this->assertNotEmpty($columns);
+        foreach (['id', 'migration', 'batch'] as $column) {
+            $this->assertContains($column, $columns);
+        }
 
-        /*
-         * The safety proof here is transaction behavior itself.
-         * No fixture is permanently committed.
-         */
+        $this->assertGreaterThan(0, DB::transactionLevel());
 
-        $this->assertContains('id', $columns);
-        $this->assertContains('updated_at', $columns);
-        $company = DB::table('companies')->first();
-        $this->assertNotNull($company, 'Testing fixture requires an existing company.');
+        $id = DB::table('migrations')->insertGetId([
+            'migration' => 'ci_rollback_fixture_'.bin2hex(random_bytes(8)),
+            'batch' => 0,
+        ]);
 
-        $before = DB::table('companies')->where('id', $company->id)->value('updated_at');
-        $marker = $before === '2001-01-01 00:00:00'
-            ? '2002-01-01 00:00:00'
-            : '2001-01-01 00:00:00';
+        $this->assertSame(
+            0,
+            (int) DB::table('migrations')->where('id', $id)->value('batch')
+        );
 
         $level = DB::transactionLevel();
-        $this->assertGreaterThan(0, $level);
-        DB::beginTransaction(); // Nested savepoint; never commit company data.
+
+        DB::beginTransaction();
         try {
-            $changed = DB::table('companies')->where('id', $company->id)
-                ->update(['updated_at' => $marker]);
+            $changed = DB::table('migrations')
+                ->where('id', $id)
+                ->update(['batch' => 1]);
+
             $this->assertSame(1, $changed);
-            $inside = DB::table('companies')->where('id', $company->id)
-                ->value('updated_at');
-            $this->assertSame($marker, $inside);
+
+            $this->assertSame(
+                1,
+                (int) DB::table('migrations')->where('id', $id)->value('batch')
+            );
         } finally {
             if (DB::transactionLevel() > $level) {
-                DB::rollBack(); // Roll back only this test's savepoint.
+                DB::rollBack();
             }
         }
 
-        $after = DB::table('companies')->where('id', $company->id)
-            ->value('updated_at');
-        $this->assertSame($before, $after, 'Company mutation was not rolled back.');
+        $this->assertSame(
+            0,
+            (int) DB::table('migrations')->where('id', $id)->value('batch'),
+            'Nested transaction mutation was not rolled back.'
+        );
     }
 }
