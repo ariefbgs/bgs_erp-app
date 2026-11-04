@@ -14,12 +14,15 @@ use App\Services\Deployment\DeploymentPackageProcessor;
 use App\Services\Deployment\DeploymentStateTransitionPolicy;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 use ZipArchive;
 
 final class DeploymentPersistentEndToEndTest extends TestCase
 {
     private ?string $sandboxRoot = null;
+
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
@@ -34,10 +37,6 @@ final class DeploymentPersistentEndToEndTest extends TestCase
             'Persistent deployment E2E must never run outside erp_app_staging_testing_1026.'
         );
 
-        DB::table('deployment_migrations')->delete();
-        DB::table('deployment_files')->delete();
-        DB::table('deployment_history')->delete();
-        DB::table('application_releases')->delete();
 
         $this->sandboxRoot =
             sys_get_temp_dir()
@@ -60,10 +59,6 @@ final class DeploymentPersistentEndToEndTest extends TestCase
             );
         }
 
-        DB::table('deployment_migrations')->delete();
-        DB::table('deployment_files')->delete();
-        DB::table('deployment_history')->delete();
-        DB::table('application_releases')->delete();
 
         parent::tearDown();
     }

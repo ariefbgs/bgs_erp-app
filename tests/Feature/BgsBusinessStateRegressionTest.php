@@ -157,13 +157,34 @@ class BgsBusinessStateRegressionTest extends TestCase
          * No fixture is permanently committed.
          */
 
-        $before = DB::table('companies')->count();
+        $this->assertContains('id', $columns);
+        $this->assertContains('updated_at', $columns);
+        $company = DB::table('companies')->first();
+        $this->assertNotNull($company, 'Testing fixture requires an existing company.');
 
-        $this->assertSame(0, $before);
+        $before = DB::table('companies')->where('id', $company->id)->value('updated_at');
+        $marker = $before === '2001-01-01 00:00:00'
+            ? '2002-01-01 00:00:00'
+            : '2001-01-01 00:00:00';
 
-        $this->assertGreaterThan(
-            0,
-            DB::transactionLevel()
-        );
+        $level = DB::transactionLevel();
+        $this->assertGreaterThan(0, $level);
+        DB::beginTransaction(); // Nested savepoint; never commit company data.
+        try {
+            $changed = DB::table('companies')->where('id', $company->id)
+                ->update(['updated_at' => $marker]);
+            $this->assertSame(1, $changed);
+            $inside = DB::table('companies')->where('id', $company->id)
+                ->value('updated_at');
+            $this->assertSame($marker, $inside);
+        } finally {
+            if (DB::transactionLevel() > $level) {
+                DB::rollBack(); // Roll back only this test's savepoint.
+            }
+        }
+
+        $after = DB::table('companies')->where('id', $company->id)
+            ->value('updated_at');
+        $this->assertSame($before, $after, 'Company mutation was not rolled back.');
     }
 }
