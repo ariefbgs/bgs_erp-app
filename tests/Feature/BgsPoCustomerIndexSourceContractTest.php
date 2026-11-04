@@ -8,24 +8,30 @@ class BgsPoCustomerIndexSourceContractTest extends TestCase
 {
     public function test_po_customer_index_uses_canonical_invoice_coverage(): void
     {
-        $path = app_path(
-            'Http/Controllers/PoCustomerController.php'
+        $source = file_get_contents(
+            app_path('Http/Controllers/PoCustomerController.php')
         );
 
-        $source = file_get_contents($path);
+        $this->assertStringContainsString(
+            '$allocationService->amountBalance($po)',
+            $source
+        );
 
         $this->assertStringContainsString(
-            '$totalInvoiced = $po->total_invoiced;',
+            '$po->total_invoiced = (float) $amountBalance[' .
+            "'invoiced_amount'" . '];',
+            $source
+        );
+
+        $this->assertStringContainsString(
+            '$po->remaining_total = (float) $amountBalance[' .
+            "'remaining_amount'" . '];',
             $source
         );
 
         $this->assertStringNotContainsString(
-            'InvoiceCustomer::where(' .
-            "'po_customer_id', " .
-            '$po->id)->sum(' .
-            "'total');",
-            $source,
-            'PO Customer index must not bypass canonical cancelled-invoice semantics.'
+            "->sum('total')",
+            $source
         );
     }
 }

@@ -4,21 +4,21 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\CheckPermission;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Database\Seeders\DeploymentPermissionSeeder;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class BgsDeploymentAuthorizationContractTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(DeploymentPermissionSeeder::class);
     }
 
     public function test_admin_has_all_deployment_permissions(): void

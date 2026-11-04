@@ -7,20 +7,21 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 final class DatabaseDeploymentMigrationProductionContractTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        DB::table('deployment_migrations')->delete();
 }
 
     protected function tearDown(): void
     {
-        DB::table('deployment_migrations')->delete();
 
         parent::tearDown();
     }
