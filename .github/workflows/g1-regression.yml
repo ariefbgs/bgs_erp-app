@@ -73,13 +73,14 @@ jobs:
             sudo apt-get install -y default-mysql-client
           fi
 
-      - name: Bootstrap isolated test schema
+      - name: Bootstrap isolated test schema through migrations
         env:
           MYSQL_PWD: ci_only_disposable_password
         run: |
-          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root \
-            erp_app_staging_testing_1026 \
-            < database/ci/testing-schema-only.sql
+          mkdir -p build/ci
+          # Prevent Laravel's schema dump from bypassing the foundation migrations.
+          mv database/schema/mysql-schema.sql build/ci/reference-schema.sql
+          php artisan migrate --force --no-interaction 2>&1 | tee build/ci/migrations.txt
 
           TABLE_COUNT=$(mysql --protocol=TCP -h 127.0.0.1 \
             -P 3306 -u root -N -B -e \
@@ -87,6 +88,7 @@ jobs:
 
           echo "IMPORTED_TABLES=$TABLE_COUNT"
           test "$TABLE_COUNT" -eq 40
+        shell: bash --noprofile --norc -e -o pipefail {0}
 
       - name: Run full regression
         run: |
