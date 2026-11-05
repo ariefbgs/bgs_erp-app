@@ -78,8 +78,9 @@ jobs:
           MYSQL_PWD: ci_only_disposable_password
         run: |
           mkdir -p build/ci
-          # Prevent Laravel's schema dump from bypassing the foundation migrations.
-          mv database/schema/mysql-schema.sql build/ci/reference-schema.sql
+          # Exercise standard installation: no active schema dump may bypass migrations.
+          test ! -f database/schema/mysql-schema.sql
+          test -f database/schema/mysql-schema.sql.reference
           php artisan migrate --force --no-interaction 2>&1 | tee build/ci/migrations.txt
 
           TABLE_COUNT=$(mysql --protocol=TCP -h 127.0.0.1 \
