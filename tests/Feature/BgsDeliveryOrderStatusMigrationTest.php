@@ -8,19 +8,31 @@ use Tests\TestCase;
 
 class BgsDeliveryOrderStatusMigrationTest extends TestCase
 {
+    private ?string $fixtureDatabase = null;
+    private string $originalConnection;
     protected function setUp(): void
     {
         parent::setUp();
         $this->assertSame('mysql', DB::connection()->getDriverName());
         $this->assertSame('erp_app_staging_testing_1026', DB::connection()->getDatabaseName());
-        // Connection-local fixture shadows the real table; no operational rows are touched.
-        DB::statement("CREATE TEMPORARY TABLE delivery_orders (id INT PRIMARY KEY, status ENUM('pending','partial','shipped','delivered') NOT NULL DEFAULT 'pending' COMMENT 'lifecycle fixture')");
+        $this->originalConnection = config('database.default');
+        $this->fixtureDatabase = 'erp_app_staging_testing_1026_g1_' . bin2hex(random_bytes(6));
+        DB::statement('CREATE DATABASE `' . $this->fixtureDatabase . '`');
+        config(['database.connections.g1_status_fixture' => array_replace(
+            config('database.connections.' . $this->originalConnection),
+            ['database' => $this->fixtureDatabase]
+        ), 'database.default' => 'g1_status_fixture']);
+        DB::statement("CREATE TABLE delivery_orders (id INT PRIMARY KEY, status ENUM('pending','partial','shipped','delivered') NOT NULL DEFAULT 'pending' COMMENT 'lifecycle fixture')");
     }
 
     protected function tearDown(): void
     {
         try {
-            DB::statement('DROP TEMPORARY TABLE IF EXISTS delivery_orders');
+            if ($this->fixtureDatabase !== null) {
+                DB::disconnect('g1_status_fixture');
+                config(['database.default' => $this->originalConnection]);
+                DB::connection($this->originalConnection)->statement('DROP DATABASE `' . $this->fixtureDatabase . '`');
+            }
         } finally {
             parent::tearDown();
         }
