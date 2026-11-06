@@ -36,7 +36,7 @@ class CheckProductionReadiness extends Command
             'release_identity' => preg_match('/^[a-f0-9]{40}$/', $sha) === 1 && ($release['source_sha'] ?? null) === $sha,
             'assets_built' => is_file(public_path('build/manifest.json')) && !is_file(public_path('hot')),
             'public_storage_link' => is_link(public_path('storage')) && realpath(public_path('storage')) === realpath(storage_path('app/public')),
-            'runtime_writable' => is_writable(storage_path()) && is_writable(bootstrap_path('cache')),
+            'runtime_writable' => is_writable(storage_path()) && is_writable(app()->bootstrapPath('cache')),
         ];
         try {
             $connection = DB::connection();
