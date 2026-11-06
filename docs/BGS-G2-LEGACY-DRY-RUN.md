@@ -10,6 +10,8 @@ Run `php artisan legacy:plan manifest.json source.json target.json` with three r
 
 Source and target each contain a `tables` object; every scoped table must exist as a row list, including empty tables. Missing tables are rejected, not assumed empty. Unscoped source tables are listed and cause exit code 2. A partial manifest is never proof of full application coverage.
 
+For input collection see [read-only snapshot collection](BGS-G2-SNAPSHOT-COLLECTION.md). Optional source `unexported_tables` metadata is preserved as an explicit scope gap; an exported table cannot simultaneously be listed as unexported. Credentials and operational exports are never committed.
+
 Example manifest using synthetic source names, not a verified production mapping:
 
 ```json
