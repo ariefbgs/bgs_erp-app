@@ -14,6 +14,14 @@ final class DryRunPlanner
         if (!is_array($source['tables'] ?? null) || !is_array($target['tables'] ?? null)) {
             throw new InvalidArgumentException('Snapshots require a tables object.');
         }
+        $unexported = $source['unexported_tables'] ?? [];
+        if (!is_array($unexported) || !array_is_list($unexported)
+            || array_filter($unexported, fn ($table) => !is_string($table) || $table === '')) {
+            throw new InvalidArgumentException('Invalid unexported table inventory.');
+        }
+        if (array_intersect(array_keys($source['tables']), $unexported)) {
+            throw new InvalidArgumentException('Snapshot contradicts its exported table inventory.');
+        }
         if (($manifest['version'] ?? null) !== 1 || !is_array($manifest['entities'] ?? null)
             || !array_is_list($manifest['entities']) || $manifest['entities'] === []) {
             throw new InvalidArgumentException('Manifest version 1 and ordered entities are required.');
@@ -203,7 +211,8 @@ final class DryRunPlanner
             $totals[$spec['name']] = ['source_rows' => count($rows), 'classified_rows' => array_sum($counts), 'states' => $counts];
         }
         return ['mode' => 'DRY_RUN', 'database_writes' => 0, 'load_implemented' => false,
-            'scope' => array_keys($seen), 'unscoped_source_tables' => array_values(array_diff(array_keys($source['tables']), array_keys($tables))),
+            'scope' => array_keys($seen), 'unscoped_source_tables' => array_values(array_unique(array_merge(
+                array_diff(array_keys($source['tables']), array_keys($tables)), $unexported))),
             'registry' => $registry, 'exceptions' => $exceptions, 'reconciliation' => $totals];
     }
 
