@@ -91,6 +91,45 @@ jobs:
           test "$TABLE_COUNT" -eq 40
         shell: bash --noprofile --norc -e -o pipefail {0}
 
+      - name: Verify read-only snapshot collector
+        run: |
+          python3 -m unittest discover -s tests/snapshot_export -v 2>&1 | tee build/ci/snapshot-tests.txt
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Collect and reconcile synthetic snapshot on disposable MySQL
+        env:
+          MYSQL_PWD: ci_only_disposable_password
+        run: |
+          test "$APP_ENV" = testing
+          test "$DB_DATABASE" = erp_app_staging_testing_1026
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          credentials = Path(os.environ['RUNNER_TEMP']) / 'bgs-export-client.cnf'
+          credentials.write_text('[client]\nhost=127.0.0.1\nport=3306\nuser=root\npassword=' + os.environ['DB_PASSWORD'] + '\n')
+          credentials.chmod(0o600)
+          manifest = {'version': 1, 'entities': [{'name': 'products', 'source_table': 'products', 'target_table': 'products', 'source_id': 'id', 'target_id': 'id', 'fields': {'product_code': 'product_code', 'price': 'price'}, 'key': ['product_code']}]}
+          Path('build/ci/synthetic-manifest.json').write_text(json.dumps(manifest))
+          Path('build/ci/synthetic-target.json').write_text(json.dumps({'tables': {'products': []}}))
+          PY
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root "$DB_DATABASE" -e "INSERT INTO products (product_code, name, unit, price) VALUES ('G2-EXPORT-SYNTHETIC', 'Synthetic export fixture', 'PCS', 123.45)"
+          python3 tools/legacy_snapshot.py --database "$DB_DATABASE" --credentials "$RUNNER_TEMP/bgs-export-client.cnf" --manifest build/ci/synthetic-manifest.json --role source --output build/ci/synthetic-source.json
+          plan_status=0
+          php artisan legacy:plan build/ci/synthetic-manifest.json build/ci/synthetic-source.json build/ci/synthetic-target.json > build/ci/synthetic-report.json || plan_status=$?
+          test "$plan_status" -eq 2
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          snapshot = json.loads(Path('build/ci/synthetic-source.json').read_text())
+          report = json.loads(Path('build/ci/synthetic-report.json').read_text())
+          assert snapshot['tables']['products'][0]['price'] == '123.45'
+          assert report['database_writes'] == 0 and report['load_implemented'] is False
+          assert report['reconciliation']['products']['source_rows'] == report['reconciliation']['products']['classified_rows'] == 1
+          assert report['registry'][0]['target_id'] is None
+          assert report['unscoped_source_tables']
+          print('SYNTHETIC_READONLY_EXPORT_AND_RECONCILIATION=PASS')
+          PY
+
       - name: Run G2 planner and command tests
         run: |
           mkdir -p build/ci
