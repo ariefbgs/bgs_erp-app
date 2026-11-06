@@ -49,9 +49,11 @@
                             <div class="text-center mt-3"><a href="{{ route('password.request') }}">Lupa Password?</a></div>
                         @endif
                     </div>
+                    @if (Route::has('register'))
                     <div class="card-footer text-center">
                         <a href="{{ route('register') }}">Belum punya akun? Register</a>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
