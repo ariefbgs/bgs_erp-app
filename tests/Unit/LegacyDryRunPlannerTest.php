@@ -151,4 +151,17 @@ class LegacyDryRunPlannerTest extends TestCase
         $target = $this->target(); $target['tables']['customers'][0]['customer_code'] = '123';
         $this->assertNull($this->plan($source, $target)['registry'][0]['target_id']);
     }
+
+    public function test_unexported_table_inventory_is_preserved_as_scope_gap(): void
+    {
+        $source = $this->source(); $source['unexported_tables'] = ['legacy_receipts'];
+        $this->assertSame(['legacy_receipts'], $this->plan($source)['unscoped_source_tables']);
+    }
+
+    public function test_contradictory_export_inventory_is_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $source = $this->source(); $source['unexported_tables'] = ['old_customers'];
+        $this->plan($source);
+    }
 }
