@@ -24,6 +24,9 @@ class SnapshotExportTest(unittest.TestCase):
         def run(command, **kwargs):
             self.assertNotIn("hidden-password", " ".join(command))
             self.assertEqual("hidden-password", kwargs["env"]["MYSQL_PWD"])
+            self.assertNotIn("--no-login-paths", command)
+            self.assertEqual(Path(kwargs["env"]["HOME"]), Path(kwargs["env"]["MYSQL_TEST_LOGIN_FILE"]).parent)
+            self.assertFalse(Path(kwargs["env"]["MYSQL_TEST_LOGIN_FILE"]).exists())
             sql = kwargs["input"].decode()
             self.assertIn("START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY;", sql)
             self.assertTrue(sql.endswith("ROLLBACK;\n"))
