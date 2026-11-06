@@ -113,25 +113,8 @@ jobs:
           Path('build/ci/synthetic-target.json').write_text(json.dumps({'tables': {'products': []}}))
           PY
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root "$DB_DATABASE" -e "INSERT INTO products (product_code, name, unit, price) VALUES ('G2-EXPORT-SYNTHETIC', 'Synthetic export fixture', 'PCS', 123.45)"
-          python3 - <<'PYCODE'
-          import json, os, sys
-          from pathlib import Path
-          sys.path.insert(0, 'tools')
-          import legacy_snapshot as exporter
-          original_run = exporter.subprocess.run
-          def diagnostic_run(*args, **kwargs):
-              result = original_run(*args, **kwargs)
-              if result.returncode:
-                  kwargs['stderr'].seek(0)
-                  message = kwargs['stderr'].read().decode(errors='replace')
-                  print(message.replace(os.environ['DB_PASSWORD'], '[REDACTED]'))
-              return result
-          exporter.subprocess.run = diagnostic_run
-          connection, port = exporter.credentials(Path(os.environ['RUNNER_TEMP']) / 'bgs-export-client.cnf')
-          manifest = json.loads(Path('build/ci/synthetic-manifest.json').read_text())
-          report = exporter.collect(os.environ['DB_DATABASE'], connection, port, exporter.scope_from_manifest(manifest, 'source'))
-          exporter.publish(Path('build/ci/synthetic-source.json'), report)
-          PYCODE
+          python3 tools/legacy_snapshot.py --database "$DB_DATABASE" --credentials "$RUNNER_TEMP/bgs-export-client.cnf" --manifest build/ci/synthetic-manifest.json --role source --output build/ci/synthetic-source.json
+          mysql --version
           plan_status=0
           php artisan legacy:plan build/ci/synthetic-manifest.json build/ci/synthetic-source.json build/ci/synthetic-target.json > build/ci/synthetic-report.json || plan_status=$?
           test "$plan_status" -eq 2
