@@ -78,13 +78,17 @@ def credentials(path):
 
 
 def collect(database, connection, port, scope):
-    command = ["mysql", "--no-defaults", "--no-login-paths", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4",
+    command = ["mysql", "--no-defaults", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4",
         "--host=" + connection["host"], "--port=" + str(port), "--user=" + connection["user"], "--database=" + database]
     if connection.get("ssl-ca"):
         command += ["--ssl-ca=" + connection["ssl-ca"]]
     environment = os.environ.copy()
     environment["MYSQL_PWD"] = connection["password"]
-    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
+    with tempfile.TemporaryDirectory() as isolated_home, tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
+        # Older clients lack --no-login-paths. Isolate both default home and
+        # MySQL's login-file override instead of trusting ambient login paths.
+        environment['HOME'] = isolated_home
+        environment['MYSQL_TEST_LOGIN_FILE'] = str(Path(isolated_home) / 'unused-login.cnf')
         result = subprocess.run(command, input=sql_for(scope).encode(), stdout=output, stderr=errors,
             env=environment, timeout=120, check=False)
         if result.returncode:
