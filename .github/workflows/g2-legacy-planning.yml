@@ -1,0 +1,149 @@
+name: ERP BGS G2 Legacy Planning
+
+on:
+  push:
+    branches:
+      - feature/bgs-g2-legacy-planning
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bgs-g2-legacy-planning
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: G2 Snapshot Planner Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_disposable_password
+          MYSQL_DATABASE: erp_app_staging_testing_1026
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci_only_disposable_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: erp_app_staging_testing_1026
+      DB_USERNAME: root
+      DB_PASSWORD: ci_only_disposable_password
+      CACHE_STORE: array
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, xml, ctype, iconv, pdo_mysql, mysqlnd, gd, zip, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Create disposable testing APP_KEY
+        run: |
+          echo "APP_KEY=base64:$(php -r 'echo base64_encode(random_bytes(32));')" >> "$GITHUB_ENV"
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install MySQL client
+        run: |
+          if ! command -v mysql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y default-mysql-client
+          fi
+
+      - name: Bootstrap isolated test schema through migrations
+        env:
+          MYSQL_PWD: ci_only_disposable_password
+        run: |
+          mkdir -p build/ci
+          # Exercise standard installation: no active schema dump may bypass migrations.
+          test ! -f database/schema/mysql-schema.sql
+          test -f database/schema/mysql-schema.sql.reference
+          php artisan migrate --force --no-interaction 2>&1 | tee build/ci/migrations.txt
+
+          TABLE_COUNT=$(mysql --protocol=TCP -h 127.0.0.1 \
+            -P 3306 -u root -N -B -e \
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='erp_app_staging_testing_1026' AND TABLE_TYPE='BASE TABLE'")
+
+          echo "IMPORTED_TABLES=$TABLE_COUNT"
+          test "$TABLE_COUNT" -eq 40
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Verify read-only snapshot collector
+        run: |
+          python3 -m unittest discover -s tests/snapshot_export -v 2>&1 | tee build/ci/snapshot-tests.txt
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Collect and reconcile synthetic snapshot on disposable MySQL
+        env:
+          MYSQL_PWD: ci_only_disposable_password
+        run: |
+          test "$APP_ENV" = testing
+          test "$DB_DATABASE" = erp_app_staging_testing_1026
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          credentials = Path(os.environ['RUNNER_TEMP']) / 'bgs-export-client.cnf'
+          credentials.write_text('[client]\nhost=127.0.0.1\nport=3306\nuser=root\npassword=' + os.environ['DB_PASSWORD'] + '\n')
+          credentials.chmod(0o600)
+          manifest = {'version': 1, 'entities': [{'name': 'products', 'source_table': 'products', 'target_table': 'products', 'source_id': 'id', 'target_id': 'id', 'fields': {'product_code': 'product_code', 'price': 'price'}, 'key': ['product_code']}]}
+          Path('build/ci/synthetic-manifest.json').write_text(json.dumps(manifest))
+          Path('build/ci/synthetic-target.json').write_text(json.dumps({'tables': {'products': []}}))
+          PY
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root "$DB_DATABASE" -e "INSERT INTO products (product_code, name, unit, price) VALUES ('G2-EXPORT-SYNTHETIC', 'Synthetic export fixture', 'PCS', 123.45)"
+          python3 tools/legacy_snapshot.py --database "$DB_DATABASE" --credentials "$RUNNER_TEMP/bgs-export-client.cnf" --manifest build/ci/synthetic-manifest.json --role source --output build/ci/synthetic-source.json
+          mysql --version
+          plan_status=0
+          php artisan legacy:plan build/ci/synthetic-manifest.json build/ci/synthetic-source.json build/ci/synthetic-target.json > build/ci/synthetic-report.json || plan_status=$?
+          test "$plan_status" -eq 2
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          snapshot = json.loads(Path('build/ci/synthetic-source.json').read_text())
+          report = json.loads(Path('build/ci/synthetic-report.json').read_text())
+          assert snapshot['tables']['products'][0]['price'] == '123.45'
+          assert report['database_writes'] == 0 and report['load_implemented'] is False
+          assert report['reconciliation']['products']['source_rows'] == report['reconciliation']['products']['classified_rows'] == 1
+          assert report['registry'][0]['target_id'] is None
+          assert report['unscoped_source_tables']
+          print('SYNTHETIC_READONLY_EXPORT_AND_RECONCILIATION=PASS')
+          PY
+
+      - name: Run G2 planner and command tests
+        run: |
+          mkdir -p build/ci
+          vendor/bin/phpunit -c phpunit.xml --filter 'LegacyDryRunPlannerTest|LegacyMigrationPlanCommandTest' \
+            --log-junit build/ci/results.xml \
+            2>&1 | tee build/ci/phpunit-output.txt
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Upload regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bgs-g2-legacy-planning-evidence
+          path: build/ci/
+          if-no-files-found: warn
+          retention-days: 14
