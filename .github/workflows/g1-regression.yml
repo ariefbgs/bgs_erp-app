@@ -1,0 +1,109 @@
+name: ERP BGS G1 Regression
+
+on:
+  push:
+    branches:
+      - feature/bgs-g1-schema-foundation
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bgs-g1-regression
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: Full PHPUnit Regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_disposable_password
+          MYSQL_DATABASE: erp_app_staging_testing_1026
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci_only_disposable_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: erp_app_staging_testing_1026
+      DB_USERNAME: root
+      DB_PASSWORD: ci_only_disposable_password
+      CACHE_STORE: array
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, xml, ctype, iconv, pdo_mysql, mysqlnd, gd, zip, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Create disposable testing APP_KEY
+        run: |
+          echo "APP_KEY=base64:$(php -r 'echo base64_encode(random_bytes(32));')" >> "$GITHUB_ENV"
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install MySQL client
+        run: |
+          if ! command -v mysql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y default-mysql-client
+          fi
+
+      - name: Bootstrap isolated test schema through migrations
+        env:
+          MYSQL_PWD: ci_only_disposable_password
+        run: |
+          mkdir -p build/ci
+          # Exercise standard installation: no active schema dump may bypass migrations.
+          test ! -f database/schema/mysql-schema.sql
+          test -f database/schema/mysql-schema.sql.reference
+          php artisan migrate --force --no-interaction 2>&1 | tee build/ci/migrations.txt
+
+          TABLE_COUNT=$(mysql --protocol=TCP -h 127.0.0.1 \
+            -P 3306 -u root -N -B -e \
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='erp_app_staging_testing_1026' AND TABLE_TYPE='BASE TABLE'")
+
+          echo "IMPORTED_TABLES=$TABLE_COUNT"
+          test "$TABLE_COUNT" -eq 40
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Run full regression
+        run: |
+          mkdir -p build/ci
+          vendor/bin/phpunit -c phpunit.xml \
+            --log-junit build/ci/results.xml \
+            2>&1 | tee build/ci/phpunit-output.txt
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Upload regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bgs-g1-regression-evidence
+          path: build/ci/
+          if-no-files-found: warn
+          retention-days: 14

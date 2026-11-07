@@ -2,11 +2,15 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('permissions') || !Schema::hasTable('role_permissions')) {
+            return;
+        }
         $now = now();
 
         $permissions = [
@@ -62,6 +66,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('permissions') || !Schema::hasTable('role_permissions')) {
+            return;
+        }
         $ids = DB::table('permissions')
             ->whereIn(
                 'name',
