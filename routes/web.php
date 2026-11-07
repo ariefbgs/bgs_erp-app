@@ -31,7 +31,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 // 2. Rute Terproteksi Login
 Route::middleware(['auth'])->group(function () {

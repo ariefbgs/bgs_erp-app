@@ -1,0 +1,185 @@
+name: ERP BGS Hostinger Candidate
+
+on:
+  push:
+    branches:
+      - feature/bgs-hostinger-production-readiness
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bgs-hostinger-candidate
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: Build and verify production candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_disposable_password
+          MYSQL_DATABASE: erp_app_staging_testing_1026
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci_only_disposable_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: erp_app_staging_testing_1026
+      DB_USERNAME: root
+      DB_PASSWORD: ci_only_disposable_password
+      CACHE_STORE: array
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, xml, ctype, iconv, pdo_mysql, mysqlnd, gd, zip, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Create disposable testing APP_KEY
+        run: |
+          echo "APP_KEY=base64:$(php -r 'echo base64_encode(random_bytes(32));')" >> "$GITHUB_ENV"
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install MySQL client
+        run: |
+          if ! command -v mysql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y default-mysql-client
+          fi
+
+      - name: Bootstrap isolated test schema through migrations
+        env:
+          MYSQL_PWD: ci_only_disposable_password
+        run: |
+          mkdir -p build/ci
+          # Exercise standard installation: no active schema dump may bypass migrations.
+          test ! -f database/schema/mysql-schema.sql
+          test -f database/schema/mysql-schema.sql.reference
+          php artisan migrate --force --no-interaction 2>&1 | tee build/ci/migrations.txt
+
+          TABLE_COUNT=$(mysql --protocol=TCP -h 127.0.0.1 \
+            -P 3306 -u root -N -B -e \
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='erp_app_staging_testing_1026' AND TABLE_TYPE='BASE TABLE'")
+
+          echo "IMPORTED_TABLES=$TABLE_COUNT"
+          test "$TABLE_COUNT" -eq 40
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Test production access and bootstrap guards
+        run: |
+          vendor/bin/phpunit --filter 'HostingerProductionReadinessTest|BgsDeploymentAuthorizationContractTest' --log-junit build/ci/readiness.xml 2>&1 | tee build/ci/readiness-tests.txt
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Build assets and production dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer check-platform-reqs --no-dev
+          python3 - <<'PYCODE'
+          import json, os
+          from pathlib import Path
+          Path('release.json').write_text(json.dumps({'version': '0.1.0-rc.1', 'source_sha': os.environ['GITHUB_SHA'], 'workflow_run': os.environ['GITHUB_RUN_ID'], 'approval': 'candidate-only'}, indent=2) + '\n')
+          PYCODE
+
+      - name: Verify production boot on disposable CI database
+        env:
+          APP_ENV: production
+          APP_DEBUG: 'false'
+          APP_URL: https://ci-candidate.example.com
+          SESSION_DRIVER: file
+          SESSION_SECURE_COOKIE: 'true'
+          BGS_RESTRICTED_FULL_USER_IDS: ''
+        run: |
+          # Synthetic CI identity only. Operational admin creation uses the hidden prompt.
+          php artisan tinker --execute="App\Models\User::forceCreate(['name'=>'Synthetic CI','email'=>'ci@example.invalid','password'=>Illuminate\Support\Facades\Hash::make(bin2hex(random_bytes(20))),'role'=>'admin']);"
+          php artisan db:seed --class=DeploymentPermissionSeeder --force --no-interaction
+          php artisan storage:link
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan bgs:production-check "$GITHUB_SHA" | tee build/ci/production-preflight.json
+          php artisan config:clear
+          php artisan route:clear
+          php artisan view:clear
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+      - name: Package candidate without secrets or operational files
+        run: |
+          python3 - <<'PYCODE'
+          import hashlib, json, os, subprocess, tarfile
+          from pathlib import Path
+          output = Path('build/release'); output.mkdir(parents=True, exist_ok=True)
+          allowed = ('app/', 'bootstrap/', 'config/', 'database/migrations/', 'database/seeders/', 'resources/', 'routes/')
+          public = ('public/css/', 'public/js/', 'public/vendor/')
+          exact = {'artisan', 'composer.json', 'composer.lock', 'package.json', 'package-lock.json', 'public/.htaccess', 'public/index.php', 'public/favicon.ico', 'public/robots.txt', '.env.hostinger.example', 'docs/BGS-HOSTINGER-PRODUCTION.md'}
+          tracked = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          paths = {p for p in tracked if p and (p.startswith(allowed + public) or p in exact)}
+          paths = {p for p in paths if not p.startswith('bootstrap/cache/')}
+          paths |= {str(p) for root in ['vendor', 'public/build'] for p in Path(root).rglob('*') if p.is_file() and not p.is_symlink()}
+          paths.add('release.json')
+          # Fresh writable skeleton, no runtime data/logs/caches from CI.
+          for directory in ['storage/app/public','storage/framework/cache/data','storage/framework/sessions','storage/framework/views','storage/logs','bootstrap/cache']:
+              Path(directory).mkdir(parents=True, exist_ok=True)
+          hashes = {p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in sorted(paths)}
+          Path('release-files.json').write_text(json.dumps(hashes, indent=2)+'\n'); paths.add('release-files.json')
+          archive = output / ('bgs-'+os.environ['GITHUB_SHA']+'.tar.gz')
+          with tarfile.open(archive, 'w:gz') as tar:
+              for p in sorted(paths): tar.add(p, arcname=p, recursive=False)
+              for directory in ['storage/app/public','storage/framework/cache/data','storage/framework/sessions','storage/framework/views','storage/logs','bootstrap/cache']:
+                  tar.add(directory, arcname=directory, recursive=False)
+          with tarfile.open(archive) as tar:
+              names = tar.getnames()
+              assert '.env' not in names and 'public/test.php' not in names
+              assert not any(n.startswith(('public/biaya/','database/schema/','.git/','node_modules/')) for n in names)
+              assert not any(n.startswith('bootstrap/cache/') and n.endswith('.php') for n in names)
+          (output/'SHA256SUMS').write_text(hashlib.sha256(archive.read_bytes()).hexdigest()+'  '+archive.name+'\n')
+          print('PRODUCTION_CANDIDATE_PACKAGE=PASS; source='+os.environ['GITHUB_SHA'])
+          PYCODE
+
+      - name: Upload candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: bgs-hostinger-candidate-${{ github.sha }}
+          path: build/release/
+          retention-days: 14
+
+      - name: Upload readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bgs-hostinger-readiness-evidence
+          path: build/ci/
+          retention-days: 14
