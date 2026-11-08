@@ -1,0 +1,9 @@
+# G4.99 — Fulfilment ETL Phase B, candidate only
+
+Adds `legacy:load-fulfilment` for goods_receipts/details, invoice_customers/details, delivery_orders/details, document_receipts, with canonical document receipt DO and invoice pivots. The loader maps source IDs via `legacy_migration_ids`, enforces unique product lineage per customer PO, refuses invoice and DO references without a confirmed mapping, and rejects unverified attachments and unsupported DO status. One atomic batch is rolled back on any failed relationship. Dry-run always rolls back. `--apply` only on `APP_ENV=testing`, SQLite `:memory:`; **no production import enabled**.
+
+Input: private JSON `{"database":"smartlo1_erp_app","tables":{...}}`, containing exactly seven table arrays. These are snapshot rows, **not** source database credentials. Source extraction and file attachments are separately controlled. Do not commit snapshots. Data in the example tests is synthetic. Do not re-run previously passed test suites on unchanged commits.
+
+**Known blockers**: G4.93 EX-001 orphan invoice detail ID 30; EX-002 document receipt ID 2 with unmatched invoice. Both must be held in the exception register and excluded only by an explicitly approved exception manifest. This candidate does **not** implement an exception manifest or partial import; it fails closed instead. Legacy statuses may require manual transformations. Incomplete source modules include supplier invoices/payments, alternate/backup tables, DPP, storage and supporting files. Full production ETL requires source snapshot, reconciliation, resolution policy, and an audited production import gate.
+
+Test only from exact GitHub SHA in private workspace with PHP 8.4 and temporary PHPUnit XML using SQLite `:memory:`. No schema reset against operational databases. Commit after PASS, not before. G4.99 is not a deploy approval.
