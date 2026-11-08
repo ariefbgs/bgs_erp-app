@@ -47,7 +47,10 @@ class ImportLegacyMasters extends Command
                     throw new RuntimeException("Missing or invalid {$table} records.");
                 }
             }
-            $identity = DB::selectOne('SELECT DATABASE() AS name')->name ?? null;
+            $connection = DB::connection();
+            $identity = $connection->getDriverName() === 'sqlite'
+                ? $connection->getDatabaseName()
+                : (DB::selectOne('SELECT DATABASE() AS name')->name ?? null);
             if ($identity === null || $identity === self::SOURCE || !Schema::hasTable('legacy_migration_ids')) {
                 throw new RuntimeException('Target database identity or registry invalid.');
             }
