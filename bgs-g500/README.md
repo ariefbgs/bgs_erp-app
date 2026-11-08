@@ -1,0 +1,9 @@
+# ERP-BGS New G5.00 — private read-only source snapshot
+
+Scope: 17 tables required by current three ETL command groups. Operational scripts only; **no production import is enabled**. `export-legacy-snapshot-g500.php` runs as `smartlo1` on Jagoan Hosting, reads `smartlo1_erp_app` through its existing private environment configuration, and writes three full snapshots plus SHA-256 manifest into a root folder with mode 0700 and files mode 0600. Transaction uses a consistent read-only snapshot. `verify-snapshot-g500.py` validates file hashes, scopes, counts, and source IDs locally without exposing customer data.
+
+Run under `/home/smartlo1/bgs-legacy-audit-g480/` (not web root). Files can contain confidential customer, financial, and product data. Never share raw JSON, `.env`, or database dump in chat, source control, or a public directory. Transfer only via an authorized encrypted channel to a private test environment with access controls and retention limits.
+
+This extraction does **not** implement transformations, per-row exception quarantine, attachment migration, or import into ERP-New. The known orphan invoice detail 30 and document receipt 2 are **included in raw snapshots**, explicitly documented in manifest and not silently dropped. Neither is permitted to auto-map; an approved exception handling rule is needed before import. Source-only `customers2`, `products6`, `products_6`, `invoice_customers_backup`, `dpp_headers`, invoices supplier/payments, and other supporting domains are explicitly outside this export; their validity cannot be assumed away. Snapshot counts will reflect a moving legacy production database; final cutover needs a frozen snapshot and delta reconciliation.
+
+Safety: not a backup, not a cutover, not a release approval. Does not modify any database. Keep copies private and time-bound. Commit scripts only (never generated snapshots), using existing GitHub feature branch.
