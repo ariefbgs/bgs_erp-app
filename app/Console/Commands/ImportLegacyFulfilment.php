@@ -37,9 +37,9 @@ class ImportLegacyFulfilment extends Command
         $testMemory = app()->environment('testing') && $connection->getDriverName() === 'sqlite'
             && $connection->getDatabaseName() === ':memory:';
         $apply = (bool) $this->option('apply');
-        if ($apply && !$testMemory) {
-            $this->error('APPLY_BLOCKED: requires APP_ENV=testing and SQLite :memory:');
-            return 1;
+        if ($apply) {
+            try { \App\Support\LegacyEtlTestGuard::assertApplyAllowed(); }
+            catch (\Throwable $e) { $this->error($e->getMessage()); return 1; }
         }
         $path = (string) $this->argument('snapshot');
         if (!is_file($path) || !is_readable($path) || is_link($path) || filesize($path) > 33554432) {

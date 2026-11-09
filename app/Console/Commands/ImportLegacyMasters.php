@@ -25,9 +25,9 @@ class ImportLegacyMasters extends Command
     public function handle(): int
     {
         $apply = (bool) $this->option('apply');
-        if ($apply && !app()->environment('testing')) {
-            $this->error('APPLY_BLOCKED: only an isolated APP_ENV=testing database is supported by this batch.');
-            return 1;
+        if ($apply) {
+            try { \App\Support\LegacyEtlTestGuard::assertApplyAllowed(); }
+            catch (\Throwable $e) { $this->error($e->getMessage()); return 1; }
         }
         $path = (string) $this->argument('snapshot');
         if (!is_file($path) || !is_readable($path) || is_link($path) || filesize($path) > 33554432) {

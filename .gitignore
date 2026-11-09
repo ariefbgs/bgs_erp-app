@@ -39,3 +39,5 @@ yarn-error.log
 /deployment-output/
 *.BGS-BACKUP*
 /erp_app_staging_backup_*.sql
+__pycache__/
+*.pyc

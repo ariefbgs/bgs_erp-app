@@ -36,9 +36,9 @@ class ImportLegacyTransactions extends Command
         $testingSqlite = app()->environment('testing')
             && $connection->getDriverName() === 'sqlite'
             && $connection->getDatabaseName() === ':memory:';
-        if ($apply && !$testingSqlite) {
-            $this->error('APPLY_BLOCKED: only APP_ENV=testing with SQLite :memory: is supported in G4.98.');
-            return 1;
+        if ($apply) {
+            try { \App\Support\LegacyEtlTestGuard::assertApplyAllowed(); }
+            catch (\Throwable $e) { $this->error($e->getMessage()); return 1; }
         }
         $path = (string) $this->argument('snapshot');
         if (!is_file($path) || !is_readable($path) || is_link($path) || filesize($path) > 33554432) {
